@@ -12,6 +12,13 @@ func _enter_tree() -> void:
 	_register_inputs()
 
 
+func _ready() -> void:
+	# CI smoke test: `game -- --smoke` boots straight into a run so the
+	# whole gameplay stack (muon, props, HUD) gets exercised headlessly.
+	if "--smoke" in OS.get_cmdline_user_args():
+		start_run.call_deferred()
+
+
 func start_run() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file(MAIN_SCENE)

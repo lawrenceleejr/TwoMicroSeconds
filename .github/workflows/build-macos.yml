@@ -80,7 +80,9 @@ jobs:
           set -euo pipefail
           BIN="$(find "$APP_PATH/Contents/MacOS" -type f -perm +111 -print -quit)"
           test -n "$BIN"
-          "$BIN" --headless --quit-after 90 2>&1 | tee build/smoke.log
+          # --smoke (after --) makes the game skip the title screen and start
+          # a real run, so muon/props/HUD scripts all load and tick.
+          "$BIN" --headless --quit-after 240 -- --smoke 2>&1 | tee build/smoke.log
           if grep -Eq "SCRIPT ERROR|Parse Error|Failed to load script" build/smoke.log; then
             echo "Smoke test found script errors" >&2
             exit 1

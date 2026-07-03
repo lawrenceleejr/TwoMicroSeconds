@@ -41,14 +41,14 @@ Every push to `main` builds a DMG on GitHub Actions:
    Apple Developer ID), so Gatekeeper needs one nudge. The short version:
 
    ```sh
-   xattr -cr "/path/to/TwoMicroseconds.app"
-   open "/path/to/TwoMicroseconds.app"
+   xattr -cr "/path/to/Two Microseconds.app"
+   open "/path/to/Two Microseconds.app"
    ```
 
    or run the raw binary directly:
 
    ```sh
-   "/path/to/TwoMicroseconds.app/Contents/MacOS/Two Microseconds"
+   "/path/to/Two Microseconds.app/Contents/MacOS/Two Microseconds"
    ```
 
 ## the physics (yes, really)
