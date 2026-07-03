@@ -1,0 +1,73 @@
+TWO MICROSECONDS — how to run this game on macOS
+=================================================
+
+This game is a tiny indie build. It is "ad-hoc" signed (no Apple
+Developer ID) and not notarized, so macOS Gatekeeper will block it
+the first time and may claim it is "damaged". It is not damaged —
+macOS just doesn't know us. Pick ONE of the options below.
+
+
+EASIEST — Terminal (works on every macOS version)
+-------------------------------------------------
+1. Drag "Two Microseconds.app" out of this disk image to wherever
+   you like (e.g. ~/Applications or your Desktop).
+2. Open Terminal and run (adjust the path to where you put it):
+
+     xattr -cr ~/Applications/TwoMicroseconds.app
+     open ~/Applications/TwoMicroseconds.app
+
+   `xattr -cr` removes the com.apple.quarantine attribute that your
+   browser attached when the file was downloaded. That attribute is
+   the only thing standing between you and 2.2 microseconds of fun.
+
+
+macOS 15 (Sequoia) and newer — no Terminal
+------------------------------------------
+Apple removed the old right-click trick in macOS 15, so:
+1. Double-click the app. It will be blocked — that's expected.
+2. Open  System Settings > Privacy & Security,  scroll down to the
+   Security section. You'll see a note that the app was blocked.
+3. Click "Open Anyway", then confirm in the dialog that appears.
+
+
+macOS 14 (Sonoma) and older — no Terminal
+-----------------------------------------
+Right-click (or Control-click) the app > Open > Open.
+You only need to do this once.
+
+
+LAST RESORT — run the raw binary from the command line
+------------------------------------------------------
+The executable inside the app bundle can be launched directly:
+
+     "/path/to/TwoMicroseconds.app/Contents/MacOS/Two Microseconds"
+
+(Tab-completion is your friend. Quotes matter — there's a space.)
+
+
+CHECKING STATUS
+---------------
+To see what Gatekeeper thinks of the app:
+
+     spctl --assess -vv /path/to/TwoMicroseconds.app
+
+"rejected" is normal for an ad-hoc signed app; it will still run
+fine once the quarantine attribute has been cleared as above.
+
+
+HOW TO PLAY
+-----------
+You are a muon. You were just born 100 km above a particle detector
+and you have 2.2 microseconds to live. Luckily, the faster you move,
+the slower your clock ticks (this is real physics — special
+relativity's time dilation). Reach the detector before you decay,
+and cause some optional mischief on the way down.
+
+  WASD / arrows / left stick ... move
+  SPACE (or SHIFT / gamepad A) . zip (dash)
+  Z / X / click (gamepad X) .... zap (your honk)
+  TAB .......................... to-do list
+  ESC .......................... pause
+  F / M ........................ fullscreen / mute
+
+Move fast. Fast muons age slowly.

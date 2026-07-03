@@ -1,0 +1,34 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+
+config_version=5
+
+[application]
+
+config/name="Two Microseconds"
+config/description="A cute game about the 2.2 microsecond life of a muon."
+config/version="0.1.0"
+run/main_scene="res://game/main/title.tscn"
+config/features=PackedStringArray("4.4", "Forward Plus")
+boot_splash/bg_color=Color(0.0784314, 0.0784314, 0.180392, 1)
+boot_splash/show_image=false
+config/icon="res://icon.svg"
+
+[autoload]
+
+Juice="*res://game/autoload/juice.gd"
+Sfx="*res://game/autoload/sfx.gd"
+Tasks="*res://game/autoload/tasks.gd"
+Game="*res://game/autoload/game.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+environment/defaults/default_clear_color=Color(0.0784314, 0.0784314, 0.180392, 1)

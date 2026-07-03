@@ -1,0 +1,118 @@
+name: build-macos
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.4.1"
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot editor and export templates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/Library/Application Support/Godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-macos-v1
+
+      - name: Install Godot and export templates
+        run: |
+          set -euo pipefail
+          GODOT_APP="$HOME/godot-bin/Godot.app/Contents/MacOS/Godot"
+          if [ ! -x "$GODOT_APP" ]; then
+            curl -fL --retry 4 --retry-delay 5 -o /tmp/godot.zip \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
+            mkdir -p "$HOME/godot-bin"
+            ditto -x -k /tmp/godot.zip "$HOME/godot-bin"
+          fi
+          TPL_DIR="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable"
+          if [ ! -f "$TPL_DIR/macos.zip" ]; then
+            curl -fL --retry 4 --retry-delay 5 -o /tmp/templates.tpz \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            rm -rf /tmp/godot-templates
+            unzip -q /tmp/templates.tpz -d /tmp/godot-templates
+            mkdir -p "$TPL_DIR"
+            mv /tmp/godot-templates/templates/* "$TPL_DIR/"
+          fi
+          "$GODOT_APP" --version
+
+      - name: Import project (headless)
+        run: |
+          GODOT="$HOME/godot-bin/Godot.app/Contents/MacOS/Godot"
+          # First import on a cold cache can exit non-zero; run it twice.
+          "$GODOT" --headless --path . --import || true
+          "$GODOT" --headless --path . --import
+
+      - name: Export macOS app
+        run: |
+          set -euo pipefail
+          GODOT="$HOME/godot-bin/Godot.app/Contents/MacOS/Godot"
+          mkdir -p build
+          "$GODOT" --headless --path . --export-release "macOS" "$PWD/build/TwoMicroseconds.zip" 2>&1 | tee build/export.log
+          # Godot can exit 0 even when the export failed; gate on the output.
+          test -s build/TwoMicroseconds.zip
+          if grep -Eq "ERROR: Project export|Failed to export" build/export.log; then
+            echo "Export log contains errors" >&2
+            exit 1
+          fi
+
+      - name: Ad-hoc sign
+        run: |
+          set -euo pipefail
+          ditto -x -k build/TwoMicroseconds.zip build/unpacked
+          APP="$(find build/unpacked -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP"
+          codesign --force --deep -s - "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          # Expected to be rejected (no notarization) — logged for reference only.
+          spctl --assess -vv "$APP" || true
+          echo "APP_PATH=$APP" >> "$GITHUB_ENV"
+
+      - name: Smoke test (headless boot of the exported game)
+        run: |
+          set -euo pipefail
+          BIN="$(find "$APP_PATH/Contents/MacOS" -type f -perm +111 -print -quit)"
+          test -n "$BIN"
+          "$BIN" --headless --quit-after 90 2>&1 | tee build/smoke.log
+          if grep -Eq "SCRIPT ERROR|Parse Error|Failed to load script" build/smoke.log; then
+            echo "Smoke test found script errors" >&2
+            exit 1
+          fi
+
+      - name: Package DMG
+        run: |
+          set -euo pipefail
+          mkdir -p build/dmg-root
+          ditto "$APP_PATH" "build/dmg-root/$(basename "$APP_PATH")"
+          cp dist/RUN_ME_FIRST.txt "build/dmg-root/RUN ME FIRST.txt"
+          for attempt in 1 2 3; do
+            if hdiutil create -volname "Two Microseconds" -srcfolder build/dmg-root \
+                -ov -format UDZO "build/TwoMicroseconds-macOS.dmg"; then
+              break
+            fi
+            echo "hdiutil attempt $attempt failed, retrying..." >&2
+            sleep 5
+          done
+          hdiutil verify build/TwoMicroseconds-macOS.dmg
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TwoMicroseconds-macOS
+          path: build/TwoMicroseconds-macOS.dmg
+          retention-days: 30
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build/*.log
+          if-no-files-found: ignore
