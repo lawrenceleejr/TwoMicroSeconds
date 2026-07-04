@@ -249,11 +249,49 @@ jobs:
           set -euo pipefail
           cd build/web
           touch .nojekyll
+          # Stamp the build so the verify step can tell what's live.
+          echo "${GITHUB_SHA}" > version.txt
           git init -b gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Deploy web build ${GITHUB_SHA}"
           git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # GitHub's internal pages-build-deployment occasionally fails with a
+      # transient error and never retries on its own, leaving the site
+      # stale. Poll the live site for our stamp; if it doesn't land, push
+      # an empty commit to re-trigger the deployer. Stand down instead of
+      # retrying if a newer deploy has already moved gh-pages past us.
+      - name: Verify Pages deployment (self-heal if the deployer flakes)
+        run: |
+          set -euo pipefail
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          REPO="${GITHUB_REPOSITORY#*/}"
+          URL="https://$(echo "$OWNER" | tr '[:upper:]' '[:lower:]').github.io/${REPO}/version.txt"
+          REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          cd build/web
+          for attempt in 1 2 3; do
+            for i in $(seq 1 18); do  # up to 3 min per attempt
+              sleep 10
+              LIVE=$(curl -fsS -H 'Cache-Control: no-cache' "${URL}?bust=${GITHUB_SHA}-${attempt}-${i}" || true)
+              if [ "$LIVE" = "$GITHUB_SHA" ]; then
+                echo "Pages is serving ${GITHUB_SHA}."
+                exit 0
+              fi
+            done
+            REMOTE_TIP=$(git ls-remote "$REMOTE_URL" refs/heads/gh-pages | cut -f1)
+            if [ "$REMOTE_TIP" != "$(git rev-parse HEAD)" ]; then
+              echo "gh-pages moved past this run; standing down."
+              exit 0
+            fi
+            echo "Attempt ${attempt}: site still stale — re-triggering the Pages deployer." >&2
+            git commit --allow-empty -m "Retrigger Pages deployment for ${GITHUB_SHA} (attempt ${attempt})"
+            git push -f "$REMOTE_URL" gh-pages
+          done
+          echo "Pages never served ${GITHUB_SHA} after 3 attempts." >&2
+          exit 1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
