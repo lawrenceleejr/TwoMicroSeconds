@@ -19,6 +19,30 @@ func _ready() -> void:
 	pivot_offset = Vector2(W * 0.5, 0.0)
 	rotation = -0.012  # pinned up slightly crooked, like a real note
 	Tasks.task_completed.connect(_on_task_completed)
+	# Phones: start tucked away — the sky is small enough already.
+	if DisplayServer.is_touchscreen_available():
+		open = false
+		_slide = 1.0
+
+
+func _input(event: InputEvent) -> void:
+	# Tap/click the note (or its edge tab when tucked away) toggles it.
+	# (On touch devices, taps also arrive as emulated mouse clicks — only
+	# listen to one kind per device class to avoid double toggles.)
+	var pt := Vector2.ZERO
+	if event is InputEventScreenTouch and event.pressed:
+		pt = event.position
+	elif event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_LEFT \
+			and not DisplayServer.is_touchscreen_available():
+		pt = event.position
+	else:
+		return
+	var canvas_pt: Vector2 = get_viewport().get_final_transform().affine_inverse() * pt
+	if get_global_rect().grow(8.0).has_point(canvas_pt):
+		get_viewport().set_input_as_handled()
+		open = not open
+		Sfx.play("pop", -10.0)
 
 
 func _process(delta: float) -> void:
@@ -29,7 +53,8 @@ func _process(delta: float) -> void:
 	var target := 0.0 if open else 1.0
 	_slide = lerpf(_slide, target, 1.0 - exp(-10.0 * delta))
 	var vp := get_viewport_rect().size
-	position = Vector2(vp.x - W - 14.0 + _slide * (W + 40.0), 64.0)
+	# Tucked away, a 28-px sliver of paper stays on screen as the handle.
+	position = Vector2(vp.x - W - 14.0 + _slide * (W - 14.0), 64.0)
 	if Tasks.all_optional_done() and _stamp_scale < 1.0:
 		_stamp_scale = minf(_stamp_scale + delta * 3.0, 1.0)
 	# Never hide the muon: when it flies behind the note, the paper turns
@@ -59,6 +84,14 @@ func _draw() -> void:
 	# Paper, held up by a piece of washi tape.
 	var sb := Juice.ui_panel(Juice.PAPER, 0.93, 14)
 	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
+	# Edge tab affordances on the visible sliver when tucked away.
+	if _slide > 0.5:
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(18.0, 40.0), Vector2(8.0, 48.0), Vector2(18.0, 56.0),
+		]), Color(Juice.INK, 0.6))
+		draw_string(Juice.ui_font, Vector2(6.0, 84.0),
+			"%d" % Tasks.optional_done_count(), HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+			Color(Juice.INK, 0.7))
 	draw_set_transform(Vector2(W * 0.5, 0.0), 0.06, Vector2.ONE)
 	draw_rect(Rect2(-26, -8, 52, 16), Color(Juice.MINT, 0.55))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

@@ -36,6 +36,9 @@ func _process(_delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# Something above us (the to-do note's tap target) took this touch.
+	if get_viewport().is_input_handled():
+		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			if event.position.x < get_viewport_rect().size.x * 0.55 and _steer_id == -1:
