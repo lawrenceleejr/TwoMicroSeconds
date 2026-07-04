@@ -64,14 +64,23 @@ func _ready() -> void:
 	add_child(_lab_label)
 
 	_alert_label = Label.new()
-	_alert_label.text = "DECAY PROBABILITY EXCEEDS 90%"
-	_alert_label.add_theme_font_size_override("font_size", 22)
+	_alert_label.text = "!! DECAY PROBABILITY EXCEEDS 90% !!"
+	_alert_label.add_theme_font_override("font", Juice.ui_font)
+	_alert_label.add_theme_font_size_override("font_size", 26)
 	_alert_label.add_theme_color_override("font_color", Color(1.0, 0.32, 0.4))
 	_alert_label.add_theme_color_override("font_outline_color", Juice.INK)
-	_alert_label.add_theme_constant_override("outline_size", 7)
+	_alert_label.add_theme_constant_override("outline_size", 8)
 	_alert_label.visible = false
 	_alert_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_alert_label)
+
+	# Pulsing red frame around the whole screen when it's dire.
+	_alert_border = Control.new()
+	_alert_border.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_alert_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_alert_border.visible = false
+	_alert_border.draw.connect(_draw_alert_border)
+	add_child(_alert_border)
 
 	# γ / velocity chip with a small dilation bar.
 	var gamma_pair := _mk_chip(14, "")
@@ -120,6 +129,8 @@ var _plot: Control
 var _lab_label: Label
 var _alert_rect: ColorRect
 var _alert_label: Label
+var _alert_border: Control
+var _glitch_timer := 0.0
 
 
 func _mk_chip(font_size: int, icon_path: String) -> Array:
@@ -173,15 +184,28 @@ func _process(delta: float) -> void:
 	_lab_label.text = "proper · lab frame %.1f µs" % lab
 	_lab_label.position = Vector2(vp.x * 0.5 - _lab_label.size.x * 0.5, 60.0)
 
-	# Red alert: the dice are loaded now.
+	# Red alert: the dice are loaded now. The whole UI comes apart a little —
+	# jitter, glitch bursts, a pulsing frame, a sustained tremble.
 	var p_now: float = muon.get("decay_p")
 	var in_danger: bool = p_now > 0.9 and muon.get("alive") and not muon.get("finished")
 	_alert_rect.visible = in_danger
-	_alert_label.visible = in_danger and int(_t * 3.0) % 2 == 0
+	_alert_border.visible = in_danger
+	_alert_label.visible = in_danger and int(_t * 4.0) % 3 != 0
+	var jit := Vector2.ZERO
 	if in_danger:
-		_alert_rect.color = Color(1.0, 0.2, 0.28, 0.055 + 0.05 * absf(sin(_t * 8.0)))
-		_alert_label.position = Vector2(vp.x * 0.5 - _alert_label.size.x * 0.5, 168.0)
-		Juice.trauma = maxf(Juice.trauma, 0.10)  # a sustained, nervous tremble
+		jit = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * 3.5
+		_alert_rect.color = Color(1.0, 0.2, 0.28, 0.06 + 0.06 * absf(sin(_t * 9.0)))
+		_alert_border.queue_redraw()
+		_alert_label.pivot_offset = _alert_label.size * 0.5
+		_alert_label.scale = Vector2.ONE * (1.0 + 0.06 * sin(_t * 11.0))
+		_alert_label.position = Vector2(vp.x * 0.5 - _alert_label.size.x * 0.5, 168.0) + jit * 1.6
+		_timer_label.position += jit
+		Juice.trauma = maxf(Juice.trauma, 0.17)
+		_glitch_timer -= delta
+		if _glitch_timer <= 0.0:
+			_glitch_timer = randf_range(0.6, 1.2)
+			Juice.glitch(0.2, 0.45)
+			Sfx.play("glitch", -12.0, 0.2)
 
 	var beta := sqrt(maxf(1.0 - 1.0 / (gamma * gamma), 0.0))
 	_gamma_label.text = "γ %.1f · %.3fc" % [gamma, beta]
@@ -193,11 +217,11 @@ func _process(delta: float) -> void:
 	var y_pos: float = muon.global_position.y
 	var layer := Atmos.layer_index_at(y_pos)
 	_alt_label.text = "%d km · %s" % [int(round(Atmos.altitude_at(y_pos))), Atmos.LAYER_NAMES[layer]]
-	_alt_chip.position = Vector2(16.0, 12.0)
+	_alt_chip.position = Vector2(16.0, 12.0) + jit * 0.7
 	_mischief_label.text = "mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()]
-	_mischief_chip.position = Vector2(16.0, 12.0 + 40.0)
+	_mischief_chip.position = Vector2(16.0, 12.0 + 40.0) - jit * 0.5
 	_sparks_label.text = str(Meta.sparks)
-	_sparks_chip.position = Vector2(16.0, 12.0 + 80.0)
+	_sparks_chip.position = Vector2(16.0, 12.0 + 80.0) + jit * 0.6
 
 	if layer != _last_layer:
 		_last_layer = layer
@@ -220,6 +244,17 @@ func _show_toast(text: String) -> void:
 	tw.tween_property(_toast_chip, "modulate:a", 1.0, 0.3)
 	tw.tween_interval(2.2)
 	tw.tween_property(_toast_chip, "modulate:a", 0.0, 0.5)
+
+
+func _draw_alert_border() -> void:
+	var vp := _alert_border.size
+	var pulse := 0.35 + 0.35 * absf(sin(_t * 9.0))
+	var col := Color(1.0, 0.25, 0.33, pulse)
+	var w := 5.0 + 3.0 * absf(sin(_t * 9.0))
+	_alert_border.draw_rect(Rect2(0, 0, vp.x, w), col)
+	_alert_border.draw_rect(Rect2(0, vp.y - w, vp.x, w), col)
+	_alert_border.draw_rect(Rect2(0, 0, w, vp.y), col)
+	_alert_border.draw_rect(Rect2(vp.x - w, 0, w, vp.y), col)
 
 
 func _draw_gamma_bar() -> void:

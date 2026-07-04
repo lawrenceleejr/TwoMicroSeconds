@@ -230,8 +230,10 @@ func _process(delta: float) -> void:
 	# stretch it. What energy DOES is length-contract the sky: the world
 	# rushes past gamma times faster, so the ground can arrive before the
 	# dice do. Earth's clocks, meanwhile, run gamma times fast.
+	# The multiplier is soft-capped so the top origins stay readable —
+	# the Oh-My-God run should feel inevitable, not frantic.
 	gamma = 1.0 + GAMMA_K * speed_frac * speed_frac + Meta.gamma_bonus()
-	velocity = heading * speed * (gamma * CONTRACT)
+	velocity = heading * speed * minf(gamma * CONTRACT, 7.0)
 	position += velocity * delta
 	_apply_bounds()
 
@@ -353,7 +355,7 @@ func _update_squash() -> void:
 
 func _update_speed_fx(delta: float) -> void:
 	# Keyed to apparent (contracted) velocity — what the view actually does.
-	var target := clampf((velocity.length() - 600.0) / 1800.0, 0.0, 1.0)
+	var target := clampf((velocity.length() - 600.0) / 2600.0, 0.0, 1.0)
 	_speed_fx = lerpf(_speed_fx, target, 1.0 - exp(-6.0 * delta))
 	_speed_lines.intensity = _speed_fx
 	_speed_lines.dir = heading

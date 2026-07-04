@@ -52,7 +52,10 @@ func show_win(run_sparks: int, omg: bool, age_us: float, lab_us: float) -> void:
 		_line("", 8, Juice.INK)
 		_line("Utah, 1991. they saw the shower you fell from and said 'oh my god'.", 14, Color(Juice.INK, 0.75))
 		_line("you've been every ray the sky makes. thank you for playing <3", 14, Color("e05c6e"))
-	_line("", 8, Juice.INK)
+	_line("", 4, Juice.INK)
+	var histo := preload("res://game/ui/lifetime_histogram.gd").new()
+	_vbox.add_child(histo)
+	_line("", 4, Juice.INK)
 	_line("R — again        ESC — title", 16, Color(Juice.PERIWINKLE, 1.0))
 	_pop_in()
 
