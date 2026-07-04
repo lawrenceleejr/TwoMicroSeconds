@@ -1,7 +1,7 @@
 extends Node
 ## Run flow, input map registration, and a couple of global toggles.
 
-const MAIN_SCENE := "res://game/main/main.tscn"
+const MAIN_SCENE := "res://game/main/stage.tscn"
 const TITLE_SCENE := "res://game/main/title.tscn"
 
 var run_start_msec := 0

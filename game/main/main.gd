@@ -22,6 +22,7 @@ var pause_overlay
 
 var _ended := false
 var _sparks_at_start := 0
+var _ui_layer: CanvasLayer
 
 
 func _ready() -> void:
@@ -51,21 +52,28 @@ func _ready() -> void:
 		# The Oh-My-God particle arrives with authority.
 		Juice.glitch(0.4, 0.7)
 
-	# UI sits above the full-screen effect layers (relativity 70,
-	# vignette 80, glitch 90) so text stays crisp and un-shifted.
-	var ui_layer := CanvasLayer.new()
-	ui_layer.layer = 100
-	add_child(ui_layer)
+	# UI lives on the ROOT viewport (the world may be rendered inside a
+	# SubViewport on the 3D stage) and above the effect layers
+	# (relativity 70, vignette 80, glitch 90): crisp, flat, un-shifted.
+	_ui_layer = CanvasLayer.new()
+	_ui_layer.layer = 100
 	var hud = HudScript.new()
 	hud.muon = muon
-	ui_layer.add_child(hud)
-	ui_layer.add_child(ChecklistScript.new())
+	_ui_layer.add_child(hud)
+	_ui_layer.add_child(ChecklistScript.new())
 	end_screen = EndScreenScript.new()
-	ui_layer.add_child(end_screen)
+	_ui_layer.add_child(end_screen)
 	pause_overlay = PauseScript.new()
-	ui_layer.add_child(pause_overlay)
+	_ui_layer.add_child(pause_overlay)
+	get_tree().root.add_child.call_deferred(_ui_layer)
 
 	Tasks.task_completed.connect(_on_task_completed)
+
+
+func _exit_tree() -> void:
+	# The UI layer was handed to the root viewport; take it with us.
+	if _ui_layer != null and is_instance_valid(_ui_layer):
+		_ui_layer.queue_free()
 
 
 func _process(_delta: float) -> void:

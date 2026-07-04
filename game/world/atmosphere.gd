@@ -49,8 +49,23 @@ func _draw() -> void:
 				var size := 1.2 + float(h % 17) / 9.0
 				draw_circle(pos, size, Color(1.0, 1.0, 0.94, 0.75 * air_fade * twinkle))
 
-	# Parallax depth layer: distant haze puffs drifting at 55% of camera
-	# speed — the cheap trick that makes a flat sky read as deep.
+	# Far parallax layer: barely-there haze at 30% of camera speed.
+	var par2 := 0.3
+	var q2tl := (Vector2(left, top) - center * (1.0 - par2)) / par2
+	var q2br := (Vector2(left + width, bottom) - center * (1.0 - par2)) / par2
+	var p2cell := 940.0
+	for cx in range(int(floor(q2tl.x / p2cell)), int(ceil(q2br.x / p2cell)) + 1):
+		for cy in range(int(floor(q2tl.y / p2cell)), int(ceil(q2br.y / p2cell)) + 1):
+			var h4 := absi(hash(Vector2i(cx + 31, cy + 47)))
+			if h4 % 4 != 0:
+				continue
+			var q4 := Vector2(cx * p2cell + float(h4 % 700), cy * p2cell + float((h4 / 11) % 700))
+			var p4 := q4 * par2 + center * (1.0 - par2)
+			draw_set_transform(p4, 0.0, Vector2(1.0, 0.34))
+			draw_circle(Vector2.ZERO, 150.0 + float(h4 % 120), Color(1.0, 1.0, 1.0, 0.035))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# Mid parallax layer: haze puffs drifting at 55% of camera speed.
 	var par := 0.55
 	var qtl := (Vector2(left, top) - center * (1.0 - par)) / par
 	var qbr := (Vector2(left + width, bottom) - center * (1.0 - par)) / par
