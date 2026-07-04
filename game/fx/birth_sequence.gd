@@ -10,10 +10,14 @@ extends Node2D
 const PROTON_T := 0.75
 const PION_T := 0.55
 const FADE_T := 1.0
+# Muon handover speed of a tier-0 birth; the reference the cinematic
+# speed scale is measured against.
+const BASE_HANDOVER_V := 610.0
 
 var muon  # untyped: script members
 
 var _t := 0.0
+var _speed_scale := 1.0
 var _spawn := Vector2.ZERO
 var _proton_from := Vector2.ZERO
 var _pion_pos := Vector2.ZERO
@@ -28,9 +32,19 @@ var _done_at := 0.0
 func _ready() -> void:
 	z_index = 9
 	_spawn = position
-	_proton_from = _spawn + Vector2(-260.0, -640.0)
+	# A hotter origin means a faster parent: the proton and pion move at
+	# a speed matched to the muon they'll hand over (softened, so the
+	# Oh-My-God intro is emphatic rather than instantaneous).
+	if muon != null:
+		var bs: float = muon.birth_speed
+		var sf: float = clampf(bs / muon.REF_SPEED, 0.0, 1.5)
+		var gam: float = 1.0 + muon.GAMMA_K * sf * sf + Meta.gamma_bonus()
+		var handover_v: float = bs * minf(gam * muon.CONTRACT, 7.0)
+		_speed_scale = clampf(0.55 + 0.45 * (handover_v / BASE_HANDOVER_V), 1.0, 4.5)
+	# Same flight time, longer approach: speed reads as distance covered.
+	_proton_from = _spawn + Vector2(-260.0, -640.0) * _speed_scale
 	_pion_pos = _spawn
-	_pion_vel = Vector2(0.3, 1.0).normalized() * 560.0
+	_pion_vel = Vector2(0.3, 1.0).normalized() * 560.0 * _speed_scale
 
 
 func _process(delta: float) -> void:
@@ -70,7 +84,7 @@ func _burst() -> void:
 		var ang := PI * 0.5 + rng.randf_range(-0.9, 0.9)  # downward cone
 		_shower.append({
 			"pos": _spawn,
-			"vel": Vector2.from_angle(ang) * rng.randf_range(260.0, 620.0),
+			"vel": Vector2.from_angle(ang) * rng.randf_range(260.0, 620.0) * _speed_scale,
 			"color": Juice.CONFETTI_COLORS[i % Juice.CONFETTI_COLORS.size()],
 			"r": rng.randf_range(3.0, 6.0),
 		})
@@ -96,8 +110,9 @@ func _draw() -> void:
 		# The proton: heavier, angrier, trailing fire.
 		var pos := _proton_from.lerp(_spawn, _t / PROTON_T) - position
 		var dir := (_spawn - _proton_from).normalized()
-		draw_line(pos - dir * 190.0, pos, Color(Juice.SUN, 0.75), 7.0, true)
-		draw_line(pos - dir * 90.0, pos, Color(1, 1, 1, 0.85), 3.5, true)
+		var trail := 190.0 * minf(_speed_scale, 2.2)
+		draw_line(pos - dir * trail, pos, Color(Juice.SUN, 0.75), 7.0, true)
+		draw_line(pos - dir * trail * 0.47, pos, Color(1, 1, 1, 0.85), 3.5, true)
 		draw_circle(pos, 13.0, Color("ff9d8a"))
 		draw_circle(pos - Vector2(4, 3), 4.0, Color(1, 1, 1, 0.85))
 		draw_circle(pos + Vector2(-4, 1), 2.2, Juice.INK)
