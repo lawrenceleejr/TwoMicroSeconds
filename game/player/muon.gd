@@ -65,6 +65,7 @@ var autopilot := Vector2.ZERO
 var _zap_cd := 0.0
 var _ghost_timer := 0.0
 var _brem_timer := 0.0
+var _cam_lead := 0.0
 var _turn_pop_cd := 0.0
 var _clock := 0.0
 var _turn_acc := 0.0
@@ -236,6 +237,14 @@ func _process(delta: float) -> void:
 	velocity = heading * speed * minf(gamma * CONTRACT, 7.0)
 	position += velocity * delta
 	_apply_bounds()
+
+	# Camera lead: position smoothing lags a fast target by velocity/speed,
+	# which would leave the muon racing along the bottom of the frame.
+	# Leading the target by exactly that lag keeps it pinned near the
+	# vertical middle at any velocity (horizontal framing stays loose).
+	var lead_y := velocity.y / _camera.position_smoothing_speed
+	_cam_lead = lerpf(_cam_lead, lead_y, 1.0 - exp(-4.0 * delta))
+	_camera.position = Vector2(0.0, _cam_lead)
 
 	age_us += delta / REAL_SECONDS_PER_US
 	lab_us += gamma * delta / REAL_SECONDS_PER_US
