@@ -29,12 +29,13 @@ float vnoise(vec2 p) {
 }
 
 vec3 sky_color(float y) {
+	// Riso dusk inks — must match Atmos.SKY_COLORS.
 	float ys[STOPS] = {-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0};
 	vec3 cs[STOPS] = {
-		vec3(0.051, 0.051, 0.125), vec3(0.078, 0.078, 0.180),
-		vec3(0.184, 0.188, 0.380), vec3(0.357, 0.373, 0.592),
-		vec3(0.718, 0.557, 0.788), vec3(1.0, 0.812, 0.761),
-		vec3(1.0, 0.961, 0.882)
+		vec3(0.043, 0.031, 0.090), vec3(0.071, 0.055, 0.133),
+		vec3(0.169, 0.137, 0.314), vec3(0.325, 0.263, 0.494),
+		vec3(0.627, 0.373, 0.467), vec3(0.878, 0.541, 0.373),
+		vec3(0.925, 0.851, 0.722)
 	};
 	if (y <= ys[0]) { return cs[0]; }
 	for (int i = 0; i < STOPS - 1; i++) {
@@ -57,16 +58,21 @@ void fragment() {
 		vec2 np = vec2(wx * 0.0011 + t * 0.008, wy * 0.0016);
 		float n = vnoise(np) * 0.65 + vnoise(np * 2.3 + 7.7) * 0.35;
 		n = smoothstep(0.55, 0.95, n);
-		col += vec3(0.22, 0.18, 0.34) * n * 0.35 * fade;
+		col += vec3(0.26, 0.17, 0.42) * n * 0.35 * fade;
 	}
 
-	// A warm sun, resting low over the troposphere.
-	float sd = length(vec2(wx - 620.0, (wy - 50000.0) * 1.35));
-	col += vec3(1.0, 0.85, 0.55) * exp(-sd / 750.0) * 0.5;
-	col += vec3(1.0, 0.95, 0.8) * exp(-sd / 220.0) * 0.6;
+	// A big flat poster sun low over the troposphere: hard coral disc,
+	// misregistered paper outline, faint halo. Print-shop, not photograph.
+	float sd = length(vec2(wx - 620.0, wy - 50000.0));
+	float disc = 1.0 - smoothstep(660.0, 706.0, sd);
+	col = mix(col, vec3(1.0, 0.40, 0.31), disc * 0.88);
+	float sd2 = length(vec2(wx - 588.0, wy - 49958.0));
+	float ring = 1.0 - smoothstep(4.0, 30.0, abs(sd2 - 706.0));
+	col = mix(col, vec3(0.93, 0.87, 0.75), ring * 0.55);
+	col += vec3(0.9, 0.42, 0.28) * exp(-max(sd - 706.0, 0.0) / 900.0) * 0.16;
 
-	// Grain dither: kills gradient banding dead.
-	col += (hash12(SCREEN_UV * vec2(1721.0, 977.0) + fract(t) * 13.7) - 0.5) * 0.012;
+	// Grain dither: kills gradient banding dead, and reads as print.
+	col += (hash12(SCREEN_UV * vec2(1721.0, 977.0) + fract(t) * 13.7) - 0.5) * 0.02;
 
 	COLOR = vec4(col, 1.0);
 }

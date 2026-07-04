@@ -31,10 +31,8 @@ func zapped(_source: Node2D) -> void:
 
 
 func _draw_face(c: Node2D) -> void:
+	# Zapped: the ice crystals ring with charge — a teal crackle, no face.
 	if _awake > 0.0:
-		c.draw_circle(Vector2(-8, -6), 2.4, Juice.INK)
-		c.draw_circle(Vector2(8, -6), 2.4, Juice.INK)
-		c.draw_circle(Vector2(0, 2), 2.6, Juice.INK)
-	else:
-		c.draw_arc(Vector2(-8, -5), 3.2, PI + 0.4, TAU - 0.4, 8, Color(Juice.INK, 0.7), 1.5, true)
-		c.draw_arc(Vector2(8, -5), 3.2, PI + 0.4, TAU - 0.4, 8, Color(Juice.INK, 0.7), 1.5, true)
+		var a := clampf(_awake, 0.0, 1.0)
+		c.draw_arc(Vector2.ZERO, 26.0 + (1.0 - a) * 14.0, 0, TAU, 24, Color(Juice.MINT, 0.8 * a), 2.0, true)
+		c.draw_arc(Vector2(-4, 3), 33.0 + (1.0 - a) * 18.0, 0, TAU, 24, Color(Juice.PERIWINKLE, 0.5 * a), 1.5, true)

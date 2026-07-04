@@ -27,7 +27,8 @@ func _draw() -> void:
 	draw_polyline(points, Color(Juice.SUN, 0.5), 3.0, true)
 	draw_circle(Vector2.ZERO, 7.0, Color(1.0, 1.0, 0.9))
 	if _bombed:
-		# A happy wink for the photo.
-		draw_circle(Vector2(-2.5, -1.5), 1.2, Juice.INK)
-		draw_line(Vector2(1.3, -2.3), Vector2(3.8, -1.0), Juice.INK, 1.2)
-		draw_arc(Vector2(0.5, 1.5), 2.2, 0.4, PI - 0.4, 8, Juice.INK, 1.0, true)
+		# Camera flash: a hard four-point glint for the photo.
+		for ang: float in [0.0, PI * 0.5]:
+			var dir2 := Vector2.from_angle(ang)
+			draw_line(-dir2 * 13.0, dir2 * 13.0, Color(Juice.CREAM, 0.95), 1.6, true)
+		draw_circle(Vector2.ZERO, 3.0, Juice.PINK)

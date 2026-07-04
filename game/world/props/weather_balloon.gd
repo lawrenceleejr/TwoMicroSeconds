@@ -57,10 +57,8 @@ func _startle() -> void:
 
 
 func _draw_face(c: Node2D) -> void:
-	if _startled > 0.0:
-		c.draw_circle(Vector2(-6, 0), 2.6, Juice.INK)
-		c.draw_circle(Vector2(6, 0), 2.6, Juice.INK)
-		c.draw_circle(Vector2(0, 8), 3.0, Juice.INK)
-	else:
-		c.draw_arc(Vector2(-6, 1), 3.0, PI + 0.4, TAU - 0.4, 8, Juice.INK, 1.5, true)
-		c.draw_arc(Vector2(6, 1), 3.0, PI + 0.4, TAU - 0.4, 8, Juice.INK, 1.5, true)
+	# Startled: the instrument box lights up and panics, telemetry-style.
+	if _startled > 0.0 and int(_startled * 12.0) % 2 == 0:
+		# (Box sits ~82 px below the overlay origin at sprite scale 0.55.)
+		c.draw_circle(Vector2(4.4, 82.0), 3.2, Juice.SUN)
+		c.draw_rect(Rect2(-8.0, 74.0, 8.0, 3.0), Juice.PINK)

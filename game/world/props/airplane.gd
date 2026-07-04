@@ -64,6 +64,6 @@ func _draw_extras(c: Node2D) -> void:
 		for i in 6:
 			var wx := (110.0 + i * 30.0 - 190.0) * 0.52
 			c.draw_circle(Vector2(wx, (72.0 - 75.0) * 0.52), 4.2, Color(Juice.SUN, 0.9))
-	# A tiny smile on the nose.
-	c.draw_arc(Vector2(78.0, 4.0), 4.5, 0.4, PI - 0.6, 8, Juice.INK, 1.6, true)
-	c.draw_circle(Vector2(72.0, -4.0), 1.9, Juice.INK)
+	# Nav beacon on the tail, blinking like the real thing.
+	if int(_t * 1.2) % 2 == 0:
+		c.draw_circle(Vector2(-64.0, -22.0), 2.6, Juice.PINK)

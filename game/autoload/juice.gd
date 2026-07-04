@@ -5,26 +5,29 @@ extends Node
 ## Screen-effect layer order (UI lives above all of them, on layer 100):
 ##   world (0) -> relativity (70) -> vignette (80) -> glitch (90) -> UI (100)
 
-const INK := Color("454063")
-const CREAM := Color("fff5e1")
-const PAPER := Color("fffaf0")
-const PINK := Color("ffc2d1")
-const BLUSH := Color("ffb3c6")
-const MINT := Color("9ee7d9")
-const LILAC := Color("b8b5e1")
-const PERIWINKLE := Color("5b5f97")
-const SUN := Color("ffe08a")
-const RAIN := Color("8fb8e8")
+# "Riso night" palette: a handful of print inks on warm paper. Deep
+# violet-black ink, fluorescent coral, electric violet, teal, amber —
+# risograph zine, not candy shop.
+const INK := Color("171226")
+const CREAM := Color("efe7d6")
+const PAPER := Color("e9e1cf")
+const PINK := Color("ff5c4d")    # riso fluorescent coral (primary accent)
+const BLUSH := Color("ff5c4d")
+const MINT := Color("3ecfb2")
+const LILAC := Color("9b93c9")
+const PERIWINKLE := Color("6a5cff")
+const SUN := Color("ffb03a")
+const RAIN := Color("6f8fc9")
 const CONFETTI_COLORS: Array[Color] = [
-	Color("ffc2d1"), Color("9ee7d9"), Color("ffe08a"), Color("b8b5e1"), Color("ffffff"),
+	Color("ff5c4d"), Color("3ecfb2"), Color("ffb03a"), Color("6a5cff"), Color("efe7d6"),
 ]
 
 var camera: Camera2D = null
 var trauma := 0.0
-## A friendly hand-written system font where available (macOS ships several);
-## falls back to the default sans elsewhere.
+## Editorial serif italic — flavor text, toasts, subtitles. Paired with a
+## mono UI it reads "design studio", not "science fair".
 var hand_font := SystemFont.new()
-## Clean modern UI face for numbers and chips.
+## Technical monospace for chips, numbers, and instrument readouts.
 var ui_font := SystemFont.new()
 
 var _noise := FastNoiseLite.new()
@@ -33,7 +36,7 @@ var _in_hitstop := false
 var _glitch_rect: ColorRect
 var _glitch_mat: ShaderMaterial
 var _glitch_tween: Tween
-var _rel_rect: ColorRect
+var _rel_rects: Array = []
 var _rel_mat: ShaderMaterial
 
 
@@ -41,10 +44,14 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_noise.seed = 1137
 	_noise.frequency = 2.0
+	# One type language everywhere: technical mono as the default face.
+	ThemeDB.fallback_font = ui_font
 	hand_font.font_names = PackedStringArray(
-		["Marker Felt", "Chalkboard SE", "Comic Sans MS", "Comic Neue"])
+		["Iowan Old Style", "Palatino", "Georgia", "Times New Roman", "serif"])
+	hand_font.font_italic = true
 	ui_font.font_names = PackedStringArray(
-		["Avenir Next", "Avenir", "Segoe UI", "Roboto", "Open Sans"])
+		["SF Mono", "Menlo", "JetBrains Mono", "Cascadia Code", "Consolas",
+		"Liberation Mono", "monospace"])
 	# Relativity is created inside the gameplay SubViewport by the stage
 	# (see create_relativity_in) so contraction can sample the overscan
 	# margin instead of smearing the screen edge.
@@ -53,18 +60,23 @@ func _ready() -> void:
 	_glitch_rect = _last_rect
 
 
-## Build the relativity layer inside `vp` (the overscanned world viewport).
+## Build a relativity layer inside `vp`. Call once per world viewport (the
+## sky plane and the gameplay plane each get one); they share one material
+## so contraction/Doppler stay in lockstep across the depth planes.
 func create_relativity_in(vp: Viewport) -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 70
 	vp.add_child(layer)
-	_rel_mat = ShaderMaterial.new()
-	_rel_mat.shader = load("res://game/fx/relativity.gdshader")
-	_rel_rect = ColorRect.new()
-	_rel_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_rel_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_rel_rect.material = _rel_mat
-	layer.add_child(_rel_rect)
+	if _rel_mat == null:
+		_rel_mat = ShaderMaterial.new()
+		_rel_mat.shader = load("res://game/fx/relativity.gdshader")
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.material = _rel_mat
+	layer.add_child(rect)
+	_rel_rects = _rel_rects.filter(func(r) -> bool: return is_instance_valid(r))
+	_rel_rects.append(rect)
 
 
 var _last_rect: ColorRect
@@ -127,9 +139,12 @@ func glitch(duration := 0.5, strength := 1.0) -> void:
 ## `strength` (speed); length contraction scales with `gamma_norm` — energy
 ## squashes the sky, because in your rest frame that's what energy does.
 func set_relativity(dir: Vector2, strength: float, gamma_norm := 0.0) -> void:
-	if _rel_mat == null or _rel_rect == null or not is_instance_valid(_rel_rect):
+	if _rel_mat == null:
 		return
-	_rel_rect.visible = strength > 0.02 or gamma_norm > 0.02
+	var on := strength > 0.02 or gamma_norm > 0.02
+	for r in _rel_rects:
+		if is_instance_valid(r):
+			r.visible = on
 	_rel_mat.set_shader_parameter("motion_dir", dir)
 	_rel_mat.set_shader_parameter("contraction", 0.06 + 0.34 * gamma_norm)
 	_rel_mat.set_shader_parameter("doppler", 0.85 * strength)
@@ -153,13 +168,18 @@ func _process(delta: float) -> void:
 # ------------------------------------------------------------ UI kit ------
 # One visual system: consistent radii, shadows, and margins everywhere.
 
+# Riso print language: near-square corners, a hairline ink border, and a
+# hard offset "misprint" shadow in coral instead of a soft blur.
+
 func ui_panel(bg := PAPER, alpha := 0.95, radius := 14) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(bg, alpha)
-	sb.set_corner_radius_all(radius)
-	sb.shadow_color = Color(INK, 0.22)
-	sb.shadow_size = 10
-	sb.shadow_offset = Vector2(0, 3)
+	sb.set_corner_radius_all(mini(radius, 5))
+	sb.set_border_width_all(1)
+	sb.border_color = Color(INK, 0.75)
+	sb.shadow_color = Color(PINK, 0.55)
+	sb.shadow_size = 2
+	sb.shadow_offset = Vector2(5, 5)
 	sb.content_margin_left = 18
 	sb.content_margin_right = 18
 	sb.content_margin_top = 12
@@ -170,10 +190,12 @@ func ui_panel(bg := PAPER, alpha := 0.95, radius := 14) -> StyleBoxFlat:
 func ui_chip(bg := PAPER, alpha := 0.88) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(bg, alpha)
-	sb.set_corner_radius_all(99)
-	sb.shadow_color = Color(INK, 0.16)
-	sb.shadow_size = 5
-	sb.shadow_offset = Vector2(0, 2)
+	sb.set_corner_radius_all(3)
+	sb.set_border_width_all(1)
+	sb.border_color = Color(INK, 0.55) if bg != INK else Color(PAPER, 0.30)
+	sb.shadow_color = Color(INK, 0.35)
+	sb.shadow_size = 1
+	sb.shadow_offset = Vector2(2, 2)
 	sb.content_margin_left = 13
 	sb.content_margin_right = 13
 	sb.content_margin_top = 5

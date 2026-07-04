@@ -33,7 +33,11 @@ func _ready() -> void:
 	Game.mark_run_start()
 	_sparks_at_start = Meta.sparks
 
-	add_child(AtmosphereScript.new())
+	var atmo = AtmosphereScript.new()
+	if Game.stage_planes:
+		# The stage renders sky and near haze on separate 3D depth planes.
+		atmo.mode = "world"
+	add_child(atmo)
 
 	director = DirectorScript.new()
 	add_child(director)

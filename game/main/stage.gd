@@ -1,46 +1,90 @@
 extends Node3D
-## The presentation stage. Gameplay is the same flat 2D world, rendered
-## into a SubViewport and textured onto a quad in a real 3D scene. A
-## perspective camera sits at a slight angle, banks into turns, and
-## breathes with speed; translucent wisps float in front of the plane
-## for true depth parallax. The UI lives on the real screen, crisp.
+## The presentation stage. Gameplay stays flat 2D, but the world is split
+## across REAL depth planes in a 3D scene:
+##
+##   z -2.6  sky plane        (gradient, far haze, horizon slab)
+##   z -2..+1.3  cloud meshes (actual translucent 3D geometry, lit)
+##   z  0.0  gameplay plane   (props, muon, stars, ground — transparent bg)
+##   z +1.7  near-haze plane  (transparent, drifts in front of the action)
+##
+## A perspective camera sits at a hard oblique angle, banks into turns,
+## breathes with speed, and dollies with the muon's velocity — the planes
+## genuinely parallax against each other. The UI lives on the real screen.
+
+const AtmosphereScript := preload("res://game/world/atmosphere.gd")
 
 const BASE_W := 1280.0
 const BASE_H := 720.0
 const OVERSCAN := 1.5
 const CAM_FOV := 55.0
-const TILT_DEG := -13.0
-const YAW_DEG := 6.5
+const TILT_DEG := -16.0
+const YAW_DEG := 9.0
+const BACK_Z := -2.6
+const FRONT_Z := 1.7
 
 var _vp: SubViewport
+var _vp_back: SubViewport
+var _vp_front: SubViewport
 var _cam: Camera3D
+var _cam_back: Camera2D
+var _cam_front: Camera2D
 var _muon
 var _wisps := []
+var _blobs := []
 var _bank := 0.0
 var _t := 0.0
+var _dolly := Vector3.ZERO
 var _env: Environment
 
 
 func _ready() -> void:
+	Game.stage_planes = true
+	var d0 := 7.2 / (2.0 * tan(deg_to_rad(CAM_FOV * 0.5)))
+
+	# --- Sky plane (far) ---------------------------------------------------
+	_vp_back = SubViewport.new()
+	_vp_back.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_vp_back.size = Vector2i(int(BASE_W * OVERSCAN), int(BASE_H * OVERSCAN))
+	add_child(_vp_back)
+	var back_root := Node2D.new()
+	var back_atmo = AtmosphereScript.new()
+	back_atmo.mode = "back"
+	back_root.add_child(back_atmo)
+	_cam_back = Camera2D.new()
+	back_root.add_child(_cam_back)
+	_vp_back.add_child(back_root)
+	_cam_back.make_current()
+	# The sky contracts and Doppler-shifts too (shared material).
+	Juice.create_relativity_in(_vp_back)
+	var back_scale := (d0 - BACK_Z) / d0 * 1.28
+	_make_plane(_vp_back, BACK_Z, back_scale, false)
+
+	# --- Gameplay plane ----------------------------------------------------
 	_vp = SubViewport.new()
 	_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_vp.size = Vector2i(int(BASE_W * OVERSCAN), int(BASE_H * OVERSCAN))
+	_vp.transparent_bg = true
 	add_child(_vp)
 	_vp.add_child(load("res://game/main/main.tscn").instantiate())
 	Juice.create_relativity_in(_vp)
+	_make_plane(_vp, 0.0, 1.0, true)
 
-	var quad := MeshInstance3D.new()
-	var mesh := QuadMesh.new()
-	# The un-overscanned frame is 7.2 units tall at the camera distance
-	# below; the quad carries the overscan margin so the tilt never
-	# reveals the void.
-	mesh.size = Vector2(12.8, 7.2) * OVERSCAN
-	quad.mesh = mesh
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_texture = _vp.get_texture()
-	quad.material_override = mat
-	add_child(quad)
+	# --- Near-haze plane (in front of the action) --------------------------
+	_vp_front = SubViewport.new()
+	_vp_front.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_vp_front.size = Vector2i(int(BASE_W * OVERSCAN), int(BASE_H * OVERSCAN))
+	_vp_front.transparent_bg = true
+	add_child(_vp_front)
+	var front_root := Node2D.new()
+	var front_atmo = AtmosphereScript.new()
+	front_atmo.mode = "front"
+	front_root.add_child(front_atmo)
+	_cam_front = Camera2D.new()
+	front_root.add_child(_cam_front)
+	_vp_front.add_child(front_root)
+	_cam_front.make_current()
+	var front_scale := (d0 - FRONT_Z) / d0 * 1.1
+	_make_plane(_vp_front, FRONT_Z, front_scale, true)
 
 	_cam = Camera3D.new()
 	_cam.fov = CAM_FOV
@@ -49,29 +93,76 @@ func _ready() -> void:
 	var world_env := WorldEnvironment.new()
 	_env = Environment.new()
 	_env.background_mode = Environment.BG_COLOR
-	# Followed to the local sky color each frame, so anything the steeper
-	# tilt reveals past the quad blends into the sky instead of reading
-	# as an edge.
-	_env.background_color = Color("101024")
+	# Followed to the local sky color each frame, so anything the oblique
+	# angle reveals past the planes blends into sky, never a hard edge.
+	_env.background_color = Color("120e22")
+	_env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	_env.ambient_light_color = Color("53437e")
+	_env.ambient_light_energy = 1.1
 	world_env.environment = _env
 	add_child(world_env)
 
+	# One warm key light so the 3D cloud meshes actually shade.
+	var light := DirectionalLight3D.new()
+	light.rotation = Vector3(deg_to_rad(-38.0), deg_to_rad(24.0), 0.0)
+	light.light_color = Color("ffd9a8")
+	light.light_energy = 0.9
+	add_child(light)
+
 	_spawn_wisps()
+	_spawn_blobs()
+
+
+func _make_plane(vp: SubViewport, z: float, s: float, transparent: bool) -> MeshInstance3D:
+	var quad := MeshInstance3D.new()
+	var mesh := QuadMesh.new()
+	# 7.2 world-units tall fills the un-overscanned frame at the camera
+	# distance; each plane is scaled for its depth plus a safety margin.
+	mesh.size = Vector2(12.8, 7.2) * OVERSCAN * s
+	quad.mesh = mesh
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_texture = vp.get_texture()
+	if transparent:
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	quad.material_override = mat
+	quad.position = Vector3(0.0, 0.0, z)
+	add_child(quad)
+	return quad
 
 
 func _spawn_wisps() -> void:
 	var texs := ["res://assets/sprites/cloud.svg", "res://assets/sprites/noctilucent.svg"]
-	for i in 12:
+	for i in 10:
 		var s := Sprite3D.new()
 		s.texture = load(texs[i % texs.size()])
 		s.pixel_size = 0.012 + (i % 4) * 0.005
-		s.modulate = Color(1, 1, 1, 0.07 + 0.045 * (i % 4))
-		# A wide depth spread: near wisps whip past, far ones drift —
-		# the speed difference is what sells the depth.
+		s.modulate = Color(1, 1, 1, 0.06 + 0.04 * (i % 4))
 		s.position = Vector3(randf_range(-7.5, 7.5), randf_range(-5.5, 5.5),
-			randf_range(1.2, 4.4))
+			randf_range(0.4, 4.2))
 		add_child(s)
 		_wisps.append(s)
+
+
+## Actual 3D geometry drifting between the planes: soft translucent slabs
+## of cloud, lit by the key light — parallax you can't fake with billboards.
+func _spawn_blobs() -> void:
+	for i in 7:
+		var blob := MeshInstance3D.new()
+		var m := SphereMesh.new()
+		m.radius = 0.55
+		m.height = 0.7
+		blob.mesh = m
+		blob.scale = Vector3(randf_range(1.7, 3.0), randf_range(0.5, 0.8), randf_range(0.9, 1.5))
+		var bm := StandardMaterial3D.new()
+		bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		bm.albedo_color = Color(0.93, 0.88, 0.78, 0.07 + 0.05 * float(i % 3))
+		bm.roughness = 1.0
+		blob.material_override = bm
+		blob.position = Vector3(randf_range(-8.0, 8.0), randf_range(-5.5, 5.5),
+			randf_range(-2.0, 1.3))
+		add_child(blob)
+		_blobs.append(blob)
 
 
 func _process(delta: float) -> void:
@@ -83,36 +174,61 @@ func _process(delta: float) -> void:
 		vel = _muon.velocity
 	var speed_f := clampf(vel.length() / 1250.0, 0.0, 1.0)
 
+	# Keep the depth-plane cameras in lockstep with the gameplay camera
+	# (including shake) — the 3D scene supplies all the parallax.
+	var gcam := Juice.camera
+	if gcam != null and is_instance_valid(gcam):
+		var center := gcam.get_screen_center_position()
+		for c: Camera2D in [_cam_back, _cam_front]:
+			c.global_position = center
+			c.offset = gcam.offset
+			c.rotation = gcam.rotation
+			c.zoom = gcam.zoom
+
 	# Bank into turns; widen the lens with speed.
-	var target_bank := clampf(-vel.x / 2500.0, -1.0, 1.0) * 0.11
+	var target_bank := clampf(-vel.x / 2500.0, -1.0, 1.0) * 0.12
 	_bank = lerpf(_bank, target_bank, 1.0 - exp(-3.0 * delta))
 	_cam.fov = lerpf(_cam.fov, CAM_FOV + 9.0 * speed_f, 1.0 - exp(-3.0 * delta))
+
+	# Velocity dolly: the 3D camera physically moves with the muon, so the
+	# sky, cloud meshes, action, and near haze slide against each other.
+	var dolly_target := Vector3(
+		clampf(vel.x * 0.00045, -0.6, 0.6),
+		clampf(-vel.y * 0.00030, -0.5, 0.5) * 0.6,
+		0.0)
+	_dolly = _dolly.lerp(dolly_target, 1.0 - exp(-2.2 * delta))
 
 	# Keep the un-overscanned frame filling the window at any fov, then
 	# tilt hard: the oblique perspective is the whole point.
 	var d := 7.2 / (2.0 * tan(deg_to_rad(_cam.fov * 0.5)))
-	_cam.position = Vector3(sin(_t * 0.23) * 0.08, 0.42 + sin(_t * 0.31) * 0.05, d)
+	_cam.position = Vector3(sin(_t * 0.23) * 0.08, 0.42 + sin(_t * 0.31) * 0.05, d) + _dolly
 	_cam.rotation = Vector3(deg_to_rad(TILT_DEG), deg_to_rad(YAW_DEG) + sin(_t * 0.17) * 0.012, _bank)
 
-	# Blend the void behind/around the quad into the local sky so the
-	# steep angle never reads as a floating rectangle.
+	# Blend the void past the planes into the local sky.
 	if _muon != null and _env != null:
 		var sky := Atmos.sky_color_at(_muon.global_position.y - 260.0)
 		_env.background_color = _env.background_color.lerp(sky.darkened(0.25), 1.0 - exp(-2.0 * delta))
 
-	# Foreground wisps: genuine 3D parallax against the gameplay plane —
-	# nearer wisps stream past faster as the muon falls.
+	# Drift the set dressing. Apparent speed scales with how far in front
+	# of the play plane a piece sits (true parallax rates).
 	for w in _wisps:
-		w.position.y += vel.y * delta * 0.001 * w.position.z
-		w.position.x += -vel.x * delta * 0.0004 * w.position.z \
-			+ sin(_t * 0.1 + w.position.z * 3.0) * delta * 0.05
-		if w.position.y > 6.5:
-			w.position.y = -6.5
-			w.position.x = randf_range(-7.5, 7.5)
-		elif w.position.y < -6.5:
-			w.position.y = 6.5
-			w.position.x = randf_range(-7.5, 7.5)
-		if w.position.x > 9.0:
-			w.position.x = -9.0
-		elif w.position.x < -9.0:
-			w.position.x = 9.0
+		_drift(w, vel, delta)
+	for b in _blobs:
+		_drift(b, vel, delta)
+
+
+func _drift(w: Node3D, vel: Vector2, delta: float) -> void:
+	var par := maxf(0.15, 1.0 + w.position.z * 0.45)
+	w.position.y += vel.y * delta * 0.0011 * par
+	w.position.x += -vel.x * delta * 0.0004 * par \
+		+ sin(_t * 0.1 + w.position.z * 3.0) * delta * 0.05
+	if w.position.y > 6.5:
+		w.position.y = -6.5
+		w.position.x = randf_range(-8.0, 8.0)
+	elif w.position.y < -6.5:
+		w.position.y = 6.5
+		w.position.x = randf_range(-8.0, 8.0)
+	if w.position.x > 9.5:
+		w.position.x = -9.5
+	elif w.position.x < -9.5:
+		w.position.x = 9.5

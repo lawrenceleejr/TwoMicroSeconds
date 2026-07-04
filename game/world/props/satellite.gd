@@ -67,15 +67,13 @@ func _draw_face(c: Node2D) -> void:
 	# Antenna beacon.
 	var light_on := (_blink > 0.0 and int(_t * 10.0) % 2 == 0) \
 		or (int(_t * 1.5) % 3 == 0 and _blink <= 0.0)
-	c.draw_circle(Vector2(0, -29), 3.4, Color("ff8fa3") if light_on else Color("d0d0d0"))
-	# Face on the gold body: asleep on duty, dizzy X-eyes once bonked.
+	c.draw_circle(Vector2(0, -29), 3.4, Color(Juice.PINK) if light_on else Color(Juice.PAPER, 0.6))
+	# Once bonked, the flight computer visibly reboots: a strip of status
+	# bars stutters across the gold body. Machines here glitch, not grimace.
 	if collected:
-		for side: float in [-1.0, 1.0]:
-			var ex := side * 7.0 - 3.0
-			c.draw_line(Vector2(ex - 2.5, -1.5), Vector2(ex + 2.5, 3.5), Juice.INK, 1.8, true)
-			c.draw_line(Vector2(ex - 2.5, 3.5), Vector2(ex + 2.5, -1.5), Juice.INK, 1.8, true)
-		c.draw_arc(Vector2(-3, 9), 3.0, PI + 0.5, TAU - 0.5, 8, Juice.INK, 1.6, true)
-	else:
-		c.draw_arc(Vector2(-9, 1), 3.0, PI + 0.4, TAU - 0.4, 8, Juice.INK, 1.6, true)
-		c.draw_arc(Vector2(3, 1), 3.0, PI + 0.4, TAU - 0.4, 8, Juice.INK, 1.6, true)
-		c.draw_arc(Vector2(-3, 7), 3.5, 0.5, PI - 0.5, 8, Juice.INK, 1.4, true)
+		for i in 3:
+			if int(_t * (9.0 + i * 3.0)) % 3 == 0:
+				continue
+			var bw := 6.0 + float((i * 7) % 9)
+			c.draw_rect(Rect2(-11.0 + i * 8.0, -2.0 + i * 4.0, bw, 2.6),
+				Juice.PINK if i % 2 == 0 else Juice.MINT)

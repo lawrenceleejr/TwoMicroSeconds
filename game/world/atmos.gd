@@ -19,19 +19,21 @@ const BANDS := [
 	[69000.0, 0.0],
 ]
 
+# Riso dusk: violet-black space, electric violet upper air, a dusty mauve
+# middle, then a burnt coral dusk band into warm paper at the horizon.
 const SKY_YS := [-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0]
 const SKY_COLORS := [
-	Color("0d0d20"),
-	Color("14142e"),
-	Color("2f3061"),
-	Color("5b5f97"),
-	Color("b18fc9"),
-	Color("ffcfc2"),
-	Color("fff5e1"),
+	Color("0b0817"),
+	Color("120e22"),
+	Color("2b2350"),
+	Color("53437e"),
+	Color("a05f77"),
+	Color("e08a5f"),
+	Color("ecd9b8"),
 ]
 
-const GRASS := Color("9fd39a")
-const GRASS_DARK := Color("86bf85")
+const GRASS := Color("7aa98c")
+const GRASS_DARK := Color("618f77")
 
 
 static func altitude_at(y: float) -> float:

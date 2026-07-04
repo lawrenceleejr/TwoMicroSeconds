@@ -30,12 +30,12 @@ func _ready() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(_root)
 
-	_title_shadow = _mk_label("two microseconds", 66, Color(Juice.INK, 0.45))
+	# Editorial serif italic for the wordmark, offset coral misprint behind.
+	_title_shadow = _mk_label("two microseconds", 66, Color(Juice.PINK, 0.75))
+	_title_shadow.add_theme_font_override("font", Juice.hand_font)
 	_title_label = _mk_label("two microseconds", 66, Juice.CREAM)
-	_title_label.add_theme_color_override("font_outline_color", Juice.INK)
-	_title_label.add_theme_constant_override("outline_size", 8)
-	_sub_label = _mk_label("the (brief) life of a muon", 22, Color(Juice.CREAM, 0.85))
-	_sub_label.add_theme_font_override("font", Juice.hand_font)
+	_title_label.add_theme_font_override("font", Juice.hand_font)
+	_sub_label = _mk_label("the (brief) life of a muon", 18, Color(Juice.CREAM, 0.8))
 
 	_cta_chip = _mk_chip(Juice.MINT, 0.92)
 	var cta_text := "press any key — be born"
@@ -100,7 +100,8 @@ func _process(delta: float) -> void:
 	var vp := _root.get_viewport_rect().size
 	_title_label.position = Vector2(vp.x * 0.5 - _title_label.size.x * 0.5, vp.y * 0.16)
 	_title_label.rotation = -0.015
-	_title_shadow.position = _title_label.position + Vector2(4, 5)
+	# Misregistered print pass: coral copy a few points off-register.
+	_title_shadow.position = _title_label.position + Vector2(-3.5, 3.0)
 	_title_shadow.rotation = -0.015
 	_sub_label.position = Vector2(vp.x * 0.5 - _sub_label.size.x * 0.5, vp.y * 0.16 + 84.0)
 	_cta_chip.position = Vector2(vp.x * 0.5 - _cta_chip.size.x * 0.5, vp.y * 0.72)
@@ -121,12 +122,12 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var vp := get_viewport_rect().size
-	# Dusk gradient (fine steps: banding is visible at coarse ones).
+	# Riso dusk gradient (fine steps: banding is visible at coarse ones).
 	var steps := 110
 	for i in steps:
 		var f := float(i) / steps
-		var col := Color("14142e").lerp(Color("5b5f97"), clampf(f * 1.6, 0.0, 1.0))
-		col = col.lerp(Color("ffc2d1"), clampf((f - 0.62) * 2.6, 0.0, 1.0))
+		var col := Color("120e22").lerp(Color("53437e"), clampf(f * 1.6, 0.0, 1.0))
+		col = col.lerp(Color("e08a5f"), clampf((f - 0.62) * 2.6, 0.0, 1.0))
 		draw_rect(Rect2(0, vp.y * f, vp.x, vp.y / steps + 1.0), col)
 	# Stars.
 	for i in 46:
@@ -134,21 +135,21 @@ func _draw() -> void:
 		var pos := Vector2(float(h % 1280) / 1280.0 * vp.x, float((h / 1280) % 520) / 520.0 * vp.y * 0.55)
 		var tw := 0.5 + 0.5 * sin(_t * 1.5 + float(h % 100))
 		draw_circle(pos, 1.4 + float(h % 3), Color(1, 1, 0.95, 0.6 * tw))
-	# The muon, bobbing happily (sprite art + live face).
-	var center := Vector2(vp.x * 0.5, vp.y * 0.47 + sin(_t * 1.6) * 10.0)
+	# A big thin orbit ring behind the muon — poster geometry.
+	var center := Vector2(vp.x * 0.5, vp.y * 0.47 + sin(_t * 1.6) * 8.0)
+	draw_arc(center, 165.0, 0, TAU, 96, Color(Juice.CREAM, 0.22), 1.5, true)
+	draw_arc(center + Vector2(-5, 4), 165.0, 0, TAU, 96, Color(Juice.PINK, 0.20), 1.5, true)
+	# The muon: the sprite plus its live minimal face (two ink dashes).
 	var size := 190.0
 	draw_texture_rect(_muon_tex, Rect2(center - Vector2(size, size) * 0.5, Vector2(size, size)), false)
 	var look := Vector2(sin(_t * 0.7) * 6.0, 0.0)
-	draw_circle(center + Vector2(-20, -10) + look, 8.5, Juice.INK)
-	draw_circle(center + Vector2(20, -10) + look, 8.5, Juice.INK)
-	draw_circle(center + Vector2(-33, 10), 10.0, Color(Juice.BLUSH, 0.85))
-	draw_circle(center + Vector2(33, 10), 10.0, Color(Juice.BLUSH, 0.85))
-	draw_arc(center + Vector2(0, 8) + look * 0.5, 13.0, 0.5, PI - 0.5, 12, Juice.INK, 3.5, true)
-	# A tiny orbiting neutrino friend.
-	var orbit := center + Vector2(cos(_t * 1.2), sin(_t * 1.2) * 0.5) * 150.0
-	draw_arc(orbit, 8.0, 0, TAU, 16, Color(1, 1, 1, 0.5), 1.5, true)
-	draw_circle(orbit + Vector2(-2.5, -1), 1.2, Color(Juice.INK, 0.6))
-	draw_circle(orbit + Vector2(2.5, -1), 1.2, Color(Juice.INK, 0.6))
+	for side: float in [-1.0, 1.0]:
+		var eye := center + Vector2(side * 22.0, -10.0) + look
+		draw_rect(Rect2(eye.x - 4.5, eye.y - 11.0, 9.0, 22.0), Juice.INK)
+	# The neutrino that got away, on the ring.
+	var orbit := center + Vector2(cos(_t * 0.6), sin(_t * 0.6)) * 165.0
+	draw_circle(orbit, 6.0, Color(Juice.CREAM, 0.9))
+	draw_circle(orbit, 10.0, Color(Juice.PINK, 0.35))
 
 
 func _on_chip_input(event: InputEvent) -> void:

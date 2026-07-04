@@ -2,8 +2,10 @@
 
 [![build-macos](https://github.com/lawrenceleejr/TwoMicroSeconds/actions/workflows/build-macos.yml/badge.svg)](https://github.com/lawrenceleejr/TwoMicroSeconds/actions/workflows/build-macos.yml)
 
-*the (brief) life of a muon* — a cute little game in the spirit of Untitled Goose Game,
-except the goose is a subatomic particle and the pond is the entire atmosphere.
+*the (brief) life of a muon* — a small game with Untitled Goose Game mischief
+in its bones and a risograph-print look on its face: flat inks, film grain,
+misregistered layers, and a sky rendered as real 3D depth planes. The goose
+is a subatomic particle and the pond is the entire atmosphere.
 
 You are a muon, freshly minted by a cosmic ray high above a particle detector.
 Your mean proper lifetime is **2.2 µs**, decay is genuinely random, and the

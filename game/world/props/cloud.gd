@@ -67,13 +67,11 @@ func zapped(source: Node2D) -> void:
 
 
 func _draw_face(c: Node2D) -> void:
+	# No cartoon face — when the charge lets go, a coral bolt glyph flares
+	# on the cloud and fades as it settles down.
 	if _blush > 0.0:
 		var a := clampf(_blush, 0.0, 1.0)
-		c.draw_circle(Vector2(-16, 2), 4.5, Color(Juice.BLUSH, a))
-		c.draw_circle(Vector2(16, 2), 4.5, Color(Juice.BLUSH, a))
-		c.draw_circle(Vector2(-7, -5), 2.6, Juice.INK)
-		c.draw_circle(Vector2(7, -5), 2.6, Juice.INK)
-		c.draw_circle(Vector2(0, 3), 2.8, Juice.INK)
-	else:
-		c.draw_arc(Vector2(-7, -4), 3.2, PI + 0.4, TAU - 0.4, 8, Color(Juice.INK, 0.65), 1.6, true)
-		c.draw_arc(Vector2(7, -4), 3.2, PI + 0.4, TAU - 0.4, 8, Color(Juice.INK, 0.65), 1.6, true)
+		c.draw_colored_polygon(PackedVector2Array([
+			Vector2(4, -14), Vector2(-6, 2), Vector2(-1, 2),
+			Vector2(-4, 14), Vector2(7, -2), Vector2(2, -2),
+		]), Color(Juice.PINK, a))

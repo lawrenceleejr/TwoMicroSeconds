@@ -26,13 +26,16 @@ void fragment() {
 	// muon at screen center stays crisp while the periphery streaks.
 	float mask = smoothstep(0.05, 0.32, length(p));
 	float b = blur_amount * mask;
-	vec3 col = vec3(0.0);
+	// Alpha is carried through: the gameplay plane renders into a
+	// transparent viewport layered over the real-3D sky plane.
+	vec4 acc = vec4(0.0);
 	for (int i = 0; i < 9; i++) {
 		float o = (float(i) / 8.0 - 0.5) * 2.0;
 		vec2 uv = clamp(base + d * o * b, vec2(0.001), vec2(0.999));
-		col += texture(screen_tex, uv).rgb;
+		acc += texture(screen_tex, uv);
 	}
-	col /= 9.0;
+	acc /= 9.0;
+	vec3 col = acc.rgb;
 
 	// Doppler: forward hemisphere shifts blue and brightens (headlight
 	// effect), rear hemisphere shifts red.
@@ -43,5 +46,5 @@ void fragment() {
 	col.b *= 1.0 + 0.44 * s;
 	col *= 1.0 + 0.20 * doppler * max(fwd, 0.0);
 
-	COLOR = vec4(col, 1.0);
+	COLOR = vec4(col, acc.a);
 }
