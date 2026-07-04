@@ -125,20 +125,10 @@ func _draw() -> void:
 
 	# (The sky gradient itself is shader-drawn on the child layer below.)
 
-	# The starfield. At rest: diamond glints. In motion: every star streaks
-	# along a line through a shared vanishing point that sits WELL OFF
-	# SCREEN, behind the direction of travel (falling → above the frame).
-	# You never see the point itself — only the fanned slopes of the
-	# streaks imply it, which reads as perspective and speed, not a
-	# hyperspace tunnel. Length grows with speed and distance from it.
+	# The starfield: four-point diamond glints, never plain dots. No
+	# painted streaks — speed and perspective come from the real 3D
+	# camera pitch, the dolly parallax, and the relativity blur.
 	if (mode == "full" or mode == "world") and top < 36000.0:
-		var mvel := Vector2.ZERO
-		var m = get_tree().get_first_node_in_group("muon")
-		if m != null and m.get("velocity") != null:
-			mvel = m.get("velocity")
-		var warp := clampf((mvel.length() - 260.0) / 1100.0, 0.0, 1.0)
-		var vdir := mvel.normalized() if mvel.length() > 40.0 else Vector2.DOWN
-		var vpnt := center - vdir * 950.0
 		var star_bottom := minf(bottom, 36000.0)
 		var cell := 140.0
 		for cx in range(int(floor(left / cell)), int(ceil((left + width) / cell)) + 1):
@@ -153,25 +143,6 @@ func _draw() -> void:
 				var twinkle := 0.55 + 0.45 * sin(_t * 1.7 + float(h % 628) * 0.01)
 				var size := 1.4 + float(h % 17) / 8.0
 				var star_col := Color(1.0, 1.0, 0.94, 0.75 * air_fade * twinkle)
-				var radial := pos - vpnt
-				var rlen := radial.length()
-				if warp > 0.03 and rlen > 24.0:
-					var rdir := radial / rlen
-					# The point is ~1000 px out, so rlen varies gently
-					# across the frame — near-parallel streaks whose
-					# slight fan is what sells the perspective.
-					var streak := warp * clampf(rlen / 1500.0, 0.30, 1.15) * 150.0
-					var w := 1.0 + size * 0.5 * warp
-					# Chroma-split rails, then the cream core — a print
-					# misregistration flying at warp speed.
-					var perp := Vector2(-rdir.y, rdir.x) * (1.2 + warp)
-					draw_line(pos - rdir * streak * 0.2 + perp, pos + rdir * streak + perp,
-						Color(Juice.PINK, star_col.a * 0.30), w, true)
-					draw_line(pos - rdir * streak * 0.2 - perp, pos + rdir * streak - perp,
-						Color(Juice.MINT, star_col.a * 0.30), w, true)
-					draw_line(pos - rdir * streak * 0.25, pos + rdir * streak,
-						star_col, w, true)
-				# Diamond glint core (never a plain dot).
 				var s2 := size * (1.0 + 0.4 * twinkle)
 				draw_colored_polygon(PackedVector2Array([
 					pos + Vector2(0, -s2 * 1.6), pos + Vector2(s2 * 0.7, 0),

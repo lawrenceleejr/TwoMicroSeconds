@@ -17,8 +17,12 @@ const BASE_W := 1280.0
 const BASE_H := 720.0
 const OVERSCAN := 1.5
 const CAM_FOV := 55.0
-const TILT_DEG := -16.0
+# The camera sits LOW and pitches UP: the sky overhead recedes with real
+# perspective (a true vanishing point far above, from foreshortening —
+# nothing painted), and the low grazing angle maximizes plane parallax.
+const TILT_DEG := 13.0
 const YAW_DEG := 9.0
+const CAM_Y := -0.95
 const BACK_Z := -2.6
 const FRONT_Z := 1.7
 
@@ -183,9 +187,9 @@ func _process(delta: float) -> void:
 	_dolly = _dolly.lerp(dolly_target, 1.0 - exp(-2.2 * delta))
 
 	# Keep the un-overscanned frame filling the window at any fov, then
-	# tilt hard: the oblique perspective is the whole point.
+	# sit low and pitch up: the oblique perspective is the whole point.
 	var d := 7.2 / (2.0 * tan(deg_to_rad(_cam.fov * 0.5)))
-	_cam.position = Vector3(sin(_t * 0.23) * 0.08, 0.42 + sin(_t * 0.31) * 0.05, d) + _dolly
+	_cam.position = Vector3(sin(_t * 0.23) * 0.08, CAM_Y + sin(_t * 0.31) * 0.05, d) + _dolly
 	_cam.rotation = Vector3(deg_to_rad(TILT_DEG), deg_to_rad(YAW_DEG) + sin(_t * 0.17) * 0.012, _bank)
 
 	# Blend the void past the planes into the local sky.

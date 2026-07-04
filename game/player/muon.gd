@@ -25,10 +25,10 @@ const REAL_SECONDS_PER_US := 12.0    # game seconds per proper µs
 const CONTRACT := 0.5
 const ZAP_RADIUS := 175.0
 const ZAP_COOLDOWN := 0.35
-# The camera aims this far above the muon: player rides the lower half
-# of the frame, sky fills the top. (The 3D stage tilt would otherwise
-# push the muon into the upper half.)
-const FRAME_LOOK_UP := 195.0
+# The camera aims this far above the muon. Most of the "sky overhead"
+# framing now comes from the 3D stage's upward pitch; this small 2D
+# offset just settles the muon into the lower third.
+const FRAME_LOOK_UP := 70.0
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the
