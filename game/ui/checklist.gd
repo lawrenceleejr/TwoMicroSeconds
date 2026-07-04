@@ -54,7 +54,10 @@ func _process(delta: float) -> void:
 	_slide = lerpf(_slide, target, 1.0 - exp(-10.0 * delta))
 	var vp := get_viewport_rect().size
 	# Tucked away, a 28-px sliver of paper stays on screen as the handle.
-	position = Vector2(vp.x - W - 14.0 + _slide * (W - 14.0), 64.0)
+	# On narrow (portrait) screens the note starts below the HUD's center
+	# cluster instead of colliding with the clock and gamma chip.
+	var y_top := 64.0 if vp.x > 900.0 else 150.0
+	position = Vector2(vp.x - W - 14.0 + _slide * (W - 14.0), y_top)
 	if Tasks.all_optional_done() and _stamp_scale < 1.0:
 		_stamp_scale = minf(_stamp_scale + delta * 3.0, 1.0)
 	# Never hide the muon: when it flies behind the note, the paper turns

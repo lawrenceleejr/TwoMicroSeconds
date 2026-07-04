@@ -98,6 +98,10 @@ func _chip_label(chip: PanelContainer, text: String, font_size: int) -> Label:
 func _process(delta: float) -> void:
 	_t += delta
 	var vp := _root.get_viewport_rect().size
+	# Modal focus: while the shop is open, the competing chrome steps out.
+	var modal: bool = _shop != null and _shop.active
+	for c: Control in [_cta_chip, _hint_chip, _histo]:
+		c.modulate.a = lerpf(c.modulate.a, 0.0 if modal else 1.0, 1.0 - exp(-12.0 * delta))
 	_title_label.position = Vector2(vp.x * 0.5 - _title_label.size.x * 0.5, vp.y * 0.16)
 	_title_label.rotation = -0.015
 	# Misregistered print pass: coral copy a few points off-register.

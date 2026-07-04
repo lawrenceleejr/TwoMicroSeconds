@@ -60,7 +60,7 @@ func _apply_ui_scale() -> void:
 	if is_touch():
 		f = 1.55
 		if win.size.y > win.size.x:
-			f = 1.85
+			f = 2.0
 	win.content_scale_factor = f
 
 

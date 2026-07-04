@@ -199,6 +199,9 @@ func _process(delta: float) -> void:
 		jit = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * 3.5
 		_alert_rect.color = Color(1.0, 0.2, 0.28, 0.06 + 0.06 * absf(sin(_t * 9.0)))
 		_alert_border.queue_redraw()
+		# Narrow (portrait) screens get the short scream so it never clips.
+		_alert_label.text = "!! DECAY PROBABILITY EXCEEDS 90% !!" if vp.x > 860.0 \
+			else "!! P(DECAY) > 90% !!"
 		_alert_label.pivot_offset = _alert_label.size * 0.5
 		_alert_label.scale = Vector2.ONE * (1.0 + 0.06 * sin(_t * 11.0))
 		_alert_label.position = Vector2(vp.x * 0.5 - _alert_label.size.x * 0.5, 208.0) + jit * 1.6

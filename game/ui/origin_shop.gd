@@ -148,14 +148,15 @@ func _draw() -> void:
 		draw_string(font, Vector2(W - 254, y + 28), "γ +%.1f" % float(t["gamma"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.PERIWINKLE, 0.9))
 		var status := ""
 		var status_col := Color(Juice.INK, 0.5)
+		var act := "tap" if Game.is_touch() else "ENTER"
 		if equipped:
 			status = "EQUIPPED"
 			status_col = Color("2e8b57")
 		elif owned:
-			status = "ENTER — equip"
+			status = "%s — equip" % act
 			status_col = Juice.INK if i == _cursor else Color(Juice.INK, 0.5)
 		elif next_up:
-			status = ("ENTER · %d sparks" % int(t["cost"])) if Meta.can_upgrade() \
+			status = ("%s · %d sparks" % [act, int(t["cost"])]) if Meta.can_upgrade() \
 				else "%d sparks" % int(t["cost"])
 			status_col = Juice.INK if Meta.can_upgrade() else Color(Juice.INK, 0.4)
 		else:
@@ -169,6 +170,8 @@ func _draw() -> void:
 	draw_string(font, Vector2(24, foot_y + 4), "satellites pay sparks — hit them fast for double",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(Juice.INK, 0.6))
 	var reset_hint := "↑↓ — browse · ENTER — acquire / equip · U — close · BACKSPACE ×2 — reset save"
+	if Game.is_touch():
+		reset_hint = "tap a row — acquire / equip · tap outside — close"
 	if _reset_armed > 0.0:
 		reset_hint = "BACKSPACE again to really reset everything!"
 	draw_string(font, Vector2(24, foot_y + 22), reset_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
