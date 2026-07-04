@@ -175,6 +175,17 @@ func _process(delta: float) -> void:
 	camera.rotation = _noise.get_noise_2d(_t * 45.0, 99.0) * 0.05 * s
 
 
+## UI avoidance: fade `ctrl` way down while the muon is behind it, so no
+## panel ever hides the player. Call every frame from _process.
+func duck_behind_muon(ctrl: Control, delta: float, grow := 36.0, low := 0.15) -> void:
+	var vp := ctrl.get_viewport()
+	if vp == null:
+		return
+	var muon_ui: Vector2 = vp.get_final_transform().affine_inverse() * Game.muon_screen_pos
+	var target := low if ctrl.get_global_rect().grow(grow).has_point(muon_ui) else 1.0
+	ctrl.modulate.a = lerpf(ctrl.modulate.a, target, 1.0 - exp(-9.0 * delta))
+
+
 # ------------------------------------------------------------ UI kit ------
 # One visual system: consistent radii, shadows, and margins everywhere.
 

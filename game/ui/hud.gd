@@ -240,6 +240,13 @@ func _process(delta: float) -> void:
 	if _hint_t > 9.0 and _hint_chip.modulate.a > 0.0:
 		_hint_chip.modulate.a = maxf(_hint_chip.modulate.a - delta * 0.8, 0.0)
 
+	# Nothing gets to hide the muon: any element it flies behind fades
+	# way down until it has passed. (Toast/hint own their alpha via
+	# tweens; the danger banner stays — it's an alarm.)
+	for el: Control in [_timer_label, _lab_label, _gamma_chip, _gamma_bar,
+			_alt_chip, _mischief_chip, _sparks_chip, _plot]:
+		Juice.duck_behind_muon(el, delta)
+
 
 func _show_toast(text: String) -> void:
 	_toast_label.text = text
