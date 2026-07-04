@@ -40,11 +40,12 @@ func count() -> void:
 
 func _draw() -> void:
 	# Scintillator pads across the ground (drawn beneath the building art).
+	# Quiet instrument lines; they surge only when a muon is counted.
 	for i in range(-7, 8):
-		var glow := 0.35 + 0.15 * sin(_t * 2.0 + i * 0.9)
+		var glow := 0.16 + 0.07 * sin(_t * 2.0 + i * 0.9)
 		if _celebrate > 0.0:
-			glow = 0.8 + 0.2 * sin(_t * 10.0 + i)
-		draw_rect(Rect2(i * 170.0 - 70.0, 26.0, 140.0, 16.0), Color(Juice.MINT, glow))
+			glow = 0.55 + 0.25 * sin(_t * 10.0 + i)
+		draw_rect(Rect2(i * 170.0 - 70.0, 30.0, 140.0, 9.0), Color(Juice.MINT, glow))
 
 
 func _draw_dynamic(c: Node2D) -> void:

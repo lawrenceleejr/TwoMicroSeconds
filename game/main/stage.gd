@@ -56,7 +56,8 @@ func _ready() -> void:
 	_cam_back.make_current()
 	# The sky contracts and Doppler-shifts too (shared material).
 	Juice.create_relativity_in(_vp_back)
-	var back_scale := (d0 - BACK_Z) / d0 * 1.28
+	# Generous margin: the dolly + bank can reach well past the frustum.
+	var back_scale := (d0 - BACK_Z) / d0 * 1.6
 	_make_plane(_vp_back, BACK_Z, back_scale, false)
 
 	# --- Gameplay plane ----------------------------------------------------
@@ -83,7 +84,7 @@ func _ready() -> void:
 	front_root.add_child(_cam_front)
 	_vp_front.add_child(front_root)
 	_cam_front.make_current()
-	var front_scale := (d0 - FRONT_Z) / d0 * 1.1
+	var front_scale := (d0 - FRONT_Z) / d0 * 1.3
 	_make_plane(_vp_front, FRONT_Z, front_scale, true)
 
 	_cam = Camera3D.new()
@@ -96,18 +97,8 @@ func _ready() -> void:
 	# Followed to the local sky color each frame, so anything the oblique
 	# angle reveals past the planes blends into sky, never a hard edge.
 	_env.background_color = Color("120e22")
-	_env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	_env.ambient_light_color = Color("53437e")
-	_env.ambient_light_energy = 1.1
 	world_env.environment = _env
 	add_child(world_env)
-
-	# One warm key light so the 3D cloud meshes actually shade.
-	var light := DirectionalLight3D.new()
-	light.rotation = Vector3(deg_to_rad(-38.0), deg_to_rad(24.0), 0.0)
-	light.light_color = Color("ffd9a8")
-	light.light_energy = 0.9
-	add_child(light)
 
 	_spawn_wisps()
 	_spawn_blobs()
@@ -133,21 +124,22 @@ func _make_plane(vp: SubViewport, z: float, s: float, transparent: bool) -> Mesh
 
 func _spawn_wisps() -> void:
 	var texs := ["res://assets/sprites/cloud.svg", "res://assets/sprites/noctilucent.svg"]
-	for i in 10:
+	for i in 6:
 		var s := Sprite3D.new()
 		s.texture = load(texs[i % texs.size()])
-		s.pixel_size = 0.012 + (i % 4) * 0.005
-		s.modulate = Color(1, 1, 1, 0.06 + 0.04 * (i % 4))
+		s.pixel_size = 0.011 + (i % 3) * 0.004
+		s.modulate = Color(1, 1, 1, 0.05 + 0.03 * (i % 3))
 		s.position = Vector3(randf_range(-7.5, 7.5), randf_range(-5.5, 5.5),
 			randf_range(0.4, 4.2))
 		add_child(s)
 		_wisps.append(s)
 
 
-## Actual 3D geometry drifting between the planes: soft translucent slabs
-## of cloud, lit by the key light — parallax you can't fake with billboards.
+## Actual 3D geometry drifting between the planes: barely-there unshaded
+## fog masses — depth cues, not set pieces. Kept sparse so the frame
+## stays clean; the parallax does the talking.
 func _spawn_blobs() -> void:
-	for i in 7:
+	for i in 4:
 		var blob := MeshInstance3D.new()
 		var m := SphereMesh.new()
 		m.radius = 0.55
@@ -155,9 +147,9 @@ func _spawn_blobs() -> void:
 		blob.mesh = m
 		blob.scale = Vector3(randf_range(1.7, 3.0), randf_range(0.5, 0.8), randf_range(0.9, 1.5))
 		var bm := StandardMaterial3D.new()
+		bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		bm.albedo_color = Color(0.93, 0.88, 0.78, 0.07 + 0.05 * float(i % 3))
-		bm.roughness = 1.0
+		bm.albedo_color = Color(0.93, 0.89, 0.80, 0.05 + 0.03 * float(i % 2))
 		blob.material_override = bm
 		blob.position = Vector3(randf_range(-8.0, 8.0), randf_range(-5.5, 5.5),
 			randf_range(-2.0, 1.3))
@@ -193,8 +185,8 @@ func _process(delta: float) -> void:
 	# Velocity dolly: the 3D camera physically moves with the muon, so the
 	# sky, cloud meshes, action, and near haze slide against each other.
 	var dolly_target := Vector3(
-		clampf(vel.x * 0.00045, -0.6, 0.6),
-		clampf(-vel.y * 0.00030, -0.5, 0.5) * 0.6,
+		clampf(vel.x * 0.00040, -0.45, 0.45),
+		clampf(-vel.y * 0.00026, -0.30, 0.30),
 		0.0)
 	_dolly = _dolly.lerp(dolly_target, 1.0 - exp(-2.2 * delta))
 
