@@ -1,9 +1,8 @@
 extends Node2D
 ## The muon. You cannot throttle a muon — nothing accelerates a charged
-## particle but an electric field. You steer; the atmosphere slowly bleeds
-## your energy away (ionization drag); auroral electrojets, thundercloud
-## fields, and rebooted satellites give it back. Speed is your clock:
-## proper time drains at delta / gamma.
+## particle but an electric field. You steer; you coast without losing
+## speed; auroral electrojets, thundercloud fields, and rebooted
+## satellites are the only way to gain it. Speed is your clock.
 
 signal decayed
 signal circle_drawn
@@ -26,10 +25,10 @@ const REAL_SECONDS_PER_US := 12.0    # game seconds per proper µs
 const CONTRACT := 0.5
 const ZAP_RADIUS := 175.0
 const ZAP_COOLDOWN := 0.35
-# Ionization drag per layer (px/s^2): thin air up high, soup down low.
-# Tuned so a fresh solar-flare muon CANNOT reach the ground — the early
-# game is about dying well and coming back heavier.
-const DRAG := [14.0, 18.0, 24.0, 34.0, 34.0]
+# No coasting drag: a minimum-ionizing particle barely notices the air,
+# and a drifting muon keeps its momentum. The early game stays unwinnable
+# anyway — a fresh solar-flare muon's clock runs out long before the
+# ground unless field events keep raising gamma.
 
 const GhostFx := preload("res://game/fx/ghost.gd")
 const ZapRingFx := preload("res://game/fx/zap_ring.gd")
@@ -224,9 +223,8 @@ func _process(delta: float) -> void:
 		var ang_down := heading.angle_to(Vector2.DOWN)
 		heading = heading.rotated(clampf(ang_down, -DOWN_BIAS * delta, DOWN_BIAS * delta))
 
-	# Ionization drag: the atmosphere is always taxing you.
-	var layer := Atmos.layer_index_at(global_position.y)
-	speed = maxf(speed - DRAG[layer] * delta, SPEED_FLOOR)
+	# No drag while coasting: a drifting particle keeps its momentum.
+	# Speed only ever changes through field events (boosts).
 
 	# This is the muon's rest frame. Your clock just ticks; energy can't
 	# stretch it. What energy DOES is length-contract the sky: the world

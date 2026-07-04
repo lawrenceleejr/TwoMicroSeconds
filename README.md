@@ -32,10 +32,10 @@ distribution underneath.
 | F / M | fullscreen / mute |
 
 **You cannot throttle a muon.** Nothing accelerates a charged particle but an
-electric field: the atmosphere constantly bleeds your speed away (ionization
-drag), and you get it back by surfing **auroral electrojets**, triggering
-**thundercloud fields** (zap a cloud), or bumping **satellites**. Speed is
-your clock — and the view tells you so, *A Slower Speed of Light*-style:
+electric field: you coast without losing speed, and the only way to gain any
+is surfing **auroral electrojets**, triggering **thundercloud fields** (zap a
+cloud), or bumping **satellites**. Speed is your clock — and the view tells
+you so, *A Slower Speed of Light*-style:
 the world **length-contracts** along your direction of motion, **Doppler
 shifts** (blue ahead, red behind, with a headlight brightening), and motion
 blur creeps in as γ climbs.
