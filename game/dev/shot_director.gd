@@ -103,12 +103,14 @@ func _run() -> void:
 	# Bird flock scatter.
 	await _visit_and_zap(muon, "bird_flock", Vector2(0, 52000), "12_birds", 0.35)
 
-	# Park mid-sky for the UI-state shots — a downward autopilot here
-	# would reach the detector and end the run before the decay shots.
+	# Park mid-sky for the UI-state shots: a slow, centered descent. At
+	# stroll speed the ground stays kilometers away, and the muon keeps
+	# mid-frame instead of drifting to the x-limit (where the decay would
+	# fire off-screen behind the checklist).
 	muon.set("speed", 320.0)
-	muon.set("global_position", Vector2(-200, 40000))
-	muon.set("heading", Vector2.RIGHT)
-	muon.set("autopilot", Vector2(1, 0.08))
+	muon.set("global_position", Vector2(0, 40000))
+	muon.set("heading", Vector2.DOWN)
+	muon.set("autopilot", Vector2(0.15, 1))
 
 	# Checklist tucked away: the edge tab affordance.
 	_press(KEY_TAB)
