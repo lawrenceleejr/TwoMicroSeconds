@@ -35,10 +35,10 @@ void fragment() {
 	// effect), rear hemisphere shifts red.
 	float fwd = dot(normalize(p + vec2(1e-5, 0.0)), d);
 	float s = doppler * fwd;
-	col.r *= 1.0 - 0.30 * s;
-	col.g *= 1.0 - 0.10 * s;
-	col.b *= 1.0 + 0.35 * s;
-	col *= 1.0 + 0.16 * doppler * max(fwd, 0.0);
+	col.r *= 1.0 - 0.38 * s;
+	col.g *= 1.0 - 0.13 * s;
+	col.b *= 1.0 + 0.44 * s;
+	col *= 1.0 + 0.20 * doppler * max(fwd, 0.0);
 
 	COLOR = vec4(col, 1.0);
 }

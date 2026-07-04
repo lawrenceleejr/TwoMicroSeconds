@@ -78,7 +78,7 @@ func _draw() -> void:
 
 	var font := ThemeDB.fallback_font
 	draw_string(font, Vector2(24, 34), "ORIGIN STORY", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Juice.INK)
-	draw_string(font, Vector2(216, 34), "· cosmic-ray production upgrades", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(Juice.INK, 0.55))
+	draw_string(font, Vector2(216, 34), "· choose your birth", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(Juice.INK, 0.55))
 	var sparks_text := "sparks: %d" % Meta.sparks
 	var stw := font.get_string_size(sparks_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 	draw_string(font, Vector2(W - 24 - stw, 34), sparks_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Juice.PERIWINKLE)
@@ -126,7 +126,7 @@ func _draw() -> void:
 
 	var foot_y := size.y - 44.0
 	draw_line(Vector2(20, foot_y - 14), Vector2(W - 20, foot_y - 14), Color(Juice.INK, 0.2), 1.5)
-	draw_string(font, Vector2(24, foot_y + 4), "bump satellites on the way down to earn sparks (zip through for double)",
+	draw_string(font, Vector2(24, foot_y + 4), "satellites pay sparks — hit them fast for double",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(Juice.INK, 0.6))
 	var reset_hint := "U — close · ENTER — acquire · BACKSPACE ×2 — reset save"
 	if _reset_armed > 0.0:

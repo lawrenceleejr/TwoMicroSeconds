@@ -1,6 +1,10 @@
 extends Node2D
 ## Base for everything zappable in the atmosphere.
 
+## Soft ambient shadow under the prop (0 = none) — cheap depth cue.
+var shadow_size := 0.0
+var shadow_drop := 40.0
+
 var _muon: Node2D = null
 
 
@@ -8,6 +12,17 @@ func _ready() -> void:
 	add_to_group("zappable")
 	z_index = 2
 	_setup()
+	queue_redraw()
+
+
+func _draw() -> void:
+	if shadow_size <= 0.0:
+		return
+	draw_set_transform(Vector2(0, shadow_drop), 0.0, Vector2(1.0, 0.3))
+	for i in 3:
+		var f := 1.0 - i * 0.27
+		draw_circle(Vector2.ZERO, shadow_size * 0.5 * f, Color(0.16, 0.15, 0.25, 0.05))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _setup() -> void:

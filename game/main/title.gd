@@ -15,6 +15,7 @@ var _origin_label: Label
 var _sparks_chip: PanelContainer
 var _sparks_label: Label
 var _hint_chip: PanelContainer
+var _histo: Control
 var _shop  # untyped: exposes script members (`active`)
 var _root: Control
 
@@ -49,6 +50,10 @@ func _ready() -> void:
 	var hint := _chip_label(_hint_chip,
 		"WASD steer · SPACE zap · TAB to-dos · U origin shop · F fullscreen · M mute", 13)
 	hint.add_theme_color_override("font_color", Juice.CREAM)
+
+	_histo = preload("res://game/ui/lifetime_histogram.gd").new()
+	_histo.compact = true
+	_root.add_child(_histo)
 
 	_shop = preload("res://game/ui/origin_shop.gd").new()
 	_root.add_child(_shop)
@@ -95,6 +100,9 @@ func _process(delta: float) -> void:
 	_origin_chip.position = Vector2(16, 12)
 	_sparks_chip.position = Vector2(vp.x - _sparks_chip.size.x - 16.0, 12)
 	_hint_chip.position = Vector2(vp.x * 0.5 - _hint_chip.size.x * 0.5, vp.y - 46.0)
+	_histo.position = Vector2(16.0, vp.y - _histo.size.y - 64.0)
+	_histo.visible = Meta.lifetimes.size() > 0
+	_histo.queue_redraw()
 
 	var o := Meta.origin()
 	_origin_label.text = "origin: %s · E ≈ %s · γ +%.1f" % [o["name"], o["energy"], float(o["gamma"])]

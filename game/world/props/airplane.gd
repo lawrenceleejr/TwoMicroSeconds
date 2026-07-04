@@ -18,6 +18,8 @@ func _setup() -> void:
 	_t = randf() * 5.0
 	# Art faces right (nose at +x); flipping the node handles direction.
 	_sprite = make_sprite("res://assets/sprites/airplane.svg", 0.52, Vector2(0, 0))
+	shadow_size = 150.0
+	shadow_drop = 56.0
 	_overlay = make_overlay(_draw_extras)
 
 

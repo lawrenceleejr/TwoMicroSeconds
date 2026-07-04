@@ -31,7 +31,7 @@ func _process(delta: float) -> void:
 			return
 	else:
 		var m := muon()
-		if m != null and m.get("dashing") and muon_dist() < 80.0:
+		if m != null and muon_dist() < 80.0 and float(m.get("speed")) > 600.0:
 			_scatter()
 		for b in _birds:
 			b["angle"] += delta * 0.5

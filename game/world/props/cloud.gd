@@ -4,7 +4,7 @@ extends "res://game/world/props/prop_base.gd"
 ## do accelerate charged particles).
 
 const Lightning := preload("res://game/fx/lightning.gd")
-const BOOST := 90.0
+const BOOST := 110.0
 
 var _t := 0.0
 var _blush := 0.0
@@ -17,6 +17,8 @@ var _overlay: Node2D
 func _setup() -> void:
 	_t = randf() * 6.0
 	_sprite = make_sprite("res://assets/sprites/cloud.svg", 0.62)
+	shadow_size = 140.0
+	shadow_drop = 52.0
 	_rain = CPUParticles2D.new()
 	_rain.position = Vector2(0, 40)
 	_rain.amount = 36

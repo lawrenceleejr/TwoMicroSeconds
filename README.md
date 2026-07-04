@@ -6,12 +6,13 @@
 except the goose is a subatomic particle and the pond is the entire atmosphere.
 
 You are a muon, freshly minted by a cosmic ray high above a particle detector.
-Your proper lifetime is **2.2 µs**. That should be nowhere near enough time to
-reach the ground… except that the faster you move, the slower your clock ticks.
-**Speed is survival** — the game's countdown drains at `Δt / γ`, so playing fast
-and reckless literally keeps you young. Reach the Muon Observatory before you
-decay, and tick off an optional to-do list of light atmospheric mischief on
-the way down.
+Your mean proper lifetime is **2.2 µs** — and decay is genuinely random: every
+instant rolls against the dilated hazard rate, and a live "fate" curve shows
+your odds stretching whenever you gain speed. **Speed is survival**, but you
+can't throttle — only electric fields accelerate you. Reach the Muon
+Observatory before the dice come up decay, and cause some optional mischief
+on the way down. Every death is logged: a persistent histogram of your
+lifetimes converges on 2.2 µs as you play.
 
 ## how to play
 
@@ -36,9 +37,10 @@ blur creeps in as γ climbs.
 
 The to-do list is optional, goose-style: tickle an aurora, high-five a
 satellite, photobomb a shooting star, startle a weather balloon, zip through
-an airplane, make a cloud rain… Each completed prank refunds **+0.2 µs** of
-proper time. Finish all ten before being detected and the observatory stamps
-your receipt **A++ MUON**.
+an airplane, make a cloud rain… Each completed prank pays **+1 spark**.
+Finish all ten before being detected and the observatory stamps your receipt
+**A++ MUON**. Fresh solar-flare muons cannot reach the ground — early runs
+are for sparks; come back heavier.
 
 ## sparks & the origin shop
 

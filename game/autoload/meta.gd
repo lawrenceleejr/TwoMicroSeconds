@@ -62,6 +62,9 @@ const TIERS := [
 var sparks := 0
 var tier := 0
 var total_sparks_earned := 0
+## Proper lifetime (µs) of every decayed muon, ever. Exponentially
+## distributed by construction; the mean converges on 2.2 as you play.
+var lifetimes: Array = []
 
 
 func _ready() -> void:
@@ -95,6 +98,22 @@ func add_sparks(amount: int) -> void:
 	sparks_changed.emit()
 
 
+func record_lifetime(us: float) -> void:
+	lifetimes.append(snappedf(us, 0.001))
+	if lifetimes.size() > 2000:
+		lifetimes = lifetimes.slice(lifetimes.size() - 2000)
+	_save()
+
+
+func lifetime_mean() -> float:
+	if lifetimes.is_empty():
+		return 0.0
+	var total := 0.0
+	for v in lifetimes:
+		total += float(v)
+	return total / lifetimes.size()
+
+
 func try_upgrade() -> bool:
 	if not can_upgrade():
 		return false
@@ -109,6 +128,7 @@ func reset_save() -> void:
 	sparks = 0
 	tier = 0
 	total_sparks_earned = 0
+	lifetimes = []
 	_save()
 	sparks_changed.emit()
 
@@ -121,6 +141,7 @@ func _save() -> void:
 		"sparks": sparks,
 		"tier": tier,
 		"earned": total_sparks_earned,
+		"lifetimes": lifetimes,
 	}))
 
 
@@ -135,3 +156,6 @@ func _load() -> void:
 		sparks = maxi(int(data.get("sparks", 0)), 0)
 		tier = clampi(int(data.get("tier", 0)), 0, TIERS.size() - 1)
 		total_sparks_earned = maxi(int(data.get("earned", 0)), 0)
+		var lts = data.get("lifetimes", [])
+		if lts is Array:
+			lifetimes = lts

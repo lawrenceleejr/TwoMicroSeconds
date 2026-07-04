@@ -18,12 +18,14 @@ const TURN_RATE_SLOW := 4.2
 const TURN_RATE_FAST := 2.4
 const DOWN_BIAS := 0.5
 const GAMMA_K := 9.0
-const LIFETIME := 2.2
-const REAL_SECONDS_PER_US := 10.0
+const LIFETIME := 2.2                # mean proper lifetime, µs
+const REAL_SECONDS_PER_US := 1.5     # game seconds per proper µs
 const ZAP_RADIUS := 175.0
 const ZAP_COOLDOWN := 0.35
 # Ionization drag per layer (px/s^2): thin air up high, soup down low.
-const DRAG := [9.0, 12.0, 16.0, 24.0, 24.0]
+# Tuned so a fresh solar-flare muon CANNOT reach the ground — the early
+# game is about dying well and coming back heavier.
+const DRAG := [14.0, 18.0, 24.0, 34.0, 34.0]
 
 const GhostFx := preload("res://game/fx/ghost.gd")
 const ZapRingFx := preload("res://game/fx/zap_ring.gd")
@@ -36,7 +38,10 @@ var heading := Vector2.DOWN
 var birth_speed := 0.0
 var alive := true
 var finished := false
-var proper_time := LIFETIME
+## Proper time lived so far (µs). Counts UP; there is no fixed budget —
+## decay is a memoryless roll against the dilated hazard rate, like the
+## real particle.
+var age_us := 0.0
 var gamma := 1.0
 var speed_frac := 0.0
 ## Scripted steering for the screenshot/demo director; zero = player input.
@@ -198,10 +203,17 @@ func _process(delta: float) -> void:
 	position += velocity * delta
 	_apply_bounds()
 
-	# Time dilation: the whole game in three lines. A hotter origin story
-	# (Meta tier) means more energy at birth, so a permanently higher gamma.
+	# Time dilation: a hotter origin story (Meta tier) means more energy at
+	# birth, so a permanently higher gamma. Your clock ticks 1/gamma as fast.
 	gamma = 1.0 + GAMMA_K * speed_frac * speed_frac + Meta.gamma_bonus()
-	proper_time -= delta / (gamma * REAL_SECONDS_PER_US)
+	age_us += delta / (gamma * REAL_SECONDS_PER_US)
+
+	# Decay is memoryless: every instant carries hazard dt / (gamma * tau).
+	if not Game.shoot_mode:
+		var mean_lab_life := gamma * LIFETIME * REAL_SECONDS_PER_US
+		if randf() < delta / mean_lab_life:
+			_die()
+			return
 
 	if speed > birth_speed * 1.15:
 		Tasks.complete("overclock")
@@ -215,10 +227,6 @@ func _process(delta: float) -> void:
 	_update_speed_fx(delta)
 	_update_camera_lookahead(delta)
 	_heartbeat()
-
-	if proper_time <= 0.0:
-		proper_time = 0.0
-		_die()
 
 
 ## The only way to gain speed: an electric field did work on you.
@@ -333,15 +341,12 @@ func _update_camera_lookahead(delta: float) -> void:
 
 
 func _heartbeat() -> void:
-	if proper_time < 0.45:
-		var bucket := int(proper_time / 0.12)
+	# Past the mean lifetime you're on borrowed time; the heart knows.
+	if age_us > LIFETIME * 0.8:
+		var bucket := int(age_us / 0.1)
 		if bucket != _last_tick_bucket:
 			_last_tick_bucket = bucket
 			Sfx.play("tick", -6.0)
-
-
-func refund_time(amount: float) -> void:
-	proper_time = minf(proper_time + amount, LIFETIME)
 
 
 func _die() -> void:

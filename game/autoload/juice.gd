@@ -112,7 +112,7 @@ func set_relativity(dir: Vector2, strength: float) -> void:
 	_rel_rect.visible = strength > 0.02
 	_rel_mat.set_shader_parameter("motion_dir", dir)
 	_rel_mat.set_shader_parameter("contraction", 0.17 * strength)
-	_rel_mat.set_shader_parameter("doppler", 0.55 * strength)
+	_rel_mat.set_shader_parameter("doppler", 0.85 * strength)
 	_rel_mat.set_shader_parameter("blur_amount", 0.0075 * strength)
 
 

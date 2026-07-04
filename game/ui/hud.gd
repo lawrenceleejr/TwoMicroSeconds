@@ -77,16 +77,19 @@ func _ready() -> void:
 	_hint_label = hint_pair[1]
 	_hint_chip.add_theme_stylebox_override("panel", Juice.ui_chip(Juice.INK, 0.45))
 	_hint_label.add_theme_color_override("font_color", Juice.CREAM)
-	_hint_label.text = "steer with WASD — only electric fields can speed you up.   SPACE zap · TAB to-dos"
+	_hint_label.text = "steer · the sky has fields, find them      SPACE zap · TAB list"
+
+	_plot = preload("res://game/ui/decay_plot.gd").new()
+	add_child(_plot)
 
 	_toasts = TOASTS.duplicate()
-	var o := Meta.origin()
-	_toasts[0] = "born of a %s · E ≈ %s" % [o["name"], o["energy"]]
+	_toasts[0] = "born of a %s" % Meta.origin()["name"]
 
 
 var _alt_chip: PanelContainer
 var _mischief_chip: PanelContainer
 var _sparks_chip: PanelContainer
+var _plot: Control
 
 
 func _mk_chip(font_size: int, icon_path: String) -> Array:
@@ -116,27 +119,27 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	var vp := get_viewport_rect().size
-	var pt: float = maxf(muon.get("proper_time"), 0.0)
+	var age: float = muon.get("age_us")
 	var gamma: float = muon.get("gamma")
 
-	_timer_label.text = "%.2f µs" % pt
+	# Proper age, counting up. Past 2.2 you're living on luck.
+	_timer_label.text = "%.2f µs" % age
 	_timer_label.position = Vector2(vp.x * 0.5 - _timer_label.size.x * 0.5, 12.0)
 	_timer_label.pivot_offset = _timer_label.size * 0.5
-	var bucket := int(pt * 20.0)
+	var bucket := int(age * 20.0)
 	if bucket != _last_bucket:
 		_last_bucket = bucket
 		_timer_label.scale = Vector2(1.12, 0.92)
 		var tw := create_tween()
 		tw.tween_property(_timer_label, "scale", Vector2.ONE, 0.18)
-	if pt < 0.45:
+	if age > 1.76:
 		var pulse := 0.5 + 0.5 * sin(_t * 10.0)
 		_timer_label.add_theme_color_override("font_color", Juice.CREAM.lerp(Color("ff8fa3"), pulse))
 	else:
 		_timer_label.add_theme_color_override("font_color", Juice.CREAM)
 
-	# β = v/c from γ — the physics readout.
 	var beta := sqrt(maxf(1.0 - 1.0 / (gamma * gamma), 0.0))
-	_gamma_label.text = "γ %.1f · v %.4f c" % [gamma, beta]
+	_gamma_label.text = "γ %.1f · %.3fc" % [gamma, beta]
 	_gamma_chip.position = Vector2(vp.x * 0.5 - _gamma_chip.size.x * 0.5, 68.0)
 	_gamma_bar.position = Vector2(vp.x * 0.5 - 60.0, 100.0)
 	_gamma_bar.size = Vector2(120.0, 8.0)
@@ -155,6 +158,10 @@ func _process(delta: float) -> void:
 		_last_layer = layer
 		_show_toast(_toasts[layer])
 	_toast_chip.position = Vector2(vp.x * 0.5 - _toast_chip.size.x * 0.5, 130.0)
+
+	if _plot.get("muon") == null:
+		_plot.set("muon", muon)
+	_plot.position = Vector2(16.0, vp.y - _plot.size.y - 16.0)
 
 	_hint_t += delta
 	_hint_chip.position = Vector2(vp.x * 0.5 - _hint_chip.size.x * 0.5, vp.y - 52.0)

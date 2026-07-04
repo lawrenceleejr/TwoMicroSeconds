@@ -49,6 +49,25 @@ func _draw() -> void:
 				var size := 1.2 + float(h % 17) / 9.0
 				draw_circle(pos, size, Color(1.0, 1.0, 0.94, 0.75 * air_fade * twinkle))
 
+	# Parallax depth layer: distant haze puffs drifting at 55% of camera
+	# speed — the cheap trick that makes a flat sky read as deep.
+	var par := 0.55
+	var qtl := (Vector2(left, top) - center * (1.0 - par)) / par
+	var qbr := (Vector2(left + width, bottom) - center * (1.0 - par)) / par
+	var pcell := 640.0
+	for cx in range(int(floor(qtl.x / pcell)), int(ceil(qbr.x / pcell)) + 1):
+		for cy in range(int(floor(qtl.y / pcell)), int(ceil(qbr.y / pcell)) + 1):
+			var h3 := absi(hash(Vector2i(cx + 7, cy + 13)))
+			if h3 % 3 != 0:
+				continue
+			var q := Vector2(cx * pcell + float(h3 % 500), cy * pcell + float((h3 / 7) % 500))
+			var p := q * par + center * (1.0 - par)
+			var rx := 90.0 + float(h3 % 90)
+			draw_set_transform(p, 0.0, Vector2(1.0, 0.38))
+			draw_circle(Vector2.ZERO, rx, Color(1.0, 1.0, 1.0, 0.05))
+			draw_circle(Vector2.ZERO, rx * 0.65, Color(1.0, 1.0, 1.0, 0.05))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
 	# Ground.
 	if bottom > Atmos.GROUND_Y:
 		draw_rect(Rect2(left, Atmos.GROUND_Y, width, bottom - Atmos.GROUND_Y + 60.0), Atmos.GRASS)

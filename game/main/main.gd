@@ -78,12 +78,12 @@ func _process(_delta: float) -> void:
 func _on_task_completed(task: Dictionary) -> void:
 	if task["id"] == "get_detected":
 		return
-	muon.refund_time(0.2)
+	Meta.add_sparks(1)
 	Sfx.play("task_done", -4.0)
 	Juice.hitstop(0.05, 0.1)
 	Juice.shake(0.12)
 	TaskPop.confetti(self, muon.global_position, 26)
-	FloatText.spawn(self, muon.global_position + Vector2(0, -34), "+0.2 µs", Juice.MINT)
+	FloatText.spawn(self, muon.global_position + Vector2(0, -34), "+1 spark", Juice.MINT)
 
 
 func _on_circle_drawn() -> void:
@@ -95,6 +95,7 @@ func _on_decayed() -> void:
 	if _ended:
 		return
 	_ended = true
+	Meta.record_lifetime(muon.age_us)
 	pause_overlay.can_pause = false
 	Sfx.play("decay", -2.0, 0.0)
 	Juice.hitstop(0.22, 0.05)
@@ -104,8 +105,9 @@ func _on_decayed() -> void:
 	add_child(burst)
 	var alt := Atmos.altitude_at(muon.global_position.y)
 	var run_sparks: int = Meta.sparks - _sparks_at_start
+	var age: float = muon.age_us
 	get_tree().create_timer(1.6).timeout.connect(func() -> void:
-		end_screen.show_lose(alt, run_sparks)
+		end_screen.show_lose(alt, run_sparks, age)
 	)
 
 
@@ -126,6 +128,7 @@ func _win() -> void:
 		bonus += 5
 	Meta.add_sparks(bonus)
 	var run_sparks: int = Meta.sparks - _sparks_at_start
+	var age: float = muon.age_us
 	get_tree().create_timer(1.5).timeout.connect(func() -> void:
-		end_screen.show_win(run_sparks, Meta.is_max_tier())
+		end_screen.show_win(run_sparks, Meta.is_max_tier(), age)
 	)

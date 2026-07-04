@@ -4,7 +4,7 @@ extends "res://game/world/props/prop_base.gd"
 ## and a half-second of digital glitch while its flight computer reboots.
 
 const FloatText := preload("res://game/fx/float_text.gd")
-const BOOST := 170.0
+const BOOST := 200.0
 
 var collected := false
 
@@ -20,6 +20,8 @@ func _setup() -> void:
 	_t = randf() * 8.0
 	_spin = randf_range(-0.15, 0.15)
 	_sprite = make_sprite("res://assets/sprites/satellite.svg", 0.55, Vector2(0, 4))
+	shadow_size = 80.0
+	shadow_drop = 46.0
 	_overlay = make_overlay(_draw_face)
 
 
@@ -42,15 +44,14 @@ func _collect(m, clean_hit: bool) -> void:
 	collected = true
 	var pts := 2 if clean_hit else 1
 	Meta.add_sparks(pts)
-	m.refund_time(0.15)
-	m.boost(BOOST, "satellite capacitors")
+	m.boost(BOOST, "satellite")
 	Tasks.complete("bonk_satellite")
 	Juice.glitch(0.5)
 	Juice.hitstop(0.05, 0.15)
 	Sfx.play("glitch", -2.0)
-	var suffix := " (clean hit!)" if clean_hit else ""
+	var suffix := "  clean hit!" if clean_hit else ""
 	FloatText.spawn(get_parent(), global_position + Vector2(0, -40),
-		"+%d spark%s · +0.15 µs%s" % [pts, "s" if pts > 1 else "", suffix], Juice.MINT)
+		"+%d spark%s%s" % [pts, "s" if pts > 1 else "", suffix], Juice.MINT)
 
 
 func zapped(_source: Node2D) -> void:

@@ -54,7 +54,7 @@ def muon(name, hi, mid, lo, rim):
 <circle cx="64" cy="64" r="46" fill="url(#body)"/>
 <ellipse cx="64" cy="92" rx="32" ry="13" fill="{rim}" opacity="0.55"/>
 <ellipse cx="88" cy="76" rx="12" ry="22" fill="{rim}" opacity="0.3" transform="rotate(-28 88 76)"/>
-<circle cx="64" cy="64" r="46" fill="none" stroke="{INK}" stroke-opacity="0.32" stroke-width="5.5"/>
+<circle cx="64" cy="64" r="46" fill="none" stroke="{INK}" stroke-opacity="0.42" stroke-width="6"/>
 <ellipse cx="48" cy="42" rx="16" ry="10" fill="#ffffff" opacity="0.95" transform="rotate(-18 48 42)"/>
 <circle cx="36" cy="57" r="4.5" fill="#ffffff" opacity="0.7"/>
 """
@@ -64,7 +64,7 @@ def muon(name, hi, mid, lo, rim):
 def cloud():
     defs = (
         linear("puff", [(0, "#ffffff", 1), (1, "#dee6f7", 1)])
-        + linear("shade", [(0, "#c3cfeb", 0.0), (1, "#b9c6e6", 0.7)])
+        + linear("shade", [(0, "#c3cfeb", 0.0), (1, "#aebde2", 0.9)])
     )
     lobes = [(82, 112, 70, 46), (162, 84, 88, 58), (242, 112, 64, 42), (162, 130, 112, 40)]
     body = "".join(f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="url(#puff)"/>'

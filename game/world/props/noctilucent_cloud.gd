@@ -10,6 +10,8 @@ var _overlay: Node2D
 func _setup() -> void:
 	_t = randf() * 6.0
 	_sprite = make_sprite("res://assets/sprites/noctilucent.svg", 0.6)
+	shadow_size = 100.0
+	shadow_drop = 42.0
 	_overlay = make_overlay(_draw_face)
 
 

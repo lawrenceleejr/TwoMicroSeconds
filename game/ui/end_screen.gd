@@ -34,50 +34,46 @@ func _ready() -> void:
 	_panel.add_child(_vbox)
 
 
-func show_win(run_sparks: int, omg: bool) -> void:
+func show_win(run_sparks: int, omg: bool, age_us: float) -> void:
 	_build_common()
 	if omg:
 		_line("C L I C K .", 44, Color("b8860b"))
 		_line("the detector needed a moment.", 22, Color(Juice.INK, 0.8))
 	else:
 		_line("CLICK.", 44, Juice.INK)
-		_line("you were counted.", 22, Color(Juice.INK, 0.8))
+		_line("counted.", 22, Color(Juice.INK, 0.8))
 	_line("", 8, Juice.INK)
-	_line("· MUON OBSERVATORY · visitor receipt ·", 14, Color(Juice.INK, 0.6))
-	_line("proper time aboard:  2.2 µs", 16, Juice.INK)
-	_line("earth time elapsed:  %.1f s" % Game.real_elapsed(), 16, Juice.INK)
-	_line("mischief managed:  %d / %d" % [Tasks.optional_done_count(), Tasks.optional_total()], 16, Juice.INK)
-	_line("sparks earned:  +%d  (wallet: %d)" % [run_sparks, Meta.sparks], 16, Juice.PERIWINKLE)
+	_line("lived %.2f µs · fell 100 km · mischief %d/%d" % [
+		age_us, Tasks.optional_done_count(), Tasks.optional_total()], 16, Juice.INK)
+	_line("sparks +%d  ·  wallet %d" % [run_sparks, Meta.sparks], 16, Juice.PERIWINKLE)
 	if Tasks.all_optional_done():
-		_line("rating:  A++ MUON. the detector is framing this.", 16, Color("e05c6e"))
-	_line("", 8, Juice.INK)
+		_line("A++ MUON — the front desk is framing this.", 16, Color("e05c6e"))
 	if omg:
-		_line("3×10²⁰ eV. Utah saw one of you in 1991 and said 'oh my god'.", 14, Color(Juice.INK, 0.75))
-		_line("you have now been every ray the sky knows how to make.", 14, Color(Juice.INK, 0.75))
-		_line("thank you for playing <3", 14, Color("e05c6e"))
-	else:
-		_line("real muons reach the ground because time dilates.", 14, Color(Juice.INK, 0.65))
-		_line("you just proved it. congratulations.", 14, Color(Juice.INK, 0.65))
+		_line("", 8, Juice.INK)
+		_line("Utah, 1991. they saw one of you and said 'oh my god'.", 14, Color(Juice.INK, 0.75))
+		_line("you've been every ray the sky makes. thank you for playing <3", 14, Color("e05c6e"))
 	_line("", 8, Juice.INK)
-	_line("R — another life        ESC — title (origin shop: U)", 16, Color(Juice.PERIWINKLE, 1.0))
+	_line("R — again        ESC — title", 16, Color(Juice.PERIWINKLE, 1.0))
 	_pop_in()
 
 
-func show_lose(altitude_km: float, run_sparks: int) -> void:
+func show_lose(altitude_km: float, run_sparks: int, age_us: float) -> void:
 	_build_common()
 	_line("poof.", 44, Juice.INK)
-	_line("you decayed into an electron and two neutrinos.", 20, Color(Juice.INK, 0.8))
-	_line("(they seem nice.)", 14, Color(Juice.INK, 0.55))
+	_line("an electron and two neutrinos carry on without you.", 20, Color(Juice.INK, 0.8))
 	_line("", 8, Juice.INK)
-	_line("altitude reached:  %d km" % int(round(altitude_km)), 16, Juice.INK)
-	_line("mischief managed:  %d / %d" % [Tasks.optional_done_count(), Tasks.optional_total()], 16, Juice.INK)
+	_line("lived %.2f µs · made it to %d km · mischief %d/%d" % [
+		age_us, int(round(altitude_km)), Tasks.optional_done_count(), Tasks.optional_total()],
+		16, Juice.INK)
 	if run_sparks > 0:
-		_line("sparks kept:  +%d  (wallet: %d)" % [run_sparks, Meta.sparks], 16, Juice.PERIWINKLE)
+		_line("sparks +%d  ·  wallet %d" % [run_sparks, Meta.sparks], 16, Juice.PERIWINKLE)
+	_line("", 4, Juice.INK)
+	var histo := preload("res://game/ui/lifetime_histogram.gd").new()
+	_vbox.add_child(histo)
+	_line("", 4, Juice.INK)
+	_line("find more field. come back heavier.", 14, Color(Juice.INK, 0.65))
 	_line("", 8, Juice.INK)
-	_line("tip: speed dilates time. a fast muon is a young muon.", 14, Color(Juice.INK, 0.65))
-	_line("(a better origin story helps too — press U on the title.)", 14, Color(Juice.INK, 0.55))
-	_line("", 8, Juice.INK)
-	_line("R — be born again        ESC — title", 16, Color(Juice.PERIWINKLE, 1.0))
+	_line("R — again        ESC — title  (U — shop)", 16, Color(Juice.PERIWINKLE, 1.0))
 	_pop_in()
 
 

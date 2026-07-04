@@ -13,6 +13,8 @@ func _setup() -> void:
 	# Art is balloon + string + box; the balloon center sits ~78 px into a
 	# 240-tall document, so offset the sprite to hang below the node origin.
 	_sprite = make_sprite("res://assets/sprites/balloon.svg", 0.55, Vector2(0, 8))
+	shadow_size = 74.0
+	shadow_drop = 86.0
 	_overlay = make_overlay(_draw_face)
 
 
@@ -42,6 +44,10 @@ func _startle() -> void:
 	Sfx.play("boing", -4.0)
 	if not Tasks.is_done("startle_balloon"):
 		Tasks.complete("startle_balloon")
+	# Static discharge: a startled balloon lets a little charge go.
+	var m := muon()
+	if m != null and muon_dist() < 160.0:
+		m.boost(55.0, "static")
 	var tw := create_tween()
 	tw.tween_property(self, "_jump", -26.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(self, "_jump", 0.0, 0.7).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)

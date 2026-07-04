@@ -4,7 +4,7 @@ extends "res://game/world/props/prop_base.gd"
 
 const SEGS := 22
 const SEG_W := 34.0
-const BOOST := 70.0
+const BOOST := 90.0
 
 var _t := 0.0
 var _glow := 0.0

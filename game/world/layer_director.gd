@@ -4,6 +4,7 @@ extends Node2D
 
 const Aurora := preload("res://game/world/props/aurora.gd")
 const Satellite := preload("res://game/world/props/satellite.gd")
+const RedSprite := preload("res://game/world/props/red_sprite.gd")
 const ShootingStar := preload("res://game/world/props/shooting_star.gd")
 const Noctilucent := preload("res://game/world/props/noctilucent_cloud.gd")
 const Balloon := preload("res://game/world/props/weather_balloon.gd")
@@ -27,11 +28,14 @@ func _ready() -> void:
 
 
 func _spawn_all() -> void:
-	# Thermosphere: auroras, and satellites carrying sparks.
-	for i in 3:
-		_place(Aurora.new(), _rng.randf_range(-800, 800), _rng.randf_range(800, 3400))
+	# Thermosphere: auroras and satellites — the early fields you live on.
 	for i in 5:
-		_place(Satellite.new(), _rng.randf_range(-950, 950), 700.0 + i * 950.0 + _rng.randf_range(-260, 260))
+		_place(Aurora.new(), _rng.randf_range(-850, 850), 600.0 + i * 640.0 + _rng.randf_range(-180, 180))
+	for i in 7:
+		_place(Satellite.new(), _rng.randf_range(-950, 950), 700.0 + i * 700.0 + _rng.randf_range(-220, 220))
+	# Red sprites flicker over the mesosphere.
+	for i in 3:
+		_place(RedSprite.new(), _rng.randf_range(-800, 800), 5200.0 + i * 1300.0 + _rng.randf_range(-300, 300))
 	# Mesosphere: noctilucent clouds (shooting stars spawn dynamically).
 	for i in 3:
 		_place(Noctilucent.new(), _rng.randf_range(-900, 900), _rng.randf_range(4300, 6300))
