@@ -133,7 +133,7 @@ func _run() -> void:
 
 	# Decay: the burst, then the lose screen (with histograms).
 	muon.call("_die")
-	await _wait(0.35)
+	await _wait(0.15)
 	await _shot("16_decay")
 	await _wait(1.8)
 	await _shot("17_end_lose")
@@ -175,12 +175,16 @@ func _visit_and_zap(muon: Node, hint: String, near: Vector2, shot_name: String,
 
 
 func _press(keycode: Key) -> void:
+	# Both keycodes: game actions match physical, the built-in ui_*
+	# actions (ui_cancel for pause) match the logical keycode.
 	var down := InputEventKey.new()
 	down.physical_keycode = keycode
+	down.keycode = keycode
 	down.pressed = true
 	Input.parse_input_event(down)
 	var up := InputEventKey.new()
 	up.physical_keycode = keycode
+	up.keycode = keycode
 	up.pressed = false
 	Input.parse_input_event(up)
 
