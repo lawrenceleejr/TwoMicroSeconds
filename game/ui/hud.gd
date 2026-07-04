@@ -113,7 +113,10 @@ func _ready() -> void:
 	_hint_label = hint_pair[1]
 	_hint_chip.add_theme_stylebox_override("panel", Juice.ui_chip(Juice.INK, 0.45))
 	_hint_label.add_theme_color_override("font_color", Juice.CREAM)
-	_hint_label.text = "steer · the sky has fields, find them      SPACE zap · TAB list"
+	if DisplayServer.is_touchscreen_available():
+		_hint_label.text = "drag left — steer · the sky has fields      tap right — zap"
+	else:
+		_hint_label.text = "steer · the sky has fields, find them      SPACE zap · TAB list"
 
 	_plot = preload("res://game/ui/decay_plot.gd").new()
 	add_child(_plot)

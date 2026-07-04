@@ -7,10 +7,10 @@ extends Node3D
 
 const BASE_W := 1280.0
 const BASE_H := 720.0
-const OVERSCAN := 1.32
+const OVERSCAN := 1.5
 const CAM_FOV := 55.0
-const TILT_DEG := -9.0
-const YAW_DEG := 4.5
+const TILT_DEG := -13.0
+const YAW_DEG := 6.5
 
 var _vp: SubViewport
 var _cam: Camera3D
@@ -18,6 +18,7 @@ var _muon
 var _wisps := []
 var _bank := 0.0
 var _t := 0.0
+var _env: Environment
 
 
 func _ready() -> void:
@@ -46,10 +47,13 @@ func _ready() -> void:
 	add_child(_cam)
 
 	var world_env := WorldEnvironment.new()
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("101024")
-	world_env.environment = env
+	_env = Environment.new()
+	_env.background_mode = Environment.BG_COLOR
+	# Followed to the local sky color each frame, so anything the steeper
+	# tilt reveals past the quad blends into the sky instead of reading
+	# as an edge.
+	_env.background_color = Color("101024")
+	world_env.environment = _env
 	add_child(world_env)
 
 	_spawn_wisps()
@@ -57,13 +61,15 @@ func _ready() -> void:
 
 func _spawn_wisps() -> void:
 	var texs := ["res://assets/sprites/cloud.svg", "res://assets/sprites/noctilucent.svg"]
-	for i in 7:
+	for i in 12:
 		var s := Sprite3D.new()
 		s.texture = load(texs[i % texs.size()])
-		s.pixel_size = 0.012 + (i % 3) * 0.005
-		s.modulate = Color(1, 1, 1, 0.09 + 0.05 * (i % 3))
-		s.position = Vector3(randf_range(-6.0, 6.0), randf_range(-4.5, 4.5),
-			randf_range(1.4, 3.6))
+		s.pixel_size = 0.012 + (i % 4) * 0.005
+		s.modulate = Color(1, 1, 1, 0.07 + 0.045 * (i % 4))
+		# A wide depth spread: near wisps whip past, far ones drift —
+		# the speed difference is what sells the depth.
+		s.position = Vector3(randf_range(-7.5, 7.5), randf_range(-5.5, 5.5),
+			randf_range(1.2, 4.4))
 		add_child(s)
 		_wisps.append(s)
 
@@ -78,24 +84,35 @@ func _process(delta: float) -> void:
 	var speed_f := clampf(vel.length() / 1250.0, 0.0, 1.0)
 
 	# Bank into turns; widen the lens with speed.
-	var target_bank := clampf(-vel.x / 2500.0, -1.0, 1.0) * 0.085
+	var target_bank := clampf(-vel.x / 2500.0, -1.0, 1.0) * 0.11
 	_bank = lerpf(_bank, target_bank, 1.0 - exp(-3.0 * delta))
-	_cam.fov = lerpf(_cam.fov, CAM_FOV + 7.0 * speed_f, 1.0 - exp(-3.0 * delta))
+	_cam.fov = lerpf(_cam.fov, CAM_FOV + 9.0 * speed_f, 1.0 - exp(-3.0 * delta))
 
 	# Keep the un-overscanned frame filling the window at any fov, then
-	# tilt: the slight perspective is the whole point.
+	# tilt hard: the oblique perspective is the whole point.
 	var d := 7.2 / (2.0 * tan(deg_to_rad(_cam.fov * 0.5)))
-	_cam.position = Vector3(sin(_t * 0.23) * 0.08, 0.3 + sin(_t * 0.31) * 0.05, d)
+	_cam.position = Vector3(sin(_t * 0.23) * 0.08, 0.42 + sin(_t * 0.31) * 0.05, d)
 	_cam.rotation = Vector3(deg_to_rad(TILT_DEG), deg_to_rad(YAW_DEG) + sin(_t * 0.17) * 0.012, _bank)
+
+	# Blend the void behind/around the quad into the local sky so the
+	# steep angle never reads as a floating rectangle.
+	if _muon != null and _env != null:
+		var sky := Atmos.sky_color_at(_muon.global_position.y - 260.0)
+		_env.background_color = _env.background_color.lerp(sky.darkened(0.25), 1.0 - exp(-2.0 * delta))
 
 	# Foreground wisps: genuine 3D parallax against the gameplay plane —
 	# nearer wisps stream past faster as the muon falls.
 	for w in _wisps:
 		w.position.y += vel.y * delta * 0.001 * w.position.z
-		w.position.x += sin(_t * 0.1 + w.position.z * 3.0) * delta * 0.05
-		if w.position.y > 5.5:
-			w.position.y = -5.5
-			w.position.x = randf_range(-6.0, 6.0)
-		elif w.position.y < -5.5:
-			w.position.y = 5.5
-			w.position.x = randf_range(-6.0, 6.0)
+		w.position.x += -vel.x * delta * 0.0004 * w.position.z \
+			+ sin(_t * 0.1 + w.position.z * 3.0) * delta * 0.05
+		if w.position.y > 6.5:
+			w.position.y = -6.5
+			w.position.x = randf_range(-7.5, 7.5)
+		elif w.position.y < -6.5:
+			w.position.y = 6.5
+			w.position.x = randf_range(-7.5, 7.5)
+		if w.position.x > 9.0:
+			w.position.x = -9.0
+		elif w.position.x < -9.0:
+			w.position.x = 9.0

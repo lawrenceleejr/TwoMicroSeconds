@@ -21,7 +21,8 @@ distribution underneath.
 | input | action |
 |---|---|
 | WASD / arrows / left stick | **steer** (that's all the control you get) |
-| SPACE / Z / X / click (gamepad A/X) | **zap** — your honk; everything reacts |
+| SPACE / Z / X (gamepad A/X) | **zap** — your honk; everything reacts |
+| touch: drag left half / tap right half | **steer** (floating joystick) / **zap** |
 | TAB | to-do list |
 | U | origin shop (title screen) |
 | ESC | pause |
@@ -68,6 +69,10 @@ Every push deploys a web build to GitHub Pages:
 
 (Single-threaded WASM via Godot's web export — audio may crackle slightly
 compared to the native build; save data lives in your browser's storage.)
+
+Works on phones and tablets: drag anywhere on the left half of the screen
+for a floating steering stick, tap the right half to zap, tap the title
+chips for the origin shop, tap the end screen to go again.
 
 ## download (macOS)
 

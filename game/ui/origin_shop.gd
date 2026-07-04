@@ -36,6 +36,20 @@ func toggle() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Touch / click: tap a row to select-and-activate, tap outside to close.
+	# (Touches arrive here as emulated mouse buttons.)
+	var mb := event as InputEventMouseButton
+	if active and mb != null and mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
+		get_viewport().set_input_as_handled()
+		var local := mb.position - global_position
+		if not Rect2(Vector2.ZERO, size).has_point(local):
+			toggle()
+			return
+		var row := int(floor((local.y - 56.0) / ROW_H))
+		if row >= 0 and row < Meta.TIERS.size() and row <= Meta.owned_tier + 1:
+			_cursor = row
+			_activate_cursor()
+		return
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return

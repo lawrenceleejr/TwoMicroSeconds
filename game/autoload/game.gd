@@ -5,6 +5,8 @@ const MAIN_SCENE := "res://game/main/stage.tscn"
 const TITLE_SCENE := "res://game/main/title.tscn"
 
 var run_start_msec := 0
+## Steering vector from the on-screen touch joystick (zero = none).
+var touch_steer := Vector2.ZERO
 
 
 func _enter_tree() -> void:
@@ -71,13 +73,11 @@ func _register_inputs() -> void:
 	_add_action("move_up", [KEY_W, KEY_UP], [], [[JOY_AXIS_LEFT_Y, -1.0]])
 	_add_action("move_down", [KEY_S, KEY_DOWN], [], [[JOY_AXIS_LEFT_Y, 1.0]])
 	# No throttle: a muon can't accelerate itself. Steering + zap only.
+	# (No mouse binding: on touch devices taps are routed by TouchControls,
+	# and emulated clicks from steering touches must not fire zaps.)
 	_add_action("zap", [KEY_Z, KEY_X, KEY_SPACE], [JOY_BUTTON_X, JOY_BUTTON_A], [])
 	_add_action("toggle_checklist", [KEY_TAB], [JOY_BUTTON_Y], [])
 	_add_action("restart", [KEY_R], [JOY_BUTTON_START], [])
-	# Mouse click also zaps.
-	var mouse_ev := InputEventMouseButton.new()
-	mouse_ev.button_index = MOUSE_BUTTON_LEFT
-	InputMap.action_add_event("zap", mouse_ev)
 
 
 func _add_action(action_name: String, keys: Array, buttons: Array, axes: Array) -> void:

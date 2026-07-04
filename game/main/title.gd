@@ -38,17 +38,26 @@ func _ready() -> void:
 	_sub_label.add_theme_font_override("font", Juice.hand_font)
 
 	_cta_chip = _mk_chip(Juice.MINT, 0.92)
-	var cta := _chip_label(_cta_chip, "press any key — be born", 18)
+	var cta_text := "press any key — be born"
+	if DisplayServer.is_touchscreen_available():
+		cta_text = "tap anywhere — be born"
+	var cta := _chip_label(_cta_chip, cta_text, 18)
 	cta.add_theme_color_override("font_color", Juice.INK)
 
 	_origin_chip = _mk_chip(Juice.PAPER, 0.88)
 	_origin_label = _chip_label(_origin_chip, "", 14)
 	_sparks_chip = _mk_chip(Juice.PAPER, 0.88)
 	_sparks_label = _chip_label(_sparks_chip, "", 14)
+	# Both status chips open the shop when tapped/clicked.
+	for chip: PanelContainer in [_origin_chip, _sparks_chip]:
+		chip.mouse_filter = Control.MOUSE_FILTER_STOP
+		chip.gui_input.connect(_on_chip_input)
 
 	_hint_chip = _mk_chip(Juice.INK, 0.4)
-	var hint := _chip_label(_hint_chip,
-		"WASD steer · SPACE zap · TAB to-dos · U origin shop · F fullscreen · M mute", 13)
+	var hint_text := "WASD steer · SPACE zap · TAB to-dos · U origin shop · F fullscreen · M mute"
+	if DisplayServer.is_touchscreen_available():
+		hint_text = "drag left — steer · tap right — zap · tap a chip for the origin shop"
+	var hint := _chip_label(_hint_chip, hint_text, 13)
 	hint.add_theme_color_override("font_color", Juice.CREAM)
 
 	_histo = preload("res://game/ui/lifetime_histogram.gd").new()
@@ -142,6 +151,14 @@ func _draw() -> void:
 	draw_circle(orbit + Vector2(2.5, -1), 1.2, Color(Juice.INK, 0.6))
 
 
+func _on_chip_input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and not _started:
+		_root.accept_event()
+		if _shop != null:
+			_shop.toggle()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _started or (_shop != null and _shop.active):
 		return
@@ -150,7 +167,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key != null and key.physical_keycode in [KEY_U, KEY_F, KEY_M, KEY_BACKSPACE, KEY_ESCAPE]:
 		return
 	var wanted := event is InputEventKey or event is InputEventJoypadButton \
-		or event is InputEventMouseButton
+		or event is InputEventMouseButton or event is InputEventScreenTouch
 	if wanted and event.is_pressed() and not event.is_echo():
 		_started = true
 		Sfx.play("task_done", -6.0, 0.0)

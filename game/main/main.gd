@@ -13,6 +13,7 @@ const DecayBurst := preload("res://game/fx/decay_burst.gd")
 const BirthSequence := preload("res://game/fx/birth_sequence.gd")
 const TaskPop := preload("res://game/fx/task_pop.gd")
 const FloatText := preload("res://game/fx/float_text.gd")
+const TouchControlsScript := preload("res://game/ui/touch_controls.gd")
 
 # Untyped: these expose script-defined members/methods.
 var muon
@@ -59,6 +60,8 @@ func _ready() -> void:
 	# (relativity 70, vignette 80, glitch 90): crisp, flat, un-shifted.
 	_ui_layer = CanvasLayer.new()
 	_ui_layer.layer = 100
+	# Touch controls sit under the HUD so chips/toasts stay readable.
+	_ui_layer.add_child(TouchControlsScript.new())
 	var hud = HudScript.new()
 	hud.muon = muon
 	_ui_layer.add_child(hud)

@@ -6,6 +6,8 @@ var active := false
 var _dim: ColorRect
 var _panel: PanelContainer
 var _vbox: VBoxContainer
+# Small grace period so the tap that ended the run can't instantly restart.
+var _tap_guard := 0.0
 
 
 func _ready() -> void:
@@ -56,7 +58,7 @@ func show_win(run_sparks: int, omg: bool, age_us: float, lab_us: float) -> void:
 	var histo := preload("res://game/ui/lifetime_histogram.gd").new()
 	_vbox.add_child(histo)
 	_line("", 4, Juice.INK)
-	_line("R — again        ESC — title", 16, Color(Juice.PERIWINKLE, 1.0))
+	_line(_restart_hint(), 16, Color(Juice.PERIWINKLE, 1.0))
 	_pop_in()
 
 
@@ -76,15 +78,25 @@ func show_lose(altitude_km: float, run_sparks: int, age_us: float, lab_us: float
 	_line("", 4, Juice.INK)
 	_line("find more field. come back heavier.", 14, Color(Juice.INK, 0.65))
 	_line("", 8, Juice.INK)
-	_line("R — again        ESC — title  (U — shop)", 16, Color(Juice.PERIWINKLE, 1.0))
+	var hint := _restart_hint()
+	if not DisplayServer.is_touchscreen_available():
+		hint += "  (U — shop)"
+	_line(hint, 16, Color(Juice.PERIWINKLE, 1.0))
 	_pop_in()
 
 
 func _build_common() -> void:
 	active = true
 	visible = true
+	_tap_guard = 0.7
 	for child in _vbox.get_children():
 		child.queue_free()
+
+
+func _restart_hint() -> String:
+	if DisplayServer.is_touchscreen_available():
+		return "tap — again"
+	return "R — again        ESC — title"
 
 
 func _line(text: String, font_size: int, color: Color) -> void:
@@ -113,13 +125,21 @@ func _center_panel() -> void:
 	_panel.pivot_offset = _panel.size * 0.5
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if active:
+		_tap_guard = maxf(_tap_guard - delta, 0.0)
 		_center_panel()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not active:
+		return
+	# Tap / click restarts (touches arrive as emulated mouse buttons).
+	var mb := event as InputEventMouseButton
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and _tap_guard <= 0.0:
+		get_viewport().set_input_as_handled()
+		get_tree().paused = false
+		get_tree().reload_current_scene()
 		return
 	if event.is_action_pressed("restart"):
 		get_viewport().set_input_as_handled()

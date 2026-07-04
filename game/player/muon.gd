@@ -205,6 +205,8 @@ func _process(delta: float) -> void:
 
 	# Steering only: rotate the heading toward the input direction.
 	var steer := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if Game.touch_steer != Vector2.ZERO:
+		steer = Game.touch_steer
 	if autopilot != Vector2.ZERO:
 		steer = autopilot
 	speed_frac = clampf(speed / REF_SPEED, 0.0, 1.5)

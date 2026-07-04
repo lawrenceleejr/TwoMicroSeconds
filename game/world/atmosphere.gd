@@ -6,6 +6,7 @@ extends Node2D
 var _t := 0.0
 var _sky: Node2D
 var _sky_mat: ShaderMaterial
+var _fg: Node2D
 
 
 func _ready() -> void:
@@ -17,6 +18,14 @@ func _ready() -> void:
 	_sky.material = _sky_mat
 	_sky.draw.connect(_draw_sky_rect)
 	add_child(_sky)
+	# Foreground haze: parallax factor > 1 puts it IN FRONT of the play
+	# plane — it streams past faster than the world, which is what makes
+	# the depth readable. Drawn above gameplay (but under the UI layer).
+	_fg = Node2D.new()
+	_fg.z_index = 50  # relative would exceed the parent's -10; use absolute
+	_fg.z_as_relative = false
+	_fg.draw.connect(_draw_foreground)
+	add_child(_fg)
 
 
 func _draw_sky_rect() -> void:
@@ -41,7 +50,40 @@ func _process(delta: float) -> void:
 		_sky_mat.set_shader_parameter("cam_w", vp.x * zoom_inv)
 		_sky_mat.set_shader_parameter("t", _t)
 	_sky.queue_redraw()
+	_fg.queue_redraw()
 	queue_redraw()
+
+
+func _draw_foreground() -> void:
+	var cam := get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	var vp := get_viewport_rect().size
+	var center := cam.get_screen_center_position()
+	var top := center.y - vp.y * 0.62
+	var left := center.x - vp.x * 0.62
+	var width := vp.x * 1.24
+	var bottom := center.y + vp.y * 0.62
+	var par := 1.35
+	var qtl := (Vector2(left, top) - center * (1.0 - par)) / par
+	var qbr := (Vector2(left + width, bottom) - center * (1.0 - par)) / par
+	var cell := 820.0
+	for cx in range(int(floor(qtl.x / cell)), int(ceil(qbr.x / cell)) + 1):
+		for cy in range(int(floor(qtl.y / cell)), int(ceil(qbr.y / cell)) + 1):
+			var h := absi(hash(Vector2i(cx + 101, cy + 203)))
+			if h % 5 != 0:
+				continue
+			var q := Vector2(cx * cell + float(h % 600), cy * cell + float((h / 13) % 600))
+			var p := q * par + center * (1.0 - par)
+			# Same rule as the other haze: none in space.
+			var air := clampf((q.y - 14000.0) / 14000.0, 0.0, 1.0)
+			if air <= 0.01:
+				continue
+			var rx := 180.0 + float(h % 130)
+			_fg.draw_set_transform(p, 0.0, Vector2(1.0, 0.3))
+			_fg.draw_circle(Vector2.ZERO, rx, Color(1.0, 1.0, 1.0, 0.055 * air))
+			_fg.draw_circle(Vector2.ZERO, rx * 0.6, Color(1.0, 1.0, 1.0, 0.05 * air))
+			_fg.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw() -> void:
