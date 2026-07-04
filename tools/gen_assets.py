@@ -179,8 +179,14 @@ def detector():
     """The observatory: warm paper block, coral roof, ink line work,
     an amber instrument dome. Architectural, not gingerbread."""
     defs = linear("wall", [(0, PAPER, 1), (1, "#d8cdb6", 1)])
+    shadow = "".join(
+        f'<line x1="{270 - 230 + i * 24}" y1="{288 + (i % 2) * 5}" '
+        f'x2="{270 - 230 + i * 24 + 16}" y2="{288 + (i % 2) * 5}" '
+        f'stroke="{INK}" stroke-opacity="0.30" stroke-width="4" stroke-linecap="round"/>'
+        for i in range(20)
+    )
     body = f"""
-<ellipse cx="270" cy="286" rx="235" ry="16" fill="{INK}" opacity="0.28"/>
+{shadow}
 <rect x="72" y="112" width="380" height="162" rx="4" fill="{VIOLET}" opacity="0.35"/>
 <rect x="80" y="120" width="380" height="162" rx="4" fill="url(#wall)"/>
 <rect x="80" y="238" width="380" height="44" rx="4" fill="{INK}" opacity="0.14"/>
