@@ -38,12 +38,14 @@ func _run() -> void:
 		await _wait(0.55)
 		await _shot("04_aurora")
 
-	# Satellite bump, captured mid-glitch.
+	# Satellite bump, captured mid-glitch. Set heading directly — steering
+	# alone can't turn fast enough to line up the hit.
 	var sat := _nearest_in_group("satellite", muon.get("global_position"))
 	if sat != null:
-		muon.set("global_position", sat.global_position + Vector2(0, -110))
+		muon.set("global_position", sat.global_position + Vector2(0, -120))
+		muon.set("heading", Vector2.DOWN)
 		muon.set("autopilot", Vector2(0, 1))
-		await _wait(0.32)
+		await _wait(0.34)
 		await _shot("05_satellite_glitch")
 		await _wait(0.8)
 
