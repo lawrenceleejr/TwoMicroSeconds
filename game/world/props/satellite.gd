@@ -33,7 +33,7 @@ func _process(delta: float) -> void:
 		if m != null and m.get("alive") and not m.get("finished"):
 			var d := muon_dist()
 			var fast: bool = float(m.get("speed")) > 750.0
-			if d < 52.0 or (fast and d < 72.0):
+			if d < 62.0 or (fast and d < 80.0):
 				_collect(m, fast)
 	_overlay.queue_redraw()
 

@@ -30,18 +30,20 @@ func _run() -> void:
 		_finish()
 		return
 
-	# Aurora glide: fast pass through the thermosphere lights.
-	muon.set("global_position", Vector2(-350, 1400))
-	muon.set("autopilot", Vector2(0.9, 0.45))
-	await _wait(0.9)
-	await _shot("04_aurora")
+	# Aurora glide: aim at a real aurora and fly through its ribbon.
+	var aurora := _nearest_in_group("aurora", Vector2(0, 1800))
+	if aurora != null:
+		muon.set("global_position", aurora.global_position + Vector2(-320, -60))
+		muon.set("autopilot", Vector2(1, 0.15))
+		await _wait(0.55)
+		await _shot("04_aurora")
 
 	# Satellite bump, captured mid-glitch.
 	var sat := _nearest_in_group("satellite", muon.get("global_position"))
 	if sat != null:
-		muon.set("global_position", sat.global_position + Vector2(0, -140))
+		muon.set("global_position", sat.global_position + Vector2(0, -110))
 		muon.set("autopilot", Vector2(0, 1))
-		await _wait(0.42)
+		await _wait(0.32)
 		await _shot("05_satellite_glitch")
 		await _wait(0.8)
 

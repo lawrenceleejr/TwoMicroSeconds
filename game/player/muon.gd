@@ -293,6 +293,11 @@ func _track_circle(delta: float) -> void:
 
 
 func _update_trail() -> void:
+	# A teleport (director, restart) would otherwise smear a bogus streak.
+	if _trail.get_point_count() > 0:
+		var last := _trail.get_point_position(_trail.get_point_count() - 1)
+		if last.distance_to(global_position) > 260.0:
+			_trail.clear_points()
 	_trail.add_point(global_position)
 	while _trail.get_point_count() > 34:
 		_trail.remove_point(0)

@@ -70,7 +70,10 @@ func _try_buy() -> void:
 
 
 func _draw() -> void:
-	var sb := Juice.ui_panel(Juice.PAPER, 0.97, 16)
+	# Dim the world behind the modal.
+	var vp := get_viewport_rect().size
+	draw_rect(Rect2(-position, vp), Color(Juice.INK, 0.4))
+	var sb := Juice.ui_panel(Juice.PAPER, 0.99, 16)
 	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
 
 	var font := ThemeDB.fallback_font
@@ -100,10 +103,10 @@ func _draw() -> void:
 			hl2.draw(get_canvas_item(), Rect2(14, y - 6, W - 28, ROW_H - 4))
 		var name_col := Juice.INK if (current or next_up) else Color(Juice.INK, 0.45 if not owned else 0.35)
 		draw_string(font, Vector2(28, y + 12), str(t["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, name_col)
-		draw_string(font, Vector2(28, y + 29), str(t["flavor"]), HORIZONTAL_ALIGNMENT_LEFT, 380, 11, Color(Juice.INK, 0.5))
-		# Right column: energy, gamma, status.
-		draw_string(font, Vector2(W - 190, y + 12), "E ≈ %s" % t["energy"], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.INK, 0.7))
-		draw_string(font, Vector2(W - 190, y + 28), "γ +%.1f" % float(t["gamma"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.PERIWINKLE, 0.9))
+		draw_string(font, Vector2(28, y + 29), str(t["flavor"]), HORIZONTAL_ALIGNMENT_LEFT, 330, 11, Color(Juice.INK, 0.5))
+		# Middle column: energy + gamma. Right column: status, right-aligned.
+		draw_string(font, Vector2(W - 232, y + 12), "E ≈ %s" % t["energy"], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.INK, 0.7))
+		draw_string(font, Vector2(W - 232, y + 28), "γ +%.1f" % float(t["gamma"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.PERIWINKLE, 0.9))
 		var status := ""
 		var status_col := Color(Juice.INK, 0.5)
 		if owned:
@@ -112,7 +115,8 @@ func _draw() -> void:
 			status = "CURRENT"
 			status_col = Color("2e8b57")
 		elif next_up:
-			status = "%d sparks — ENTER" % int(t["cost"])
+			status = ("ENTER · %d sparks" % int(t["cost"])) if Meta.can_upgrade() \
+				else "%d sparks" % int(t["cost"])
 			status_col = Juice.INK if Meta.can_upgrade() else Color(Juice.INK, 0.4)
 		else:
 			status = "%d sparks" % int(t["cost"])

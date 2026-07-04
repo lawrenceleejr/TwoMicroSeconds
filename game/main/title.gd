@@ -104,8 +104,8 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var vp := get_viewport_rect().size
-	# Dusk gradient.
-	var steps := 28
+	# Dusk gradient (fine steps: banding is visible at coarse ones).
+	var steps := 110
 	for i in steps:
 		var f := float(i) / steps
 		var col := Color("14142e").lerp(Color("5b5f97"), clampf(f * 1.6, 0.0, 1.0))
