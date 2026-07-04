@@ -57,7 +57,7 @@ func zapped(_source: Node2D) -> void:
 func _draw() -> void:
 	var ink := Color(Juice.INK, 0.75)
 	# Solar panels.
-	for side in [-1.0, 1.0]:
+	for side: float in [-1.0, 1.0]:
 		var panel := Rect2(22.0 * side - (14.0 if side < 0.0 else 0.0), -10.0, 14.0, 20.0)
 		draw_rect(panel, Color("9bb8e8"))
 		draw_rect(panel, ink, false, 1.5)
@@ -73,7 +73,7 @@ func _draw() -> void:
 	draw_circle(Vector2(0, -26), 3.0, Color("ff8fa3") if light_on else Color("d0d0d0"))
 	# Face: asleep on duty, dizzy X-eyes once bonked.
 	if collected:
-		for side in [-1.0, 1.0]:
+		for side: float in [-1.0, 1.0]:
 			var ex := side * 6.0
 			draw_line(Vector2(ex - 2.5, -4.5), Vector2(ex + 2.5, 0.5), Juice.INK, 1.8)
 			draw_line(Vector2(ex - 2.5, 0.5), Vector2(ex + 2.5, -4.5), Juice.INK, 1.8)
