@@ -7,6 +7,7 @@ var _timer_label: Label
 var _gamma_label: Label
 var _alt_label: Label
 var _mischief_label: Label
+var _sparks_label: Label
 var _toast_label: Label
 var _hint_label: Label
 var _gamma_bar: Control
@@ -14,6 +15,7 @@ var _last_layer := -1
 var _last_bucket := -1
 var _hint_t := 0.0
 var _t := 0.0
+var _toasts := []
 
 const TOASTS := [
 	"the thermosphere · born of a cosmic ray",
@@ -31,7 +33,12 @@ func _ready() -> void:
 	_gamma_label = _mk_label(16)
 	_alt_label = _mk_label(17)
 	_mischief_label = _mk_label(15)
+	_sparks_label = _mk_label(15)
 	_toast_label = _mk_label(24)
+	# The birth toast names your origin story.
+	_toasts = TOASTS.duplicate()
+	var o := Meta.origin()
+	_toasts[0] = "born of a %s · E ≈ %s" % [o["name"], o["energy"]]
 	_toast_label.modulate.a = 0.0
 	_hint_label = _mk_label(17)
 	_hint_label.text = "move fast — fast muons age slowly.   SPACE zip · Z zap · TAB to-do list"
@@ -87,10 +94,12 @@ func _process(delta: float) -> void:
 	_alt_label.position = Vector2(16.0, 12.0)
 	_mischief_label.text = "mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()]
 	_mischief_label.position = Vector2(16.0, 40.0)
+	_sparks_label.text = "sparks %d" % Meta.sparks
+	_sparks_label.position = Vector2(16.0, 66.0)
 
 	if layer != _last_layer:
 		_last_layer = layer
-		_show_toast(TOASTS[layer])
+		_show_toast(_toasts[layer])
 	_toast_label.position = Vector2(vp.x * 0.5 - _toast_label.size.x * 0.5, 120.0)
 
 	_hint_t += delta
@@ -111,7 +120,7 @@ func _draw_gamma_bar() -> void:
 	if muon == null or not is_instance_valid(muon):
 		return
 	var gamma: float = muon.get("gamma")
-	var frac := clampf((gamma - 1.0) / 20.0, 0.0, 1.0)
+	var frac := clampf((gamma - 1.0) / 24.0, 0.0, 1.0)
 	_gamma_bar.draw_rect(Rect2(0, 0, 120, 10), Color(Juice.INK, 0.5))
 	var col := Juice.MINT.lerp(Juice.SUN, frac)
 	_gamma_bar.draw_rect(Rect2(1, 1, 118.0 * frac, 8), col)

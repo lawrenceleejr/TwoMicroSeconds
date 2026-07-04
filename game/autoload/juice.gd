@@ -21,12 +21,46 @@ var trauma := 0.0
 var _noise := FastNoiseLite.new()
 var _t := 0.0
 var _in_hitstop := false
+var _glitch_rect: ColorRect
+var _glitch_mat: ShaderMaterial
+var _glitch_tween: Tween
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_noise.seed = 1137
 	_noise.frequency = 2.0
+	_build_glitch_layer()
+
+
+func _build_glitch_layer() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 90
+	add_child(layer)
+	_glitch_mat = ShaderMaterial.new()
+	_glitch_mat.shader = load("res://game/fx/glitch.gdshader")
+	_glitch_rect = ColorRect.new()
+	_glitch_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_glitch_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_glitch_rect.material = _glitch_mat
+	_glitch_rect.visible = false
+	layer.add_child(_glitch_rect)
+
+
+## Digital-artifact screen glitch + shake, decaying to nothing over `duration`.
+func glitch(duration := 0.5, strength := 1.0) -> void:
+	if _glitch_tween != null and _glitch_tween.is_valid():
+		_glitch_tween.kill()
+	_glitch_rect.visible = true
+	_glitch_mat.set_shader_parameter("intensity", strength)
+	shake(0.45 * strength)
+	_glitch_tween = create_tween()
+	_glitch_tween.tween_method(func(v: float) -> void:
+		_glitch_mat.set_shader_parameter("intensity", v)
+	, strength, 0.0, duration)
+	_glitch_tween.tween_callback(func() -> void:
+		_glitch_rect.visible = false
+	)
 
 
 func register_camera(cam: Camera2D) -> void:

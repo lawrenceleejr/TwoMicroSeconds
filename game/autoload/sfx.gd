@@ -1,12 +1,22 @@
 extends Node
 ## All audio is synthesized at startup — the repo contains no audio files.
-## Sounds are rendered once into AudioStreamWAV buffers and played from a pool.
+##
+## REPLACING THE SOUNDTRACK (two ways, no code changes):
+##   1. Drop a file named  track.ogg / track.mp3 / track.wav  into  res://music/
+##      and re-export (or just run from the editor).
+##   2. At runtime, drop  music.ogg / music.mp3 / music.wav  into the game's
+##      user data folder (macOS: ~/Library/Application Support/Godot/
+##      app_userdata/Two Microseconds/). Found on next launch.
+## The generated loop below is only the fallback.
 
 const SFX_RATE := 22050
 const MUSIC_RATE := 12000
+const MUSIC_DB := -12.0
+const WIND_DB := -30.0
 
 var _streams := {}
 var _pool: Array[AudioStreamPlayer] = []
+var _music_player: AudioStreamPlayer
 
 
 func _ready() -> void:
@@ -16,8 +26,14 @@ func _ready() -> void:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		_pool.append(p)
-	_start_loop("music", -13.0)
-	_start_loop("wind", -30.0)
+	_music_player = AudioStreamPlayer.new()
+	_music_player.stream = _music_stream()
+	_music_player.volume_db = MUSIC_DB
+	add_child(_music_player)
+	# Loop fallback for streams that don't loop natively.
+	_music_player.finished.connect(_music_player.play)
+	_music_player.play()
+	_start_loop("wind", WIND_DB)
 
 
 func play(key: String, vol_db := 0.0, pitch_jitter := 0.05) -> void:
@@ -44,6 +60,56 @@ func _start_loop(key: String, vol_db: float) -> void:
 	p.play()
 
 
+# ------------------------------------------------------------------ music --
+
+func _music_stream() -> AudioStream:
+	# 1) Runtime override in the user data folder.
+	for ext in ["ogg", "mp3", "wav"]:
+		var user_path := "user://music." + ext
+		if FileAccess.file_exists(user_path):
+			var s := _load_external_music(user_path, ext)
+			if s != null:
+				return s
+	# 2) Project override committed under res://music/.
+	for ext in ["ogg", "mp3", "wav"]:
+		var res_path := "res://music/track." + ext
+		if ResourceLoader.exists(res_path):
+			var s2: AudioStream = load(res_path)
+			if s2 != null:
+				_enable_loop(s2)
+				return s2
+	# 3) The built-in generated tune.
+	return _make_music()
+
+
+func _load_external_music(path: String, ext: String) -> AudioStream:
+	match ext:
+		"ogg":
+			var ogg := AudioStreamOggVorbis.load_from_file(path)
+			if ogg != null:
+				ogg.loop = true
+			return ogg
+		"mp3":
+			var bytes := FileAccess.get_file_as_bytes(path)
+			if bytes.is_empty():
+				return null
+			var mp3 := AudioStreamMP3.new()
+			mp3.data = bytes
+			mp3.loop = true
+			return mp3
+		"wav":
+			# Looping falls back to the `finished` reconnect.
+			return AudioStreamWAV.load_from_file(path)
+	return null
+
+
+func _enable_loop(stream: AudioStream) -> void:
+	if stream is AudioStreamOggVorbis or stream is AudioStreamMP3:
+		stream.loop = true
+
+
+# ------------------------------------------------------------ synthesis ----
+
 func _build() -> void:
 	_streams["zap"] = _make_zap()
 	_streams["dash"] = _make_dash()
@@ -54,7 +120,9 @@ func _build() -> void:
 	_streams["detected"] = _make_detected()
 	_streams["chirp"] = _make_chirp()
 	_streams["boing"] = _make_boing()
-	_streams["music"] = _make_music()
+	_streams["glitch"] = _make_glitch()
+	_streams["buy"] = _make_buy()
+	_streams["deny"] = _make_deny()
 	_streams["wind"] = _make_wind()
 
 
@@ -196,20 +264,16 @@ func _make_detected() -> AudioStreamWAV:
 	b.resize(n)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 12
-	# click
 	for i in int(0.012 * SFX_RATE):
 		b[i] += (rng.randf() * 2.0 - 1.0) * (1.0 - float(i) / (0.012 * SFX_RATE)) * 0.8
-	# ping
 	for i in int(0.28 * SFX_RATE):
 		var t := float(i) / SFX_RATE
 		b[int(0.02 * SFX_RATE) + i] += sin(TAU * 1244.5 * t) * exp(-t * 12.0) * 0.3
-	# receipt ratchet
 	for click_i in 14:
 		var onset := int((0.36 + click_i * 0.028) * SFX_RATE)
 		for j in int(0.004 * SFX_RATE):
 			if onset + j < n:
 				b[onset + j] += (rng.randf() * 2.0 - 1.0) * 0.22
-	# ding
 	var ding_start := int(0.82 * SFX_RATE)
 	for i in n - ding_start:
 		var t := float(i) / SFX_RATE
@@ -251,41 +315,140 @@ func _make_boing() -> AudioStreamWAV:
 	return _pack(b, SFX_RATE, false)
 
 
-## Gentle generative pentatonic loop. Note tails wrap around the buffer,
-## and pad frequencies are quantized to whole cycles, so the loop is seamless.
+## Bitcrushed digital corruption, for satellite bumps.
+func _make_glitch() -> AudioStreamWAV:
+	var dur := 0.34
+	var n := int(dur * SFX_RATE)
+	var b := PackedFloat32Array()
+	b.resize(n)
+	var phase := 0.0
+	for i in n:
+		var t := float(i) / SFX_RATE
+		var k := t / dur
+		var seg := int(t / 0.011)
+		var h := absi(hash(seg * 7919 + 13))
+		var gate := 0.0 if h % 5 == 0 else 1.0
+		var freq := 300.0 + float(h % 12) * 260.0
+		phase += freq / SFX_RATE
+		var sq := 1.0 if fmod(phase, 1.0) < 0.5 else -1.0
+		# 3-bit crush.
+		var v := roundf(sq * gate * 4.0) / 4.0
+		b[i] = v * 0.42 * pow(1.0 - k, 0.7)
+	return _pack(b, SFX_RATE, false)
+
+
+## Rising shop-purchase arpeggio.
+func _make_buy() -> AudioStreamWAV:
+	var dur := 0.55
+	var n := int(dur * SFX_RATE)
+	var b := PackedFloat32Array()
+	b.resize(n)
+	var notes := [[0.0, 523.25], [0.07, 659.25], [0.14, 783.99], [0.21, 1046.5], [0.30, 1318.5]]
+	for note in notes:
+		var onset := int(note[0] * SFX_RATE)
+		var freq: float = note[1]
+		var length := mini(int(0.35 * SFX_RATE), n - onset)
+		for j in length:
+			var t := float(j) / SFX_RATE
+			b[onset + j] += (sin(TAU * freq * t) + 0.25 * sin(TAU * freq * 3.0 * t)) * exp(-t * 8.0) * 0.2
+	return _pack(b, SFX_RATE, false)
+
+
+## Gentle "not yet" double-buzz.
+func _make_deny() -> AudioStreamWAV:
+	var dur := 0.26
+	var n := int(dur * SFX_RATE)
+	var b := PackedFloat32Array()
+	b.resize(n)
+	var phase := 0.0
+	for i in n:
+		var t := float(i) / SFX_RATE
+		var on := (t < 0.09) or (t > 0.15 and t < 0.24)
+		if not on:
+			continue
+		phase += 138.0 / SFX_RATE
+		var sq := 1.0 if fmod(phase, 1.0) < 0.5 else -1.0
+		b[i] = sq * 0.22
+	return _pack(b, SFX_RATE, false)
+
+
+## The built-in soundtrack: a hand-composed 8-bar loop at 104 BPM.
+## C - Am - F - G, twice: soft pad, round bass, plucky pentatonic-ish melody,
+## brushed offbeat ticks. Note tails wrap around the buffer so it loops clean.
 func _make_music() -> AudioStreamWAV:
-	var bpm := 96.0
+	var bpm := 104.0
 	var beat := 60.0 / bpm
+	var bar := beat * 4.0
 	var bars := 8
-	var dur := beat * 4.0 * bars
+	var dur := bar * bars
 	var n := int(dur * MUSIC_RATE)
 	var b := PackedFloat32Array()
 	b.resize(n)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 20260703
-	# Pad drone: C3 + G3, quantized so freq * dur is an integer cycle count.
-	var pad_a := roundf(130.81 * dur) / dur
-	var pad_b := roundf(196.0 * dur) / dur
+
+	# Pad: one triad per bar, enveloped inside the bar so changes don't click.
+	var pads := [
+		[261.63, 329.63, 392.0],   # C
+		[220.0, 261.63, 329.63],   # Am
+		[174.61, 220.0, 261.63],   # F
+		[196.0, 246.94, 293.66],   # G
+	]
 	for i in n:
 		var t := float(i) / MUSIC_RATE
-		var swell := 0.7 + 0.3 * sin(TAU * 4.0 * t / dur)
-		b[i] = (sin(TAU * pad_a * t) * 0.05 + sin(TAU * pad_b * t) * 0.032) * swell
-	# Sparse plucked pentatonic melody on an eighth-note grid.
-	var notes := [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.26]
-	var slots := bars * 8
-	var eighth := beat / 2.0
-	for slot in slots:
-		if rng.randf() > 0.38:
+		var bar_i := int(t / bar) % 4
+		var bar_pos := fmod(t, bar) / bar
+		var env := minf(minf(bar_pos / 0.05, (1.0 - bar_pos) / 0.10), 1.0)
+		var chord: Array = pads[bar_i]
+		var v := 0.0
+		for f in chord:
+			v += sin(TAU * float(f) * t)
+		b[i] = v * 0.030 * env
+
+	# Bass: root pulses on beats 1, 3, and the 4-and.
+	var roots := [65.41, 110.0, 87.31, 98.0]  # C2 A2 F2 G2
+	for bar_i in bars:
+		var root: float = roots[bar_i % 4]
+		for hit in [0.0, 2.0, 3.5]:
+			var onset := int((bar_i * 4.0 + float(hit)) * beat * MUSIC_RATE)
+			var length := int(0.30 * MUSIC_RATE)
+			var amp := 0.13 if float(hit) < 3.0 else 0.09
+			for j in length:
+				var t2 := float(j) / MUSIC_RATE
+				var v2 := (sin(TAU * root * t2) + 0.4 * sin(TAU * root * 2.0 * t2)) * exp(-t2 * 6.0) * amp
+				b[(onset + j) % n] += v2
+
+	# Melody: 64 eighth-note slots, hand-written (0 = rest).
+	var melody := [
+		659.26, 0.0, 783.99, 0.0, 1046.5, 0.0, 987.77, 880.0,
+		880.0, 0.0, 659.26, 0.0, 523.25, 587.33, 659.26, 0.0,
+		698.46, 0.0, 880.0, 0.0, 1046.5, 0.0, 880.0, 783.99,
+		783.99, 0.0, 987.77, 0.0, 1174.66, 0.0, 987.77, 783.99,
+		659.26, 783.99, 0.0, 659.26, 523.25, 0.0, 587.33, 659.26,
+		440.0, 523.25, 659.26, 0.0, 880.0, 0.0, 783.99, 659.26,
+		698.46, 0.0, 523.25, 0.0, 440.0, 698.46, 783.99, 880.0,
+		783.99, 698.46, 587.33, 493.88, 392.0, 0.0, 587.33, 493.88,
+	]
+	var eighth := beat * 0.5
+	for slot in melody.size():
+		var freq: float = melody[slot]
+		if freq <= 0.0:
 			continue
-		var freq: float = notes[rng.randi_range(0, notes.size() - 1)]
 		var onset := int(slot * eighth * MUSIC_RATE)
-		var length := int(1.1 * MUSIC_RATE)
-		var amp := rng.randf_range(0.10, 0.17)
+		var length := int(0.42 * MUSIC_RATE)
 		for j in length:
-			var t := float(j) / MUSIC_RATE
-			var a := exp(-t * 4.5) * amp
-			var v := sin(TAU * freq * t) + 0.35 * sin(TAU * freq * 2.0 * t) + 0.12 * sin(TAU * freq * 3.0 * t)
-			b[(onset + j) % n] += v * a
+			var t3 := float(j) / MUSIC_RATE
+			var vib := t3 + 0.0022 * sin(TAU * 5.2 * t3)
+			var v3 := sin(TAU * freq * vib) + 0.35 * sin(TAU * freq * 2.0 * vib)
+			b[(onset + j) % n] += v3 * exp(-t3 * 6.5) * 0.155
+
+	# Brushed offbeat ticks.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 3
+	for beat_i in bars * 4:
+		var onset := int((float(beat_i) + 0.5) * beat * MUSIC_RATE)
+		for j in int(0.02 * MUSIC_RATE):
+			var t4 := float(j) / MUSIC_RATE
+			b[(onset + j) % n] += (rng.randf() * 2.0 - 1.0) * exp(-t4 * 160.0) * 0.05
+
 	_normalize(b, 0.8)
 	return _pack(b, MUSIC_RATE, true)
 
@@ -303,7 +466,6 @@ func _make_wind() -> AudioStreamWAV:
 		y = (y + 0.045 * x) * 0.998
 		b[i] = y
 	_normalize(b, 0.5)
-	# Crossfade the tail into the head so the loop point is inaudible.
 	var fade := int(0.3 * MUSIC_RATE)
 	for k in fade:
 		var w := float(k) / fade

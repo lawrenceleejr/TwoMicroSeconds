@@ -5,6 +5,7 @@ signal task_completed(task: Dictionary)
 
 const DEFS := [
 	{"id": "tickle_aurora", "layer": 0, "text": "tickle an aurora"},
+	{"id": "bonk_satellite", "layer": 0, "text": "high-five a satellite"},
 	{"id": "triple_dash", "layer": 0, "text": "zip three times in five seconds"},
 	{"id": "photobomb_star", "layer": 1, "text": "photobomb a shooting star"},
 	{"id": "zap_noctilucent", "layer": 1, "text": "zap a night-glowing cloud"},

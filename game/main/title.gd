@@ -5,6 +5,8 @@ var _t := 0.0
 var _started := false
 
 var _press_label: Label
+var _origin_label: Label
+var _shop  # untyped: exposes script members (`active`)
 
 
 func _ready() -> void:
@@ -17,9 +19,14 @@ func _ready() -> void:
 
 	_add_label(root, "two microseconds", 64, Juice.CREAM, 0.30)
 	_add_label(root, "the (brief) life of a muon", 22, Color(Juice.CREAM, 0.85), 0.42)
+	_origin_label = _add_label(root, "", 15, Juice.MINT, 0.52)
 	_press_label = _add_label(root, "press any key to be born", 19, Juice.SUN, 0.68)
+	_add_label(root, "U — origin shop", 15, Color(Juice.CREAM, 0.8), 0.76)
 	_add_label(root, "WASD / stick — move      SPACE — zip      Z — zap      TAB — to-do list", 15, Color(Juice.CREAM, 0.7), 0.88)
 	_add_label(root, "F — fullscreen · M — mute", 12, Color(Juice.CREAM, 0.45), 0.94)
+
+	_shop = preload("res://game/ui/origin_shop.gd").new()
+	root.add_child(_shop)
 
 
 func _add_label(parent: Control, text: String, font_size: int, color: Color, y_frac: float) -> Label:
@@ -47,6 +54,11 @@ func _process(delta: float) -> void:
 						l.position = Vector2(vp.x * 0.5 - l.size.x * 0.5, vp.y * l.get_meta("y_frac"))
 	if _press_label != null:
 		_press_label.modulate.a = 0.6 + 0.4 * sin(_t * 3.0)
+	if _origin_label != null:
+		var o := Meta.origin()
+		_origin_label.text = "origin: %s · E ≈ %s · γ +%.1f      sparks: %d" % [
+			o["name"], o["energy"], float(o["gamma"]), Meta.sparks
+		]
 	queue_redraw()
 
 
@@ -85,7 +97,11 @@ func _draw() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _started:
+	if _started or (_shop != null and _shop.active):
+		return
+	# Keys with their own jobs shouldn't also start the game.
+	var key := event as InputEventKey
+	if key != null and key.physical_keycode in [KEY_U, KEY_F, KEY_M, KEY_BACKSPACE, KEY_ESCAPE]:
 		return
 	var wanted := event is InputEventKey or event is InputEventJoypadButton \
 		or event is InputEventMouseButton

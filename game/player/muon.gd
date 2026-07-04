@@ -92,6 +92,13 @@ func _build_visuals() -> void:
 	_face = preload("res://game/player/muon_face.gd").new()
 	add_child(_face)
 
+	# Higher-energy origins glow warmer; the Oh-My-God muon is golden.
+	var tier_f := float(Meta.tier) / float(Meta.TIERS.size() - 1)
+	_body.body_color = Juice.PAPER.lerp(Color("ffe6a3"), tier_f * 0.9)
+	if Meta.is_max_tier():
+		_trail.gradient.set_color(1, Color(1.0, 0.88, 0.5, 0.7))
+		_sparkles.color = Color(Juice.SUN, 0.65)
+
 
 func _build_camera() -> void:
 	_camera = Camera2D.new()
@@ -139,9 +146,10 @@ func _process(delta: float) -> void:
 	position += velocity * delta
 	_apply_bounds()
 
-	# Time dilation: the whole game in three lines.
+	# Time dilation: the whole game in three lines. A hotter origin story
+	# (Meta tier) means more energy at birth, so a permanently higher gamma.
 	var frac := clampf(velocity.length() / MAX_SPEED, 0.0, 1.5)
-	gamma = 1.0 + GAMMA_K * frac * frac
+	gamma = 1.0 + GAMMA_K * frac * frac + Meta.gamma_bonus()
 	proper_time -= delta / (gamma * REAL_SECONDS_PER_US)
 
 	speed_frac = clampf(velocity.length() / MAX_SPEED, 0.0, 1.0)

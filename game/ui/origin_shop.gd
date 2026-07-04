@@ -1,0 +1,135 @@
+extends Control
+## The origin-story shop, on the title screen. Spend sparks to be produced
+## by ever more violent astrophysics. U toggles, ENTER acquires.
+
+const W := 600.0
+const ROW_H := 44.0
+const TaskPop := preload("res://game/fx/task_pop.gd")
+
+var active := false
+
+var _reset_armed := 0.0
+
+
+func _ready() -> void:
+	visible = false
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	size = Vector2(W, Meta.TIERS.size() * ROW_H + 150.0)
+
+
+func _process(delta: float) -> void:
+	_reset_armed = maxf(_reset_armed - delta, 0.0)
+	if not active:
+		return
+	var vp := get_viewport_rect().size
+	position = (vp - size) * 0.5
+	queue_redraw()
+
+
+func toggle() -> void:
+	active = not active
+	visible = active
+	Sfx.play("pop", -8.0)
+	queue_redraw()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key == null or not key.pressed or key.echo:
+		return
+	if key.physical_keycode == KEY_U:
+		get_viewport().set_input_as_handled()
+		toggle()
+	elif active and (key.physical_keycode == KEY_ENTER or key.physical_keycode == KEY_KP_ENTER):
+		get_viewport().set_input_as_handled()
+		_try_buy()
+	elif active and key.physical_keycode == KEY_ESCAPE:
+		get_viewport().set_input_as_handled()
+		toggle()
+	elif active and key.physical_keycode == KEY_BACKSPACE:
+		get_viewport().set_input_as_handled()
+		if _reset_armed > 0.0:
+			Meta.reset_save()
+			Sfx.play("deny", -2.0)
+			_reset_armed = 0.0
+		else:
+			_reset_armed = 1.0
+			Sfx.play("tick", -4.0)
+		queue_redraw()
+
+
+func _try_buy() -> void:
+	if Meta.try_upgrade():
+		Sfx.play("buy", -2.0)
+		TaskPop.confetti(self, Vector2(W * 0.5, 70.0), 30)
+		if Meta.is_max_tier():
+			Juice.glitch(0.45, 0.8)
+	else:
+		Sfx.play("deny", -4.0)
+	queue_redraw()
+
+
+func _draw() -> void:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(Juice.PAPER, 0.97)
+	sb.set_corner_radius_all(14)
+	sb.shadow_color = Color(Juice.INK, 0.35)
+	sb.shadow_size = 12
+	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
+
+	var font := ThemeDB.fallback_font
+	draw_string(font, Vector2(24, 34), "ORIGIN STORY", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Juice.INK)
+	draw_string(font, Vector2(216, 34), "· cosmic-ray production upgrades", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(Juice.INK, 0.55))
+	var sparks_text := "sparks: %d" % Meta.sparks
+	var stw := font.get_string_size(sparks_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+	draw_string(font, Vector2(W - 24 - stw, 34), sparks_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Juice.PERIWINKLE)
+	draw_line(Vector2(20, 46), Vector2(W - 20, 46), Color(Juice.INK, 0.2), 1.5)
+
+	for i in Meta.TIERS.size():
+		var t: Dictionary = Meta.TIERS[i]
+		var y := 62.0 + i * ROW_H
+		var current := i == Meta.tier
+		var next_up := i == Meta.tier + 1
+		var owned := i < Meta.tier
+		# Highlight boxes.
+		if current:
+			var hl := StyleBoxFlat.new()
+			hl.bg_color = Color(Juice.MINT, 0.35)
+			hl.set_corner_radius_all(8)
+			hl.draw(get_canvas_item(), Rect2(14, y - 6, W - 28, ROW_H - 4))
+		elif next_up:
+			var hl2 := StyleBoxFlat.new()
+			hl2.bg_color = Color(Juice.SUN, 0.22 if Meta.can_upgrade() else 0.10)
+			hl2.set_corner_radius_all(8)
+			hl2.draw(get_canvas_item(), Rect2(14, y - 6, W - 28, ROW_H - 4))
+		var name_col := Juice.INK if (current or next_up) else Color(Juice.INK, 0.45 if not owned else 0.35)
+		draw_string(font, Vector2(28, y + 12), str(t["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, name_col)
+		draw_string(font, Vector2(28, y + 29), str(t["flavor"]), HORIZONTAL_ALIGNMENT_LEFT, 380, 11, Color(Juice.INK, 0.5))
+		# Right column: energy, gamma, status.
+		draw_string(font, Vector2(W - 190, y + 12), "E ≈ %s" % t["energy"], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.INK, 0.7))
+		draw_string(font, Vector2(W - 190, y + 28), "γ +%.1f" % float(t["gamma"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.PERIWINKLE, 0.9))
+		var status := ""
+		var status_col := Color(Juice.INK, 0.5)
+		if owned:
+			status = "outgrown"
+		elif current:
+			status = "CURRENT"
+			status_col = Color("2e8b57")
+		elif next_up:
+			status = "%d sparks — ENTER" % int(t["cost"])
+			status_col = Juice.INK if Meta.can_upgrade() else Color(Juice.INK, 0.4)
+		else:
+			status = "%d sparks" % int(t["cost"])
+			status_col = Color(Juice.INK, 0.3)
+		var sw := font.get_string_size(status, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		draw_string(font, Vector2(W - 28 - sw, y + 20), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, status_col)
+
+	var foot_y := size.y - 44.0
+	draw_line(Vector2(20, foot_y - 14), Vector2(W - 20, foot_y - 14), Color(Juice.INK, 0.2), 1.5)
+	draw_string(font, Vector2(24, foot_y + 4), "bump satellites on the way down to earn sparks (zip through for double)",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(Juice.INK, 0.6))
+	var reset_hint := "U — close · ENTER — acquire · BACKSPACE ×2 — reset save"
+	if _reset_armed > 0.0:
+		reset_hint = "BACKSPACE again to really reset everything!"
+	draw_string(font, Vector2(24, foot_y + 22), reset_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
+		Color("e05c6e") if _reset_armed > 0.0 else Color(Juice.INK, 0.6))

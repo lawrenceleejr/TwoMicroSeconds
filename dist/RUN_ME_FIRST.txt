@@ -67,7 +67,18 @@ and cause some optional mischief on the way down.
   SPACE (or SHIFT / gamepad A) . zip (dash)
   Z / X / click (gamepad X) .... zap (your honk)
   TAB .......................... to-do list
+  U (title screen) ............. origin shop
   ESC .......................... pause
   F / M ........................ fullscreen / mute
 
 Move fast. Fast muons age slowly.
+
+Bump the drowsy satellites up top: they pay out SPARKS (zip through
+for double). Sparks persist between lives and buy you a better origin
+story in the shop — from a humble solar flare all the way up to the
+Oh-My-God particle (Utah, 1991). More energy at birth, more time
+dilation, more mischief.
+
+Custom soundtrack: drop a file named music.ogg into
+  ~/Library/Application Support/Godot/app_userdata/Two Microseconds/
+and relaunch. Your tune replaces ours. No hard feelings.

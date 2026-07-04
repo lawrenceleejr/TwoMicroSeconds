@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 Juice="*res://game/autoload/juice.gd"
 Sfx="*res://game/autoload/sfx.gd"
 Tasks="*res://game/autoload/tasks.gd"
+Meta="*res://game/autoload/meta.gd"
 Game="*res://game/autoload/game.gd"
 
 [display]

@@ -21,12 +21,14 @@ var end_screen
 var pause_overlay
 
 var _ended := false
+var _sparks_at_start := 0
 
 
 func _ready() -> void:
 	randomize()
 	Tasks.reset()
 	Game.mark_run_start()
+	_sparks_at_start = Meta.sparks
 
 	add_child(AtmosphereScript.new())
 
@@ -41,7 +43,12 @@ func _ready() -> void:
 
 	var intro: Node2D = CosmicIntro.new()
 	intro.position = muon.position
+	intro.beam_width = 5.0 + Meta.tier * 1.4
+	intro.beam_color = Juice.SUN.lerp(Color(1.0, 0.85, 0.4), float(Meta.tier) / 6.0)
 	add_child(intro)
+	if Meta.is_max_tier():
+		# The Oh-My-God particle arrives with authority.
+		Juice.glitch(0.4, 0.7)
 
 	var ui_layer := CanvasLayer.new()
 	add_child(ui_layer)
@@ -92,8 +99,9 @@ func _on_decayed() -> void:
 	burst.position = muon.global_position
 	add_child(burst)
 	var alt := Atmos.altitude_at(muon.global_position.y)
+	var run_sparks: int = Meta.sparks - _sparks_at_start
 	get_tree().create_timer(1.6).timeout.connect(func() -> void:
-		end_screen.show_lose(alt)
+		end_screen.show_lose(alt, run_sparks)
 	)
 
 
@@ -108,6 +116,12 @@ func _win() -> void:
 	Tasks.complete("get_detected")
 	Sfx.play("detected", 0.0, 0.0)
 	Juice.shake(0.2)
+	# Completion bonus, plus a fat tip for a perfect mischief sheet.
+	var bonus := 3
+	if Tasks.all_optional_done():
+		bonus += 5
+	Meta.add_sparks(bonus)
+	var run_sparks: int = Meta.sparks - _sparks_at_start
 	get_tree().create_timer(1.5).timeout.connect(func() -> void:
-		end_screen.show_win()
+		end_screen.show_win(run_sparks, Meta.is_max_tier())
 	)

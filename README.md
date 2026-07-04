@@ -21,14 +21,32 @@ the way down.
 | SPACE (or SHIFT / gamepad A) | **zip** — a dash, with input buffering |
 | Z / X / mouse click (gamepad X) | **zap** — your honk; everything reacts |
 | TAB | to-do list |
+| U | origin shop (title screen) |
 | ESC | pause |
 | R | restart (on the end screen) |
 | F / M | fullscreen / mute |
 
-The to-do list is optional, goose-style: tickle an aurora, photobomb a shooting
-star, startle a weather balloon, zip through an airplane, make a cloud rain…
-Each completed prank refunds **+0.2 µs** of proper time. Finish all nine before
-being detected and the observatory stamps your receipt **A++ MUON**.
+The to-do list is optional, goose-style: tickle an aurora, high-five a
+satellite, photobomb a shooting star, startle a weather balloon, zip through
+an airplane, make a cloud rain… Each completed prank refunds **+0.2 µs** of
+proper time. Finish all ten before being detected and the observatory stamps
+your receipt **A++ MUON**.
+
+## sparks & the origin shop
+
+Drowsy **satellites** drift through the thermosphere. Bump one and its flight
+computer reboots — the screen glitches out for half a second, you pocket a
+**spark** (two for zipping straight through), and gain a little proper time.
+Finishing a run pays +3 sparks; a perfect mischief sheet pays +5 more.
+
+Sparks persist between runs and are spent in the **origin shop** (press U on
+the title screen) on better cosmic-ray production mechanisms. Each tier means
+more energy at birth, i.e. a permanently higher Lorentz factor:
+
+solar flare → red dwarf superflare → supernova shock front (Fermi
+acceleration) → pulsar wind nebula → magnetar flare → active galactic
+nucleus → **the Oh-My-God particle** (Utah, 1991, 3×10²⁰ eV) — a golden
+muon whose detection earns the game's final ending.
 
 ## download (macOS)
 
@@ -62,6 +80,14 @@ special relativity. This game takes some liberties (γ ≈ 10ish, an atmosphere
 five screens tall, clouds with faces) but the core mechanic — *fast muons age
 slowly* — is the real thing. We also gave our muon a scenic route starting at
 100 km, because the aurora was too pretty to skip.
+
+## the soundtrack (and how to replace it)
+
+The game generates a cute 8-bar loop at startup (C–Am–F–G, plucks + pad +
+bass, 104 BPM). To swap in your own music, drop `track.ogg` into `music/`
+(ships with the build) or `music.ogg` into the game's user-data folder
+(works on the shipped app, no rebuild). Details in
+[`music/README.md`](music/README.md).
 
 ## building locally
 

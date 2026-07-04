@@ -3,6 +3,10 @@ extends Node2D
 
 const DUR := 0.8
 
+# Scaled up by main for higher-energy origin tiers.
+var beam_width := 5.0
+var beam_color := Color("ffe08a")
+
 var _t := 0.0
 
 
@@ -26,7 +30,8 @@ func _draw() -> void:
 		var hk := k / 0.4
 		var head := from.lerp(Vector2.ZERO, hk)
 		var tail := from.lerp(Vector2.ZERO, maxf(hk - 0.35, 0.0))
-		draw_line(tail, head, Color(Juice.SUN, 0.9), 5.0, true)
+		draw_line(tail, head, Color(beam_color, 0.9), beam_width, true)
 	else:
 		var fk := (k - 0.4) / 0.6
-		draw_circle(Vector2.ZERO, lerpf(4.0, 70.0, 1.0 - pow(1.0 - fk, 3.0)), Color(1, 1, 0.95, 0.6 * (1.0 - fk)))
+		var flash_r := lerpf(4.0, 70.0 + beam_width * 4.0, 1.0 - pow(1.0 - fk, 3.0))
+		draw_circle(Vector2.ZERO, flash_r, Color(1, 1, 0.95, 0.6 * (1.0 - fk)))

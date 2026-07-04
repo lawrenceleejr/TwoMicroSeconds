@@ -3,6 +3,7 @@ extends Node2D
 ## mesosphere supplied with shooting stars while the muon is passing through.
 
 const Aurora := preload("res://game/world/props/aurora.gd")
+const Satellite := preload("res://game/world/props/satellite.gd")
 const ShootingStar := preload("res://game/world/props/shooting_star.gd")
 const Noctilucent := preload("res://game/world/props/noctilucent_cloud.gd")
 const Balloon := preload("res://game/world/props/weather_balloon.gd")
@@ -23,9 +24,11 @@ func _ready() -> void:
 
 
 func _spawn_all() -> void:
-	# Thermosphere: auroras.
+	# Thermosphere: auroras, and satellites carrying sparks.
 	for i in 3:
 		_place(Aurora.new(), _rng.randf_range(-800, 800), _rng.randf_range(800, 3400))
+	for i in 5:
+		_place(Satellite.new(), _rng.randf_range(-950, 950), 700.0 + i * 950.0 + _rng.randf_range(-260, 260))
 	# Mesosphere: noctilucent clouds (shooting stars spawn dynamically).
 	for i in 3:
 		_place(Noctilucent.new(), _rng.randf_range(-900, 900), _rng.randf_range(4300, 6300))
