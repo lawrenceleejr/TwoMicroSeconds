@@ -64,14 +64,14 @@ func _start_loop(key: String, vol_db: float) -> void:
 
 func _music_stream() -> AudioStream:
 	# 1) Runtime override in the user data folder.
-	for ext in ["ogg", "mp3", "wav"]:
+	for ext: String in ["ogg", "mp3", "wav"]:
 		var user_path := "user://music." + ext
 		if FileAccess.file_exists(user_path):
 			var s := _load_external_music(user_path, ext)
 			if s != null:
 				return s
 	# 2) Project override committed under res://music/.
-	for ext in ["ogg", "mp3", "wav"]:
+	for ext: String in ["ogg", "mp3", "wav"]:
 		var res_path := "res://music/track." + ext
 		if ResourceLoader.exists(res_path):
 			var s2: AudioStream = load(res_path)
