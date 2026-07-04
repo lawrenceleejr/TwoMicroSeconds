@@ -21,7 +21,8 @@ func _ready() -> void:
 
 	_label = Label.new()
 	_label.text = "paused"
-	_label.add_theme_font_size_override("font_size", 40)
+	_label.add_theme_font_override("font", Juice.hand_font)
+	_label.add_theme_font_size_override("font_size", 44)
 	_label.add_theme_color_override("font_color", Juice.CREAM)
 	add_child(_label)
 
@@ -52,3 +53,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if visible and key != null and key.pressed and key.physical_keycode == KEY_T:
 		get_viewport().set_input_as_handled()
 		Game.to_title()
+		return
+	# Tap anywhere resumes (touch devices have no ESC).
+	var mb := event as InputEventMouseButton
+	if visible and mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		get_viewport().set_input_as_handled()
+		get_tree().paused = false
+		visible = false
+		Sfx.play("pop", -8.0)
