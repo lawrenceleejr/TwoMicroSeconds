@@ -6,13 +6,15 @@
 except the goose is a subatomic particle and the pond is the entire atmosphere.
 
 You are a muon, freshly minted by a cosmic ray high above a particle detector.
-Your mean proper lifetime is **2.2 µs** — and decay is genuinely random: every
-instant rolls against the dilated hazard rate, and a live "fate" curve shows
-your odds stretching whenever you gain speed. **Speed is survival**, but you
-can't throttle — only electric fields accelerate you. Reach the Muon
-Observatory before the dice come up decay, and cause some optional mischief
-on the way down. Every death is logged: a persistent histogram of your
-lifetimes converges on 2.2 µs as you play.
+Your mean proper lifetime is **2.2 µs**, decay is genuinely random, and the
+game plays out in **your own rest frame**: energy can never stretch your
+clock — what it does is **length-contract the atmosphere**, so a hotter birth
+makes the ground arrive sooner while Earth's lab clock races ahead of yours.
+You can't throttle (only electric fields accelerate a charged particle; the
+fields that steer you do no work). Reach the Muon Observatory before the dice
+come up decay. Every death is logged: a persistent histogram of proper
+lifetimes converges on 2.2 µs as you play, with the γ-stretched lab-frame
+distribution underneath.
 
 ## how to play
 
@@ -87,10 +89,12 @@ Classically they'd travel ~660 m before decaying; relativistically, time
 dilation (γ = 1/√(1−v²/c²)) stretches their laboratory lifetime enough to
 reach the ground in droves — about one per cm² per minute reaches sea level.
 Muons arriving at your detector are one of the classic demonstrations of
-special relativity. This game takes some liberties (γ ≈ 10ish, an atmosphere
-five screens tall, clouds with faces) but the core mechanic — *fast muons age
-slowly* — is the real thing. We also gave our muon a scenic route starting at
-100 km, because the aurora was too pretty to skip.
+special relativity — and in the muon's own frame the resolution is length
+contraction, which is exactly the mechanic here. The decay products are an
+electron, a muon neutrino, and an electron antineutrino; the birth chain
+(proton -> pion -> muon + neutrino) is the real one too. The game still takes
+liberties (an atmosphere five screens tall, clouds with faces, a scenic
+start at 100 km because the aurora was too pretty to skip).
 
 ## the soundtrack (and how to replace it)
 

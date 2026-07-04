@@ -8,6 +8,7 @@ const TaskPop := preload("res://game/fx/task_pop.gd")
 
 var active := false
 
+var _cursor := 0
 var _reset_armed := 0.0
 
 
@@ -29,6 +30,7 @@ func _process(delta: float) -> void:
 func toggle() -> void:
 	active = not active
 	visible = active
+	_cursor = Meta.tier
 	Sfx.play("pop", -8.0)
 	queue_redraw()
 
@@ -40,9 +42,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key.physical_keycode == KEY_U:
 		get_viewport().set_input_as_handled()
 		toggle()
+	elif active and (key.physical_keycode == KEY_UP or key.physical_keycode == KEY_W):
+		get_viewport().set_input_as_handled()
+		_cursor = maxi(_cursor - 1, 0)
+		Sfx.play("tick", -10.0)
+		queue_redraw()
+	elif active and (key.physical_keycode == KEY_DOWN or key.physical_keycode == KEY_S):
+		get_viewport().set_input_as_handled()
+		_cursor = mini(_cursor + 1, mini(Meta.owned_tier + 1, Meta.TIERS.size() - 1))
+		Sfx.play("tick", -10.0)
+		queue_redraw()
 	elif active and (key.physical_keycode == KEY_ENTER or key.physical_keycode == KEY_KP_ENTER):
 		get_viewport().set_input_as_handled()
-		_try_buy()
+		_activate_cursor()
 	elif active and key.physical_keycode == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
 		toggle()
@@ -58,8 +70,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		queue_redraw()
 
 
-func _try_buy() -> void:
-	if Meta.try_upgrade():
+func _activate_cursor() -> void:
+	if _cursor <= Meta.owned_tier:
+		# Equip (downgrades welcome — sometimes you want the slow sky back).
+		if Meta.equip(_cursor):
+			Sfx.play("pop", -4.0)
+		else:
+			Sfx.play("deny", -6.0)
+	elif _cursor == Meta.owned_tier + 1 and Meta.try_upgrade():
+		_cursor = Meta.tier
 		Sfx.play("buy", -2.0)
 		TaskPop.confetti(self, Vector2(W * 0.5, 70.0), 30)
 		if Meta.is_max_tier():
@@ -87,21 +106,27 @@ func _draw() -> void:
 	for i in Meta.TIERS.size():
 		var t: Dictionary = Meta.TIERS[i]
 		var y := 62.0 + i * ROW_H
-		var current := i == Meta.tier
-		var next_up := i == Meta.tier + 1
-		var owned := i < Meta.tier
-		# Highlight boxes.
-		if current:
+		var equipped := i == Meta.tier
+		var owned := i <= Meta.owned_tier
+		var next_up := i == Meta.owned_tier + 1
+		# Highlight boxes: equipped mint, cursor sun.
+		if equipped:
 			var hl := StyleBoxFlat.new()
 			hl.bg_color = Color(Juice.MINT, 0.35)
 			hl.set_corner_radius_all(8)
 			hl.draw(get_canvas_item(), Rect2(14, y - 6, W - 28, ROW_H - 4))
-		elif next_up:
+		if i == _cursor:
 			var hl2 := StyleBoxFlat.new()
-			hl2.bg_color = Color(Juice.SUN, 0.22 if Meta.can_upgrade() else 0.10)
+			hl2.bg_color = Color(0, 0, 0, 0)
+			hl2.set_border_width_all(2)
+			hl2.border_color = Color(Juice.SUN, 0.9)
 			hl2.set_corner_radius_all(8)
 			hl2.draw(get_canvas_item(), Rect2(14, y - 6, W - 28, ROW_H - 4))
-		var name_col := Juice.INK if (current or next_up) else Color(Juice.INK, 0.45 if not owned else 0.35)
+			# Cursor arrow.
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(6, y + 6), Vector2(12, y + 11), Vector2(6, y + 16)
+			]), Juice.INK)
+		var name_col := Juice.INK if (owned or next_up) else Color(Juice.INK, 0.4)
 		draw_string(font, Vector2(28, y + 12), str(t["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, name_col)
 		draw_string(font, Vector2(28, y + 29), str(t["flavor"]), HORIZONTAL_ALIGNMENT_LEFT, 330, 11, Color(Juice.INK, 0.5))
 		# Middle column: energy + gamma. Right column: status, right-aligned.
@@ -109,11 +134,12 @@ func _draw() -> void:
 		draw_string(font, Vector2(W - 232, y + 28), "γ +%.1f" % float(t["gamma"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.PERIWINKLE, 0.9))
 		var status := ""
 		var status_col := Color(Juice.INK, 0.5)
-		if owned:
-			status = "outgrown"
-		elif current:
-			status = "CURRENT"
+		if equipped:
+			status = "EQUIPPED"
 			status_col = Color("2e8b57")
+		elif owned:
+			status = "ENTER — equip"
+			status_col = Juice.INK if i == _cursor else Color(Juice.INK, 0.5)
 		elif next_up:
 			status = ("ENTER · %d sparks" % int(t["cost"])) if Meta.can_upgrade() \
 				else "%d sparks" % int(t["cost"])
@@ -128,7 +154,7 @@ func _draw() -> void:
 	draw_line(Vector2(20, foot_y - 14), Vector2(W - 20, foot_y - 14), Color(Juice.INK, 0.2), 1.5)
 	draw_string(font, Vector2(24, foot_y + 4), "satellites pay sparks — hit them fast for double",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(Juice.INK, 0.6))
-	var reset_hint := "U — close · ENTER — acquire · BACKSPACE ×2 — reset save"
+	var reset_hint := "↑↓ — browse · ENTER — acquire / equip · U — close · BACKSPACE ×2 — reset save"
 	if _reset_armed > 0.0:
 		reset_hint = "BACKSPACE again to really reset everything!"
 	draw_string(font, Vector2(24, foot_y + 22), reset_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 12,

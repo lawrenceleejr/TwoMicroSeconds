@@ -167,8 +167,8 @@ func _process(delta: float) -> void:
 	else:
 		_timer_label.add_theme_color_override("font_color", Juice.CREAM)
 
-	var lab: float = muon.get("lab_s")
-	_lab_label.text = "proper · lab %.1f s" % lab
+	var lab: float = muon.get("lab_us")
+	_lab_label.text = "proper · lab frame %.1f µs" % lab
 	_lab_label.position = Vector2(vp.x * 0.5 - _lab_label.size.x * 0.5, 60.0)
 
 	# Red alert: the dice are loaded now.

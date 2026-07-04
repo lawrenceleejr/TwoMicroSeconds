@@ -7,10 +7,10 @@ extends Node3D
 
 const BASE_W := 1280.0
 const BASE_H := 720.0
-const OVERSCAN := 1.2
+const OVERSCAN := 1.32
 const CAM_FOV := 55.0
-const TILT_DEG := -5.0
-const YAW_DEG := 2.2
+const TILT_DEG := -9.0
+const YAW_DEG := 4.5
 
 var _vp: SubViewport
 var _cam: Camera3D
@@ -77,7 +77,7 @@ func _process(delta: float) -> void:
 	var speed_f := clampf(vel.length() / 1250.0, 0.0, 1.0)
 
 	# Bank into turns; widen the lens with speed.
-	var target_bank := clampf(-vel.x / 1250.0, -1.0, 1.0) * 0.055
+	var target_bank := clampf(-vel.x / 2500.0, -1.0, 1.0) * 0.085
 	_bank = lerpf(_bank, target_bank, 1.0 - exp(-3.0 * delta))
 	_cam.fov = lerpf(_cam.fov, CAM_FOV + 7.0 * speed_f, 1.0 - exp(-3.0 * delta))
 

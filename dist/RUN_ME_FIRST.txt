@@ -71,9 +71,11 @@ and cause some optional mischief on the way down.
   F / M ........................ fullscreen / mute
 
 You cannot throttle a muon — only electric fields accelerate a
-charged particle. The air slowly drags you; auroras, zapped
-thunderclouds, and satellites speed you back up. Fast muons age
-slowly, and the view goes full special-relativity as you speed up.
+charged particle (steering is just bending; no work done). The air
+drags you; auroras, zapped thunderclouds, and satellites give energy
+back. And since this is YOUR rest frame, energy never stretches your
+clock — it length-contracts the sky so the ground arrives sooner,
+while Earth's clocks race ahead. The view shows all of it.
 
 Bump the drowsy satellites up top: they pay out SPARKS (zip through
 for double). Sparks persist between lives and buy you a better origin

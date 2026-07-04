@@ -5,7 +5,7 @@ extends Control
 
 const BINS := 22
 const RANGE_US := 6.6
-const RANGE_LAB := 120.0
+const RANGE_LAB := 150.0
 const PLOT_W := 232.0
 const PROPER_H := 58.0
 const LAB_H := 34.0
@@ -86,5 +86,5 @@ func _draw() -> void:
 	_draw_histo(lab_origin, LAB_H, _bin_counts(Meta.lifetimes_lab, RANGE_LAB),
 		Color(Juice.RAIN, 0.6), Meta.lab_mean(), RANGE_LAB, text_col, false)
 	draw_string(Juice.hand_font, Vector2(PAD, top_origin.y + 15.0),
-		"lab · mean %.0f s" % Meta.lab_mean(),
+		"lab · mean %.0f µs" % Meta.lab_mean(),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(text_col, 0.6))

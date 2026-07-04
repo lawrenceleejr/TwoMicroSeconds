@@ -12,7 +12,7 @@ const TITLE_H := 16.0
 
 var muon: Node2D = null
 
-var _xmax := 24.0
+var _xmax := 12.0
 var _hist := PackedVector2Array()  # (lab_t, P) samples
 var _sample_accum := 1.0
 var _t := 0.0
@@ -26,17 +26,17 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	if muon != null and is_instance_valid(muon):
-		var lab: float = muon.get("lab_s")
+		var lab: float = muon.get("lab_us")
 		var p: float = muon.get("decay_p")
 		_sample_accum += delta
 		if _sample_accum >= 0.2:
 			_sample_accum = 0.0
 			_hist.append(Vector2(lab, p))
 		var gamma: float = muon.get("gamma")
-		var mean_life: float = gamma * 2.2 * 1.5
+		var mean_life: float = gamma * 2.2  # lab-frame mean life, µs
 		# Window covers the past plus ~2 mean lives of future; boosting
 		# raises the target and the lerp animates the zoom-out.
-		var target_x := maxf(lab * 1.25 + 4.0, mean_life * 2.1)
+		var target_x := maxf(lab * 1.25 + 3.0, mean_life * 2.1)
 		_xmax = lerpf(_xmax, target_x, 1.0 - exp(-2.2 * delta))
 	queue_redraw()
 
@@ -61,15 +61,15 @@ func _draw() -> void:
 	var p_now := 0.0
 	var gamma := 1.0
 	if muon != null and is_instance_valid(muon):
-		lab = muon.get("lab_s")
+		lab = muon.get("lab_us")
 		p_now = muon.get("decay_p")
 		gamma = muon.get("gamma")
-	var mean_life: float = gamma * 2.2 * 1.5
+	var mean_life: float = gamma * 2.2
 	var danger := p_now > 0.9
 
 	# Time ticks (they compress and stream by as the window rescales).
 	var tick_dt := 1.0
-	for candidate in [1.0, 2.0, 5.0, 10.0, 15.0, 30.0, 60.0, 120.0]:
+	for candidate in [1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0]:
 		tick_dt = candidate
 		if _xmax / candidate <= 8.0:
 			break
@@ -79,7 +79,7 @@ func _draw() -> void:
 		var x := _x(tick_t, origin)
 		draw_line(Vector2(x, origin.y), Vector2(x, origin.y - PLOT_H), Color(Juice.CREAM, 0.10), 1.0, true)
 		if tick_i % 2 == 0:
-			draw_string(font, Vector2(x - 10.0, origin.y + 11.0), "%ds" % int(tick_t),
+			draw_string(font, Vector2(x - 10.0, origin.y + 11.0), "%dµs" % int(tick_t),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(Juice.CREAM, 0.45))
 		tick_t += tick_dt
 		tick_i += 1
@@ -127,7 +127,7 @@ func _draw() -> void:
 	var pw := font.get_string_size(pct, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 	draw_string(font, Vector2(PAD + PLOT_W - pw, PAD + 9.0), pct,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 15, now_col)
-	var tau_text := "γτ = %.1f s" % mean_life
+	var tau_text := "γτ = %.1f µs" % mean_life
 	draw_string(font, Vector2(PAD + 78.0, PAD + 8.0), tau_text,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Juice.CREAM, 0.5))
 

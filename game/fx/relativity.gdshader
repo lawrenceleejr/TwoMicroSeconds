@@ -9,7 +9,7 @@ uniform sampler2D screen_tex : hint_screen_texture, filter_linear;
 uniform vec2 motion_dir = vec2(0.0, 1.0);
 uniform float contraction : hint_range(0.0, 0.5) = 0.0;
 uniform float doppler : hint_range(0.0, 1.0) = 0.0;
-uniform float blur_amount : hint_range(0.0, 0.03) = 0.0;
+uniform float blur_amount : hint_range(0.0, 0.05) = 0.0;
 
 void fragment() {
 	vec2 center = vec2(0.5, 0.5);
@@ -22,14 +22,14 @@ void fragment() {
 	// appears squeezed along the motion axis (pivot at screen center).
 	vec2 base = center + perp + d * (along * (1.0 + contraction));
 
-	// Motion blur: a few taps along the motion axis.
+	// Motion blur: nine taps along the motion axis.
 	vec3 col = vec3(0.0);
-	for (int i = 0; i < 5; i++) {
-		float o = (float(i) / 4.0 - 0.5) * 2.0;
+	for (int i = 0; i < 9; i++) {
+		float o = (float(i) / 8.0 - 0.5) * 2.0;
 		vec2 uv = clamp(base + d * o * blur_amount, vec2(0.001), vec2(0.999));
 		col += texture(screen_tex, uv).rgb;
 	}
-	col /= 5.0;
+	col /= 9.0;
 
 	// Doppler: forward hemisphere shifts blue and brightens (headlight
 	// effect), rear hemisphere shifts red.

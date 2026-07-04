@@ -1,16 +1,46 @@
 extends Node2D
-## Draws the sky gradient, twinkling stars up high, and the ground.
-## Everything is redrawn each frame relative to the camera — cheap and seamless.
+## The sky. The gradient itself is a shader (smooth, dithered, nebula wisps,
+## sun glow) on a child layer beneath; stars, parallax haze, and the ground
+## are drawn here on top. Everything follows the camera — cheap and seamless.
 
 var _t := 0.0
+var _sky: Node2D
+var _sky_mat: ShaderMaterial
 
 
 func _ready() -> void:
 	z_index = -10
+	_sky_mat = ShaderMaterial.new()
+	_sky_mat.shader = load("res://game/fx/sky.gdshader")
+	_sky = Node2D.new()
+	_sky.z_index = -1  # beneath this node's own drawing
+	_sky.material = _sky_mat
+	_sky.draw.connect(_draw_sky_rect)
+	add_child(_sky)
+
+
+func _draw_sky_rect() -> void:
+	var cam := get_viewport().get_camera_2d()
+	if cam == null:
+		return
+	var vp := get_viewport_rect().size
+	var center := cam.get_screen_center_position()
+	_sky.draw_rect(Rect2(center - vp * 0.62, vp * 1.24), Color.WHITE)
 
 
 func _process(delta: float) -> void:
 	_t += delta
+	var cam := get_viewport().get_camera_2d()
+	if cam != null:
+		var vp := get_viewport_rect().size
+		var center := cam.get_screen_center_position()
+		var zoom_inv := 1.0 / maxf(cam.zoom.y, 0.01)
+		_sky_mat.set_shader_parameter("cam_top", center.y - vp.y * 0.5 * zoom_inv)
+		_sky_mat.set_shader_parameter("cam_left", center.x - vp.x * 0.5 * zoom_inv)
+		_sky_mat.set_shader_parameter("cam_h", vp.y * zoom_inv)
+		_sky_mat.set_shader_parameter("cam_w", vp.x * zoom_inv)
+		_sky_mat.set_shader_parameter("t", _t)
+	_sky.queue_redraw()
 	queue_redraw()
 
 
@@ -25,12 +55,7 @@ func _draw() -> void:
 	var left := center.x - vp.x * 0.62
 	var width := vp.x * 1.24
 
-	# Sky bands.
-	var step := 40.0
-	var y := top
-	while y < bottom:
-		draw_rect(Rect2(left, y, width, step + 1.0), Atmos.sky_color_at(y + step * 0.5))
-		y += step
+	# (The sky gradient itself is shader-drawn on the child layer below.)
 
 	# Stars fade out as the air thickens.
 	if top < 12000.0:

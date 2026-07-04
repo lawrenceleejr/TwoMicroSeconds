@@ -63,7 +63,7 @@ def muon(name, hi, mid, lo, rim):
 
 def cloud():
     defs = (
-        linear("puff", [(0, "#ffffff", 1), (1, "#dee6f7", 1)])
+        linear("puff", [(0, "#ffffff", 1), (1, "#d3ddf3", 1)])
         + linear("shade", [(0, "#c3cfeb", 0.0), (1, "#aebde2", 0.9)])
     )
     lobes = [(82, 112, 70, 46), (162, 84, 88, 58), (242, 112, 64, 42), (162, 130, 112, 40)]
@@ -96,7 +96,7 @@ def noctilucent():
 
 def balloon():
     defs = (
-        radial("bal", [(0, "#ffd9df", 1), (0.6, "#ff9dad", 1), (1, "#e26b81", 1)],
+        radial("bal", [(0, "#ffd9df", 1), (0.55, "#ff9dad", 1), (1, "#d1546c", 1)],
                fx=0.38, fy=0.30)
         + linear("box", [(0, "#fff4de", 1), (1, "#e9d0a6", 1)])
     )
@@ -116,7 +116,7 @@ def balloon():
 
 def airplane():
     defs = (
-        linear("fus", [(0, "#fffdf6", 1), (1, "#e5ddcc", 1)])
+        linear("fus", [(0, "#fffdf6", 1), (1, "#dcd1b8", 1)])
         + linear("fin", [(0, "#ffb9c4", 1), (1, "#ff8fa0", 1)])
         + linear("wing", [(0, "#ffd7dd", 1), (1, "#ffadbb", 1)])
         + linear("glass", [(0, "#eaf7ff", 1), (1, "#9fd0f5", 1)])
@@ -131,7 +131,7 @@ def airplane():
 <polygon points="52,60 86,60 74,16 46,16" fill="url(#fin)" stroke="{INK}" stroke-opacity="0.28" stroke-width="3"/>
 <rect x="40" y="55" width="282" height="46" rx="23" fill="url(#fus)"/>
 <circle cx="320" cy="78" r="23" fill="url(#fus)"/>
-<ellipse cx="180" cy="97" rx="140" ry="10" fill="#cfc6b2" opacity="0.55"/>
+<ellipse cx="180" cy="97" rx="140" ry="10" fill="#c2b79e" opacity="0.75"/>
 <rect x="40" y="55" width="282" height="46" rx="23" fill="none" stroke="{INK}" stroke-opacity="0.25" stroke-width="3.5"/>
 <polygon points="150,94 232,94 198,132 126,132" fill="url(#wing)" stroke="{INK}" stroke-opacity="0.28" stroke-width="3"/>
 <path d="M306 60 Q322 60 326 74 L306 74 Z" fill="url(#glass)" stroke="{INK}" stroke-opacity="0.3" stroke-width="2.5"/>
@@ -144,7 +144,7 @@ def airplane():
 def satellite():
     defs = (
         linear("cells", [(0, "#3f63b5", 1), (1, "#274579", 1)])
-        + linear("foil", [(0, "#ffe3a6", 1), (1, "#dda44f", 1)])
+        + linear("foil", [(0, "#ffe3a6", 1), (1, "#c98f3a", 1)])
         + linear("silver", [(0, "#f6f6fa", 1), (1, "#c6cad8", 1)])
     )
 
@@ -239,7 +239,7 @@ def spark_icon():
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    muon("muon.svg", "#fdf3e3", "#ecdff0", "#cfc7e8", "#b7aede")
+    muon("muon.svg", "#fdf3e3", "#e9dcee", "#b9b0dc", "#a99ed6")
     cloud()
     noctilucent()
     balloon()

@@ -104,16 +104,17 @@ func glitch(duration := 0.5, strength := 1.0) -> void:
 	)
 
 
-## Relativistic view: length contraction + Doppler + motion blur, all scaled
-## by `strength` 0..1 along screen-space `dir`. Called by the muon each frame.
-func set_relativity(dir: Vector2, strength: float) -> void:
+## Relativistic view along screen-space `dir`. Doppler and blur scale with
+## `strength` (speed); length contraction scales with `gamma_norm` — energy
+## squashes the sky, because in your rest frame that's what energy does.
+func set_relativity(dir: Vector2, strength: float, gamma_norm := 0.0) -> void:
 	if _rel_mat == null:
 		return
-	_rel_rect.visible = strength > 0.02
+	_rel_rect.visible = strength > 0.02 or gamma_norm > 0.02
 	_rel_mat.set_shader_parameter("motion_dir", dir)
-	_rel_mat.set_shader_parameter("contraction", 0.17 * strength)
+	_rel_mat.set_shader_parameter("contraction", 0.06 + 0.34 * gamma_norm)
 	_rel_mat.set_shader_parameter("doppler", 0.85 * strength)
-	_rel_mat.set_shader_parameter("blur_amount", 0.0075 * strength)
+	_rel_mat.set_shader_parameter("blur_amount", 0.016 * strength)
 
 
 func _process(delta: float) -> void:

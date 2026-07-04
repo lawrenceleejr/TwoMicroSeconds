@@ -17,9 +17,13 @@ const REF_SPEED := 470.0
 const TURN_RATE_SLOW := 4.2
 const TURN_RATE_FAST := 2.4
 const DOWN_BIAS := 0.5
-const GAMMA_K := 9.0
+const GAMMA_K := 2.2
 const LIFETIME := 2.2                # mean proper lifetime, µs
-const REAL_SECONDS_PER_US := 1.5     # game seconds per proper µs
+const REAL_SECONDS_PER_US := 12.0    # game seconds per proper µs
+# We play in the muon's rest frame: energy never buys proper time — it
+# length-contracts the atmosphere, so ground-distance is covered gamma
+# times faster. This is the entire progression mechanic.
+const CONTRACT := 0.5
 const ZAP_RADIUS := 175.0
 const ZAP_COOLDOWN := 0.35
 # Ionization drag per layer (px/s^2): thin air up high, soup down low.
@@ -31,6 +35,10 @@ const GhostFx := preload("res://game/fx/ghost.gd")
 const ZapRingFx := preload("res://game/fx/zap_ring.gd")
 const SpeedLines := preload("res://game/fx/speed_lines.gd")
 const FloatText := preload("res://game/fx/float_text.gd")
+const BremBurst := preload("res://game/fx/brem_burst.gd")
+## Above this gamma, radiative losses kick in: forward bremsstrahlung
+## sparks and continuous mini-showers ahead of you.
+const BREM_GAMMA := 9.0
 
 var velocity := Vector2.ZERO
 var speed := 0.0
@@ -42,11 +50,13 @@ var finished := false
 ## decay is a memoryless roll against the dilated hazard rate, like the
 ## real particle.
 var age_us := 0.0
-## Lab-frame time lived so far (game seconds).
-var lab_s := 0.0
-## Cumulative probability of having decayed by now: 1 - exp(-∫dt/γτ).
+## Lab-frame time lived so far (µs): Earth's clocks run gamma times fast.
+var lab_us := 0.0
+## Cumulative probability of having decayed by now: 1 - exp(-τ/2.2).
 var decay_p := 0.0
 var gamma := 1.0
+## Scripted birth sequence owns the muon while true.
+var intro_mode := false
 
 var _hazard_integral := 0.0
 var speed_frac := 0.0
@@ -55,6 +65,8 @@ var autopilot := Vector2.ZERO
 
 var _zap_cd := 0.0
 var _ghost_timer := 0.0
+var _brem_timer := 0.0
+var _turn_pop_cd := 0.0
 var _clock := 0.0
 var _turn_acc := 0.0
 var _prev_dir := 0.0
@@ -182,9 +194,11 @@ func _build_camera() -> void:
 
 func _process(delta: float) -> void:
 	_clock += delta
+	if intro_mode:
+		return
 	if not alive or finished:
 		_update_trail()
-		Juice.set_relativity(Vector2.DOWN, 0.0)
+		Juice.set_relativity(Vector2.DOWN, 0.0, 0.0)
 		return
 
 	_zap_cd = maxf(_zap_cd - delta, 0.0)
@@ -195,9 +209,15 @@ func _process(delta: float) -> void:
 		steer = autopilot
 	speed_frac = clampf(speed / REF_SPEED, 0.0, 1.5)
 	var turn_rate := lerpf(TURN_RATE_SLOW, TURN_RATE_FAST, clampf(speed / SPEED_CAP, 0.0, 1.0))
+	_turn_pop_cd = maxf(_turn_pop_cd - delta, 0.0)
 	if steer.length() > 0.2:
 		var ang := heading.angle_to(steer.normalized())
-		heading = heading.rotated(clampf(ang, -turn_rate * delta, turn_rate * delta))
+		var applied := clampf(ang, -turn_rate * delta, turn_rate * delta)
+		heading = heading.rotated(applied)
+		# A hard bank gets a little anticipation squash — goose rules.
+		if absf(applied) > 3.4 * delta and absf(ang) > 1.1 and _turn_pop_cd <= 0.0:
+			_turn_pop_cd = 0.45
+			_pop_scale(Vector2(0.82, 1.2))
 	else:
 		var ang_down := heading.angle_to(Vector2.DOWN)
 		heading = heading.rotated(clampf(ang_down, -DOWN_BIAS * delta, DOWN_BIAS * delta))
@@ -205,22 +225,24 @@ func _process(delta: float) -> void:
 	# Ionization drag: the atmosphere is always taxing you.
 	var layer := Atmos.layer_index_at(global_position.y)
 	speed = maxf(speed - DRAG[layer] * delta, SPEED_FLOOR)
-	velocity = heading * speed
+
+	# This is the muon's rest frame. Your clock just ticks; energy can't
+	# stretch it. What energy DOES is length-contract the sky: the world
+	# rushes past gamma times faster, so the ground can arrive before the
+	# dice do. Earth's clocks, meanwhile, run gamma times fast.
+	gamma = 1.0 + GAMMA_K * speed_frac * speed_frac + Meta.gamma_bonus()
+	velocity = heading * speed * (gamma * CONTRACT)
 	position += velocity * delta
 	_apply_bounds()
 
-	# Time dilation: a hotter origin story (Meta tier) means more energy at
-	# birth, so a permanently higher gamma. Your clock ticks 1/gamma as fast.
-	gamma = 1.0 + GAMMA_K * speed_frac * speed_frac + Meta.gamma_bonus()
-	age_us += delta / (gamma * REAL_SECONDS_PER_US)
-	lab_s += delta
+	age_us += delta / REAL_SECONDS_PER_US
+	lab_us += gamma * delta / REAL_SECONDS_PER_US
 
-	# Decay is memoryless: every instant carries hazard dt / (gamma * tau).
-	# The integral of that hazard gives the cumulative decay probability.
-	var mean_lab_life := gamma * LIFETIME * REAL_SECONDS_PER_US
-	_hazard_integral += delta / mean_lab_life
+	# Decay is memoryless in proper time, and gamma can't touch it.
+	var mean_real_life := LIFETIME * REAL_SECONDS_PER_US
+	_hazard_integral += delta / mean_real_life
 	decay_p = 1.0 - exp(-_hazard_integral)
-	if not Game.shoot_mode and randf() < delta / mean_lab_life:
+	if not Game.shoot_mode and randf() < delta / mean_real_life:
 		_die()
 		return
 
@@ -323,12 +345,15 @@ func _update_trail() -> void:
 
 func _update_squash() -> void:
 	var stretch := clampf(speed / SPEED_CAP, 0.0, 1.0)
+	# Always breathing, a little more visibly when drifting slow.
+	var breath := 1.0 + (0.025 - 0.015 * stretch) * sin(_clock * 2.7)
 	_body.rotation = heading.angle()
-	_body.applied_squash = Vector2(1.0 + 0.26 * stretch, 1.0 - 0.18 * stretch)
+	_body.applied_squash = Vector2(1.0 + 0.26 * stretch, (1.0 - 0.18 * stretch) * breath)
 
 
 func _update_speed_fx(delta: float) -> void:
-	var target := clampf((speed - 420.0) / 500.0, 0.0, 1.0)
+	# Keyed to apparent (contracted) velocity — what the view actually does.
+	var target := clampf((velocity.length() - 600.0) / 1800.0, 0.0, 1.0)
 	_speed_fx = lerpf(_speed_fx, target, 1.0 - exp(-6.0 * delta))
 	_speed_lines.intensity = _speed_fx
 	_speed_lines.dir = heading
@@ -337,11 +362,22 @@ func _update_speed_fx(delta: float) -> void:
 	_sparkles.modulate.a = clampf(0.35 + speed / SPEED_CAP, 0.0, 1.0)
 	var zoom := lerpf(1.0, 0.84, _speed_fx)
 	_camera.zoom = _camera.zoom.lerp(Vector2.ONE * zoom, 1.0 - exp(-4.0 * delta))
-	Juice.set_relativity(heading, clampf((speed - 330.0) / 750.0, 0.0, 1.0))
+	Juice.set_relativity(heading, clampf((speed - 330.0) / 750.0, 0.0, 1.0),
+		clampf((gamma - 1.0) / 14.0, 0.0, 1.0))
 	_ghost_timer -= delta
-	if speed > 880.0 and _ghost_timer <= 0.0:
+	if velocity.length() > 1500.0 and _ghost_timer <= 0.0:
 		_spawn_ghost()
 		_ghost_timer = 0.04
+	# Radiative regime: brem sparks and continuous forward showers.
+	if gamma > BREM_GAMMA:
+		_brem_timer -= delta
+		if _brem_timer <= 0.0:
+			_brem_timer = randf_range(0.4, 0.75)
+			var burst: Node2D = BremBurst.new()
+			burst.position = global_position + heading * randf_range(120.0, 260.0)
+			burst.dir = heading
+			get_parent().add_child(burst)
+			Sfx.play("tick", -14.0, 0.25)
 
 
 func _update_camera_lookahead(delta: float) -> void:

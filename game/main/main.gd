@@ -10,7 +10,7 @@ const ChecklistScript := preload("res://game/ui/checklist.gd")
 const EndScreenScript := preload("res://game/ui/end_screen.gd")
 const PauseScript := preload("res://game/ui/pause_overlay.gd")
 const DecayBurst := preload("res://game/fx/decay_burst.gd")
-const CosmicIntro := preload("res://game/fx/cosmic_intro.gd")
+const BirthSequence := preload("res://game/fx/birth_sequence.gd")
 const TaskPop := preload("res://game/fx/task_pop.gd")
 const FloatText := preload("res://game/fx/float_text.gd")
 
@@ -43,11 +43,13 @@ func _ready() -> void:
 	muon.decayed.connect(_on_decayed)
 	muon.circle_drawn.connect(_on_circle_drawn)
 
-	var intro: Node2D = CosmicIntro.new()
-	intro.position = muon.position
-	intro.beam_width = 5.0 + Meta.tier * 1.4
-	intro.beam_color = Juice.SUN.lerp(Color(1.0, 0.85, 0.4), float(Meta.tier) / 6.0)
-	add_child(intro)
+	# Birth: proton in, shower, ride a pion, decay to muon, play.
+	muon.intro_mode = true
+	muon.visible = false
+	var birth: Node2D = BirthSequence.new()
+	birth.position = muon.position
+	birth.muon = muon
+	add_child(birth)
 	if Meta.is_max_tier():
 		# The Oh-My-God particle arrives with authority.
 		Juice.glitch(0.4, 0.7)
@@ -102,7 +104,7 @@ func _on_decayed() -> void:
 	if _ended:
 		return
 	_ended = true
-	Meta.record_lifetime(muon.age_us, muon.lab_s)
+	Meta.record_lifetime(muon.age_us, muon.lab_us)
 	pause_overlay.can_pause = false
 	Sfx.play("decay", -2.0, 0.0)
 	Juice.hitstop(0.22, 0.05)
@@ -114,7 +116,7 @@ func _on_decayed() -> void:
 	var alt := Atmos.altitude_at(muon.global_position.y)
 	var run_sparks: int = Meta.sparks - _sparks_at_start
 	var age: float = muon.age_us
-	var lab: float = muon.lab_s
+	var lab: float = muon.lab_us
 	get_tree().create_timer(1.6).timeout.connect(func() -> void:
 		end_screen.show_lose(alt, run_sparks, age, lab)
 	)
@@ -138,7 +140,7 @@ func _win() -> void:
 	Meta.add_sparks(bonus)
 	var run_sparks: int = Meta.sparks - _sparks_at_start
 	var age: float = muon.age_us
-	var lab: float = muon.lab_s
+	var lab: float = muon.lab_us
 	get_tree().create_timer(1.5).timeout.connect(func() -> void:
 		end_screen.show_win(run_sparks, Meta.is_max_tier(), age, lab)
 	)

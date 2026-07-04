@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="170" height="240" viewBox="0 0 170 240">
 <defs>
-<radialGradient id="bal" cx="0.5" cy="0.5" r="0.5" fx="0.38" fy="0.3"><stop offset="0" stop-color="#ffd9df" stop-opacity="1"/><stop offset="0.6" stop-color="#ff9dad" stop-opacity="1"/><stop offset="1" stop-color="#e26b81" stop-opacity="1"/></radialGradient><linearGradient id="box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4de" stop-opacity="1"/><stop offset="1" stop-color="#e9d0a6" stop-opacity="1"/></linearGradient>
+<radialGradient id="bal" cx="0.5" cy="0.5" r="0.5" fx="0.38" fy="0.3"><stop offset="0" stop-color="#ffd9df" stop-opacity="1"/><stop offset="0.55" stop-color="#ff9dad" stop-opacity="1"/><stop offset="1" stop-color="#d1546c" stop-opacity="1"/></radialGradient><linearGradient id="box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4de" stop-opacity="1"/><stop offset="1" stop-color="#e9d0a6" stop-opacity="1"/></linearGradient>
 </defs>
 
 <path d="M85 146 Q77 196 93 196" fill="none" stroke="#4a4460" stroke-opacity="0.55" stroke-width="2.5"/>

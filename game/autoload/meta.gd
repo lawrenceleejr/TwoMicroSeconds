@@ -60,7 +60,11 @@ const TIERS := [
 ]
 
 var sparks := 0
+## Equipped origin (what you're born as). Any owned tier can be equipped —
+## sometimes you want the slow sky back.
 var tier := 0
+## Highest origin purchased.
+var owned_tier := 0
 var total_sparks_earned := 0
 ## Proper lifetime (µs) of every decayed muon, ever. Exponentially
 ## distributed by construction; the mean converges on 2.2 as you play.
@@ -86,11 +90,20 @@ func is_max_tier() -> bool:
 
 
 func next_tier() -> Dictionary:
-	return TIERS[mini(tier + 1, TIERS.size() - 1)]
+	return TIERS[mini(owned_tier + 1, TIERS.size() - 1)]
 
 
 func can_upgrade() -> bool:
-	return not is_max_tier() and sparks >= int(next_tier()["cost"])
+	return owned_tier < TIERS.size() - 1 and sparks >= int(next_tier()["cost"])
+
+
+func equip(i: int) -> bool:
+	if i < 0 or i > owned_tier or i == tier:
+		return false
+	tier = i
+	_save()
+	sparks_changed.emit()
+	return true
 
 
 func add_sparks(amount: int) -> void:
@@ -131,7 +144,8 @@ func try_upgrade() -> bool:
 	if not can_upgrade():
 		return false
 	sparks -= int(next_tier()["cost"])
-	tier += 1
+	owned_tier += 1
+	tier = owned_tier  # a new origin equips itself; downgrade any time
 	_save()
 	sparks_changed.emit()
 	return true
@@ -140,6 +154,7 @@ func try_upgrade() -> bool:
 func reset_save() -> void:
 	sparks = 0
 	tier = 0
+	owned_tier = 0
 	total_sparks_earned = 0
 	lifetimes = []
 	lifetimes_lab = []
@@ -154,6 +169,7 @@ func _save() -> void:
 	f.store_string(JSON.stringify({
 		"sparks": sparks,
 		"tier": tier,
+		"owned": owned_tier,
 		"earned": total_sparks_earned,
 		"lifetimes": lifetimes,
 		"lifetimes_lab": lifetimes_lab,
@@ -170,6 +186,7 @@ func _load() -> void:
 	if data is Dictionary:
 		sparks = maxi(int(data.get("sparks", 0)), 0)
 		tier = clampi(int(data.get("tier", 0)), 0, TIERS.size() - 1)
+		owned_tier = clampi(int(data.get("owned", tier)), tier, TIERS.size() - 1)
 		total_sparks_earned = maxi(int(data.get("earned", 0)), 0)
 		var lts = data.get("lifetimes", [])
 		if lts is Array:

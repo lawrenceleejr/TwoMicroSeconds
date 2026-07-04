@@ -135,8 +135,6 @@ func _draw() -> void:
 	draw_circle(center + Vector2(-33, 10), 10.0, Color(Juice.BLUSH, 0.85))
 	draw_circle(center + Vector2(33, 10), 10.0, Color(Juice.BLUSH, 0.85))
 	draw_arc(center + Vector2(0, 8) + look * 0.5, 13.0, 0.5, PI - 0.5, 12, Juice.INK, 3.5, true)
-	draw_circle(center + Vector2(0, 62), 17.0, Juice.MINT)
-	draw_line(center + Vector2(-8, 62), center + Vector2(8, 62), Juice.INK, 4.0)
 	# A tiny orbiting neutrino friend.
 	var orbit := center + Vector2(cos(_t * 1.2), sin(_t * 1.2) * 0.5) * 150.0
 	draw_arc(orbit, 8.0, 0, TAU, 16, Color(1, 1, 1, 0.5), 1.5, true)

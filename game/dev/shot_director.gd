@@ -22,8 +22,9 @@ func _run() -> void:
 	_press(KEY_U)
 	await _wait(0.3)
 	Game.start_run()
-	await _wait(1.0)
+	await _wait(0.95)
 	await _shot("03_birth")
+	await _wait(1.0)  # let the pion decay hand over control
 
 	var muon := get_tree().get_first_node_in_group("muon")
 	if muon == null:
