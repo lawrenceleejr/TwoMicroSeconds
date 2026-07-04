@@ -156,16 +156,29 @@ jobs:
           "$HOME/godot-linux/godot" --headless --path . --import || true
           "$HOME/godot-linux/godot" --headless --path . --import
 
-      - name: Run shot director
+      - name: Run shot director (landscape desktop)
         run: |
           set -euo pipefail
-          timeout 240 xvfb-run -a -s "-screen 0 1280x720x24" \
+          timeout 300 xvfb-run -a -s "-screen 0 1280x720x24" \
             "$HOME/godot-linux/godot" --path . \
             --rendering-method gl_compatibility --rendering-driver opengl3 \
             -- --shoot 2>&1 | tee shoot.log || true
           SHOTS_DIR="$HOME/.local/share/godot/app_userdata/Two Microseconds/shots"
           ls -la "$SHOTS_DIR"
           test -n "$(ls "$SHOTS_DIR"/*.png 2>/dev/null)"
+
+      # Same tour again as a phone: portrait window, forced touch UI
+      # (scaled chips, touch hints, tucked checklist). Shots get a p_ prefix.
+      - name: Run shot director (portrait phone)
+        run: |
+          set -euo pipefail
+          timeout 300 xvfb-run -a -s "-screen 0 420x900x24" \
+            "$HOME/godot-linux/godot" --path . \
+            --rendering-method gl_compatibility --rendering-driver opengl3 \
+            --resolution 390x844 \
+            -- --shoot --touch 2>&1 | tee shoot-portrait.log || true
+          SHOTS_DIR="$HOME/.local/share/godot/app_userdata/Two Microseconds/shots"
+          test -n "$(ls "$SHOTS_DIR"/p_*.png 2>/dev/null)"
           mkdir -p out && cp "$SHOTS_DIR"/*.png out/
 
       - name: Upload screenshots
@@ -175,12 +188,14 @@ jobs:
           path: out/*.png
           retention-days: 14
 
-      - name: Upload shoot log on failure
+      - name: Upload shoot logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: shoot-log
-          path: shoot.log
+          path: |
+            shoot.log
+            shoot-portrait.log
           if-no-files-found: ignore
 
   # Playable web build on GitHub Pages. Single-threaded export: Pages can't

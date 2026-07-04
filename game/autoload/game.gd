@@ -18,12 +18,22 @@ func _enter_tree() -> void:
 
 
 var shoot_mode := false
+## Forced by `-- --touch` so CI can audit the touch/phone UI without a
+## real touchscreen.
+var fake_touch := false
+
+
+## The single source of truth for "is this a touch device": everything
+## that adapts to phones asks here.
+func is_touch() -> bool:
+	return fake_touch or DisplayServer.is_touchscreen_available()
 
 
 func _ready() -> void:
+	var args := OS.get_cmdline_user_args()
+	fake_touch = "--touch" in args
 	_apply_ui_scale()
 	get_window().size_changed.connect(_apply_ui_scale)
-	var args := OS.get_cmdline_user_args()
 	if "--shoot" in args:
 		# Screenshot mode: a director drives the game through scripted
 		# moments and saves PNGs (used by CI for the visual feedback loop).
@@ -47,7 +57,7 @@ func _apply_ui_scale() -> void:
 	# The 3D world renders at full window resolution either way.
 	var win := get_window()
 	var f := 1.0
-	if DisplayServer.is_touchscreen_available():
+	if is_touch():
 		f = 1.55
 		if win.size.y > win.size.x:
 			f = 1.85

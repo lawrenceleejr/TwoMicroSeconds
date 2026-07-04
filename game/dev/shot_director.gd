@@ -210,8 +210,10 @@ func _wait(sec: float) -> void:
 func _shot(shot_name: String) -> void:
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
-	img.save_png(_dir.path_join(shot_name + ".png"))
-	print("SHOT saved: ", shot_name)
+	# The portrait/touch audit pass prefixes its shots.
+	var prefix := "p_" if Game.fake_touch else ""
+	img.save_png(_dir.path_join(prefix + shot_name + ".png"))
+	print("SHOT saved: ", prefix + shot_name)
 
 
 func _finish() -> void:

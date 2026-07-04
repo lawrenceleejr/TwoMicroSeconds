@@ -20,7 +20,7 @@ func _ready() -> void:
 	rotation = -0.012  # pinned up slightly crooked, like a real note
 	Tasks.task_completed.connect(_on_task_completed)
 	# Phones: start tucked away — the sky is small enough already.
-	if DisplayServer.is_touchscreen_available():
+	if Game.is_touch():
 		open = false
 		_slide = 1.0
 
@@ -34,7 +34,7 @@ func _input(event: InputEvent) -> void:
 		pt = event.position
 	elif event is InputEventMouseButton and event.pressed \
 			and event.button_index == MOUSE_BUTTON_LEFT \
-			and not DisplayServer.is_touchscreen_available():
+			and not Game.is_touch():
 		pt = event.position
 	else:
 		return

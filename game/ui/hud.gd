@@ -113,7 +113,7 @@ func _ready() -> void:
 	_hint_label = hint_pair[1]
 	_hint_chip.add_theme_stylebox_override("panel", Juice.ui_chip(Juice.INK, 0.45))
 	_hint_label.add_theme_color_override("font_color", Juice.CREAM)
-	if DisplayServer.is_touchscreen_available():
+	if Game.is_touch():
 		_hint_label.text = "drag left — steer · tap right — zap · tap the paper tab — to-dos"
 	else:
 		_hint_label.text = "steer · the sky has fields, find them      SPACE zap · TAB list"

@@ -39,7 +39,7 @@ func _ready() -> void:
 
 	_cta_chip = _mk_chip(Juice.MINT, 0.92)
 	var cta_text := "press any key — be born"
-	if DisplayServer.is_touchscreen_available():
+	if Game.is_touch():
 		cta_text = "tap anywhere — be born"
 	var cta := _chip_label(_cta_chip, cta_text, 18)
 	cta.add_theme_color_override("font_color", Juice.INK)
@@ -55,7 +55,7 @@ func _ready() -> void:
 
 	_hint_chip = _mk_chip(Juice.INK, 0.4)
 	var hint_text := "WASD steer · SPACE zap · TAB to-dos · U origin shop · F fullscreen · M mute"
-	if DisplayServer.is_touchscreen_available():
+	if Game.is_touch():
 		hint_text = "drag left — steer · tap right — zap · tap a chip for the origin shop"
 	var hint := _chip_label(_hint_chip, hint_text, 13)
 	hint.add_theme_color_override("font_color", Juice.CREAM)

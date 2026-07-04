@@ -79,7 +79,7 @@ func show_lose(altitude_km: float, run_sparks: int, age_us: float, lab_us: float
 	_line("find more field. come back heavier.", 14, Color(Juice.INK, 0.65))
 	_line("", 8, Juice.INK)
 	var hint := _restart_hint()
-	if not DisplayServer.is_touchscreen_available():
+	if not Game.is_touch():
 		hint += "  (U — shop)"
 	_line(hint, 16, Color(Juice.PERIWINKLE, 1.0))
 	_pop_in()
@@ -94,7 +94,7 @@ func _build_common() -> void:
 
 
 func _restart_hint() -> String:
-	if DisplayServer.is_touchscreen_available():
+	if Game.is_touch():
 		return "tap — again"
 	return "R — again        ESC — title"
 

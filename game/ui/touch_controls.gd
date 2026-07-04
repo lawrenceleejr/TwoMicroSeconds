@@ -14,7 +14,7 @@ var _zap_pressed := false
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if not DisplayServer.is_touchscreen_available():
+	if not Game.is_touch():
 		visible = false
 		set_process_input(false)
 		set_process(false)
