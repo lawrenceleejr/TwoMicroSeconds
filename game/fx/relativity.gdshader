@@ -22,11 +22,14 @@ void fragment() {
 	// appears squeezed along the motion axis (pivot at screen center).
 	vec2 base = center + perp + d * (along * (1.0 + contraction));
 
-	// Motion blur: nine taps along the motion axis.
+	// Motion blur: nine taps along the motion axis, masked radially so the
+	// muon at screen center stays crisp while the periphery streaks.
+	float mask = smoothstep(0.05, 0.32, length(p));
+	float b = blur_amount * mask;
 	vec3 col = vec3(0.0);
 	for (int i = 0; i < 9; i++) {
 		float o = (float(i) / 8.0 - 0.5) * 2.0;
-		vec2 uv = clamp(base + d * o * blur_amount, vec2(0.001), vec2(0.999));
+		vec2 uv = clamp(base + d * o * b, vec2(0.001), vec2(0.999));
 		col += texture(screen_tex, uv).rgb;
 	}
 	col /= 9.0;

@@ -86,8 +86,12 @@ func _draw() -> void:
 				continue
 			var q4 := Vector2(cx * p2cell + float(h4 % 700), cy * p2cell + float((h4 / 11) % 700))
 			var p4 := q4 * par2 + center * (1.0 - par2)
+			# No haze in space: fade in below ~50 km where there's air.
+			var air4 := clampf((q4.y - 5000.0) / 5000.0, 0.0, 1.0)
+			if air4 <= 0.01:
+				continue
 			draw_set_transform(p4, 0.0, Vector2(1.0, 0.34))
-			draw_circle(Vector2.ZERO, 150.0 + float(h4 % 120), Color(1.0, 1.0, 1.0, 0.035))
+			draw_circle(Vector2.ZERO, 150.0 + float(h4 % 120), Color(1.0, 1.0, 1.0, 0.035 * air4))
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# Mid parallax layer: haze puffs drifting at 55% of camera speed.
@@ -102,10 +106,13 @@ func _draw() -> void:
 				continue
 			var q := Vector2(cx * pcell + float(h3 % 500), cy * pcell + float((h3 / 7) % 500))
 			var p := q * par + center * (1.0 - par)
+			var air := clampf((q.y - 4500.0) / 4500.0, 0.0, 1.0)
+			if air <= 0.01:
+				continue
 			var rx := 90.0 + float(h3 % 90)
 			draw_set_transform(p, 0.0, Vector2(1.0, 0.38))
-			draw_circle(Vector2.ZERO, rx, Color(1.0, 1.0, 1.0, 0.05))
-			draw_circle(Vector2.ZERO, rx * 0.65, Color(1.0, 1.0, 1.0, 0.05))
+			draw_circle(Vector2.ZERO, rx, Color(1.0, 1.0, 1.0, 0.05 * air))
+			draw_circle(Vector2.ZERO, rx * 0.65, Color(1.0, 1.0, 1.0, 0.05 * air))
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# Ground.
