@@ -84,7 +84,8 @@ func _draw() -> void:
 	# Paper, held up by a piece of washi tape.
 	var sb := Juice.ui_panel(Juice.PAPER, 0.93, 14)
 	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
-	# Edge tab affordances on the visible sliver when tucked away.
+	# Tucked away: draw ONLY the edge-tab affordances on the sliver —
+	# partial checkboxes peeking past the screen edge read as clutter.
 	if _slide > 0.5:
 		draw_colored_polygon(PackedVector2Array([
 			Vector2(18.0, 40.0), Vector2(8.0, 48.0), Vector2(18.0, 56.0),
@@ -92,6 +93,7 @@ func _draw() -> void:
 		draw_string(Juice.ui_font, Vector2(6.0, 84.0),
 			"%d" % Tasks.optional_done_count(), HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
 			Color(Juice.INK, 0.7))
+		return
 	draw_set_transform(Vector2(W * 0.5, 0.0), 0.06, Vector2.ONE)
 	draw_rect(Rect2(-26, -8, 52, 16), Color(Juice.MINT, 0.55))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

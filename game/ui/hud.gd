@@ -201,7 +201,7 @@ func _process(delta: float) -> void:
 		_alert_border.queue_redraw()
 		_alert_label.pivot_offset = _alert_label.size * 0.5
 		_alert_label.scale = Vector2.ONE * (1.0 + 0.06 * sin(_t * 11.0))
-		_alert_label.position = Vector2(vp.x * 0.5 - _alert_label.size.x * 0.5, 168.0) + jit * 1.6
+		_alert_label.position = Vector2(vp.x * 0.5 - _alert_label.size.x * 0.5, 208.0) + jit * 1.6
 		_timer_label.position += jit
 		Juice.trauma = maxf(Juice.trauma, 0.17)
 		_glitch_timer -= delta

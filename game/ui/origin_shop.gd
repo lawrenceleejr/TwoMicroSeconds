@@ -142,10 +142,10 @@ func _draw() -> void:
 			]), Juice.INK)
 		var name_col := Juice.INK if (owned or next_up) else Color(Juice.INK, 0.4)
 		draw_string(font, Vector2(28, y + 12), str(t["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, name_col)
-		draw_string(font, Vector2(28, y + 29), str(t["flavor"]), HORIZONTAL_ALIGNMENT_LEFT, 330, 11, Color(Juice.INK, 0.5))
+		draw_string(font, Vector2(28, y + 29), str(t["flavor"]), HORIZONTAL_ALIGNMENT_LEFT, 300, 11, Color(Juice.INK, 0.5))
 		# Middle column: energy + gamma. Right column: status, right-aligned.
-		draw_string(font, Vector2(W - 232, y + 12), "E ≈ %s" % t["energy"], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.INK, 0.7))
-		draw_string(font, Vector2(W - 232, y + 28), "γ +%.1f" % float(t["gamma"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.PERIWINKLE, 0.9))
+		draw_string(font, Vector2(W - 254, y + 12), "E ≈ %s" % t["energy"], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.INK, 0.7))
+		draw_string(font, Vector2(W - 254, y + 28), "γ +%.1f" % float(t["gamma"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.PERIWINKLE, 0.9))
 		var status := ""
 		var status_col := Color(Juice.INK, 0.5)
 		if equipped:

@@ -35,8 +35,9 @@ func _process(delta: float) -> void:
 
 
 func zapped(_source: Node2D) -> void:
-	# Zapping startles it fully lit for a moment.
-	_t = ceilf(_t)
+	# Zapping startles it fully lit: shift its phase so the flicker cycle
+	# lands squarely in the "on" window right now.
+	_phase_offset = fposmod(1.2 - _t, 3.8)
 	Sfx.play("pop", -8.0)
 
 

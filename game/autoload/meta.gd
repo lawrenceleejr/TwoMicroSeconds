@@ -24,7 +24,7 @@ const TIERS := [
 	},
 	{
 		"name": "supernova shock front",
-		"flavor": "surf a dying star's blast wave (Fermi acceleration)",
+		"flavor": "surf a dying star's blast wave, Fermi-style",
 		"energy": "10 TeV",
 		"gamma": 2.5,
 		"cost": 4,
@@ -52,7 +52,7 @@ const TIERS := [
 	},
 	{
 		"name": "the Oh-My-God particle",
-		"flavor": "Utah, 1991. 3×10²⁰ eV. oh. my. god.",
+		"flavor": "Utah, 1991. 3e20 eV. oh. my. god.",
 		"energy": "320 EeV",
 		"gamma": 14.0,
 		"cost": 16,

@@ -92,6 +92,7 @@ func _run() -> void:
 	# Airplane fly-through (avionics glitch + cabin flicker).
 	var plane := _nearest_prop("airplane", Vector2(0, 54000))
 	if plane != null:
+		muon.set("speed", 320.0)
 		muon.set("global_position", plane.global_position + Vector2(-170, 0))
 		muon.set("heading", Vector2.RIGHT)
 		muon.set("autopilot", Vector2(1, 0))
@@ -102,8 +103,14 @@ func _run() -> void:
 	# Bird flock scatter.
 	await _visit_and_zap(muon, "bird_flock", Vector2(0, 52000), "12_birds", 0.35)
 
+	# Park mid-sky for the UI-state shots — a downward autopilot here
+	# would reach the detector and end the run before the decay shots.
+	muon.set("speed", 320.0)
+	muon.set("global_position", Vector2(-200, 40000))
+	muon.set("heading", Vector2.RIGHT)
+	muon.set("autopilot", Vector2(1, 0.08))
+
 	# Checklist tucked away: the edge tab affordance.
-	muon.set("autopilot", Vector2(0.2, 1))
 	_press(KEY_TAB)
 	await _wait(0.6)
 	await _shot("13_checklist_tucked")
@@ -148,12 +155,15 @@ func _run() -> void:
 
 
 ## Teleport next to a prop (matched by script-path hint), zap, screenshot.
+## Speed is reset to a stroll each visit — after a boost the tour would
+## otherwise streak past every subject at gamma 7.
 func _visit_and_zap(muon: Node, hint: String, near: Vector2, shot_name: String,
 		delay: float) -> void:
 	var prop := _nearest_prop(hint, near)
 	if prop == null:
 		print("SHOT skipped (no prop): ", shot_name)
 		return
+	muon.set("speed", 320.0)
 	muon.set("global_position", prop.global_position + Vector2(-60, -90))
 	muon.set("heading", Vector2.DOWN)
 	muon.set("autopilot", Vector2(0.3, 1))
