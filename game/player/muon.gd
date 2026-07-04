@@ -25,6 +25,10 @@ const REAL_SECONDS_PER_US := 12.0    # game seconds per proper µs
 const CONTRACT := 0.5
 const ZAP_RADIUS := 175.0
 const ZAP_COOLDOWN := 0.35
+# The camera aims this far above the muon: player rides the lower half
+# of the frame, sky fills the top. (The 3D stage tilt would otherwise
+# push the muon into the upper half.)
+const FRAME_LOOK_UP := 195.0
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the
@@ -238,13 +242,16 @@ func _process(delta: float) -> void:
 	position += velocity * delta
 	_apply_bounds()
 
-	# Camera lead: position smoothing lags a fast target by velocity/speed,
-	# which would leave the muon racing along the bottom of the frame.
-	# Leading the target by exactly that lag keeps it pinned near the
-	# vertical middle at any velocity (horizontal framing stays loose).
+	# Camera framing. Two ingredients:
+	#  - lead: position smoothing lags a fast target by velocity/speed,
+	#    so the target leads by exactly that lag (otherwise the muon
+	#    slides around the frame with every speed change);
+	#  - look-up: the camera aims a fixed distance ABOVE the muon, so the
+	#    muon rides the bottom half of the screen with the sky it's
+	#    falling out of filling the frame overhead.
 	var lead_y := velocity.y / _camera.position_smoothing_speed
 	_cam_lead = lerpf(_cam_lead, lead_y, 1.0 - exp(-4.0 * delta))
-	_camera.position = Vector2(0.0, _cam_lead)
+	_camera.position = Vector2(0.0, _cam_lead - FRAME_LOOK_UP)
 
 	age_us += delta / REAL_SECONDS_PER_US
 	lab_us += gamma * delta / REAL_SECONDS_PER_US
