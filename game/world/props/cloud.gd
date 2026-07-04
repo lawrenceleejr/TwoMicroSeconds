@@ -4,7 +4,7 @@ extends "res://game/world/props/prop_base.gd"
 ## do accelerate charged particles).
 
 const Lightning := preload("res://game/fx/lightning.gd")
-const BOOST := 110.0
+const BOOST := 55.0
 
 var _t := 0.0
 var _blush := 0.0

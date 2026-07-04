@@ -32,7 +32,7 @@ func _run() -> void:
 		return
 
 	# Aurora glide: aim at a real aurora and fly through its ribbon.
-	var aurora := _nearest_in_group("aurora", Vector2(0, 1800))
+	var aurora := _nearest_in_group("aurora", Vector2(0, 5400))
 	if aurora != null:
 		muon.set("global_position", aurora.global_position + Vector2(-320, -60))
 		muon.set("autopilot", Vector2(1, 0.15))
@@ -51,14 +51,14 @@ func _run() -> void:
 		await _wait(0.8)
 
 	# High-speed streak through the mesosphere (post-boost).
-	muon.set("global_position", Vector2(-500, 6000))
+	muon.set("global_position", Vector2(-500, 18000))
 	muon.set("autopilot", Vector2(1, 0.35))
 	muon.call("boost", 500.0, "director's orders")
 	await _wait(0.7)
 	await _shot("06_speed")
 
 	# Troposphere: zap among the clouds.
-	muon.set("global_position", Vector2(0, 19500))
+	muon.set("global_position", Vector2(0, 58000))
 	muon.set("autopilot", Vector2(0.5, 0.6))
 	await _wait(0.5)
 	muon.call("_zap")
@@ -66,7 +66,7 @@ func _run() -> void:
 	await _shot("07_zap")
 
 	# Detection and the end screen.
-	muon.set("global_position", Vector2(0, 22400))
+	muon.set("global_position", Vector2(0, 68300))
 	muon.set("autopilot", Vector2(0, 1))
 	await _wait(1.6)
 	await _shot("08_detected")

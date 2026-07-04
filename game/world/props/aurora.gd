@@ -4,7 +4,7 @@ extends "res://game/world/props/prop_base.gd"
 
 const SEGS := 22
 const SEG_W := 34.0
-const BOOST := 90.0
+const BOOST := 45.0
 
 var _t := 0.0
 var _glow := 0.0
@@ -60,7 +60,10 @@ func _draw() -> void:
 		var col := Juice.MINT.lerp(Juice.LILAC, f)
 		col.h = wrapf(col.h + _hue_shift, 0.0, 1.0)
 		var alpha := 0.24 + 0.1 * sin(_t * 1.3 + i * 0.7) + _glow * 0.3
-		draw_rect(Rect2(p.x - 13.0, p.y - 95.0, 26.0, 190.0), Color(col, clampf(alpha, 0.05, 0.6)))
+		var a := clampf(alpha, 0.05, 0.6)
+		# Round-capped curtain strips, layered soft-over-bright.
+		draw_line(p + Vector2(0, -95), p + Vector2(0, 95), Color(col, a * 0.55), 30.0, true)
+		draw_line(p + Vector2(0, -80), p + Vector2(0, 70), Color(col, a), 14.0, true)
 	var points := PackedVector2Array()
 	for i in SEGS:
 		points.append(_point(i) - global_position)

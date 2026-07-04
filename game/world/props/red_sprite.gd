@@ -3,7 +3,7 @@ extends "res://game/world/props/prop_base.gd"
 ## It flickers in and out of existence; catch it while it's lit and its
 ## field hurls you downward.
 
-const BOOST := 130.0
+const BOOST := 65.0
 
 var _t := 0.0
 var _boost_cd := 0.0

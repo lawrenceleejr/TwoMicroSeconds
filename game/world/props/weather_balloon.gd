@@ -48,7 +48,7 @@ func _startle() -> void:
 	# man-made electronics always glitch you.
 	var m := muon()
 	if m != null and muon_dist() < 160.0:
-		m.boost(55.0, "static")
+		m.boost(30.0, "static")
 		Juice.glitch(0.35, 0.7)
 		Sfx.play("glitch", -6.0)
 	var tw := create_tween()

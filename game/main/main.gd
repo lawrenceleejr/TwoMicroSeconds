@@ -107,7 +107,8 @@ func _on_decayed() -> void:
 	Meta.record_lifetime(muon.age_us, muon.lab_us)
 	pause_overlay.can_pause = false
 	Sfx.play("decay", -2.0, 0.0)
-	Juice.hitstop(0.22, 0.05)
+	# No dramatic pause: decay is instantaneous — one frame you exist,
+	# the next you're three other particles.
 	Juice.shake(0.5)
 	var burst: Node2D = DecayBurst.new()
 	burst.position = muon.global_position

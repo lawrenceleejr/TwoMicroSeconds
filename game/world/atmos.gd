@@ -3,9 +3,9 @@ extends RefCounted
 ## World geometry and the sky gradient. y=0 is where the muon is born
 ## ("100 km up", with some poetic license); GROUND_Y is the detector lab.
 
-const WORLD_DEPTH := 24000.0
-const GROUND_Y := 23000.0
-const DETECT_Y := 22820.0
+const WORLD_DEPTH := 72000.0
+const GROUND_Y := 69000.0
+const DETECT_Y := 68820.0
 const X_LIMIT := 1150.0
 
 const LAYER_NAMES := ["thermosphere", "mesosphere", "stratosphere", "troposphere", "the ground"]
@@ -13,13 +13,13 @@ const LAYER_NAMES := ["thermosphere", "mesosphere", "stratosphere", "troposphere
 # [y, altitude_km] anchors for the piecewise altitude readout.
 const BANDS := [
 	[0.0, 100.0],
-	[4000.0, 85.0],
-	[9500.0, 50.0],
-	[16000.0, 12.0],
-	[23000.0, 0.0],
+	[12000.0, 85.0],
+	[28500.0, 50.0],
+	[48000.0, 12.0],
+	[69000.0, 0.0],
 ]
 
-const SKY_YS := [-2500.0, 0.0, 4000.0, 9500.0, 16000.0, 20500.0, 23000.0]
+const SKY_YS := [-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0]
 const SKY_COLORS := [
 	Color("0d0d20"),
 	Color("14142e"),
@@ -49,13 +49,13 @@ static func altitude_at(y: float) -> float:
 
 
 static func layer_index_at(y: float) -> int:
-	if y >= GROUND_Y - 400.0:
+	if y >= GROUND_Y - 1200.0:
 		return 4
-	if y >= 16000.0:
+	if y >= 48000.0:
 		return 3
-	if y >= 9500.0:
+	if y >= 28500.0:
 		return 2
-	if y >= 4000.0:
+	if y >= 12000.0:
 		return 1
 	return 0
 

@@ -44,6 +44,7 @@ func _ready() -> void:
 
 	# The clock: big, centered, unmissable.
 	_timer_label = Label.new()
+	_timer_label.add_theme_font_override("font", Juice.ui_font)
 	_timer_label.add_theme_font_size_override("font_size", 46)
 	_timer_label.add_theme_color_override("font_color", Juice.CREAM)
 	_timer_label.add_theme_color_override("font_outline_color", Juice.INK)
@@ -136,6 +137,7 @@ func _mk_chip(font_size: int, icon_path: String) -> Array:
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		row.add_child(icon)
 	var label := Label.new()
+	label.add_theme_font_override("font", Juice.ui_font)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", Juice.INK)
 	row.add_child(label)

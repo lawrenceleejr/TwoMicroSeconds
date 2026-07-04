@@ -32,8 +32,9 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 	for p in _parts:
+		# Ballistic: no gravity, no drag — they inherit their momentum
+		# at production and simply keep going.
 		p["pos"] += p["vel"] * delta
-		p["vel"] *= 1.0 - 0.5 * delta  # bleed off, wave goodbye
 	queue_redraw()
 
 

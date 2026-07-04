@@ -26,6 +26,7 @@ func _ready() -> void:
 	_vp.size = Vector2i(int(BASE_W * OVERSCAN), int(BASE_H * OVERSCAN))
 	add_child(_vp)
 	_vp.add_child(load("res://game/main/main.tscn").instantiate())
+	Juice.create_relativity_in(_vp)
 
 	var quad := MeshInstance3D.new()
 	var mesh := QuadMesh.new()

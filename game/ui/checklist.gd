@@ -16,6 +16,8 @@ var _stamp_scale := 0.0
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	size = Vector2(W, Tasks.DEFS.size() * 26.0 + 78.0)
+	pivot_offset = Vector2(W * 0.5, 0.0)
+	rotation = -0.012  # pinned up slightly crooked, like a real note
 	Tasks.task_completed.connect(_on_task_completed)
 
 
@@ -50,9 +52,12 @@ func _on_task_completed(task: Dictionary) -> void:
 
 
 func _draw() -> void:
-	# Paper.
+	# Paper, held up by a piece of washi tape.
 	var sb := Juice.ui_panel(Juice.PAPER, 0.93, 14)
 	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
+	draw_set_transform(Vector2(W * 0.5, 0.0), 0.06, Vector2.ONE)
+	draw_rect(Rect2(-26, -8, 52, 16), Color(Juice.MINT, 0.55))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	var font: Font = Juice.hand_font
 	draw_string(font, Vector2(16, 28), "to-do", HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Juice.INK)

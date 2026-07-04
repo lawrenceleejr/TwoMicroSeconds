@@ -24,6 +24,8 @@ var trauma := 0.0
 ## A friendly hand-written system font where available (macOS ships several);
 ## falls back to the default sans elsewhere.
 var hand_font := SystemFont.new()
+## Clean modern UI face for numbers and chips.
+var ui_font := SystemFont.new()
 
 var _noise := FastNoiseLite.new()
 var _t := 0.0
@@ -41,11 +43,28 @@ func _ready() -> void:
 	_noise.frequency = 2.0
 	hand_font.font_names = PackedStringArray(
 		["Marker Felt", "Chalkboard SE", "Comic Sans MS", "Comic Neue"])
-	_rel_mat = _build_screen_layer(70, "res://game/fx/relativity.gdshader", true)
-	_rel_rect = _last_rect
+	ui_font.font_names = PackedStringArray(
+		["Avenir Next", "Avenir", "Segoe UI", "Roboto", "Open Sans"])
+	# Relativity is created inside the gameplay SubViewport by the stage
+	# (see create_relativity_in) so contraction can sample the overscan
+	# margin instead of smearing the screen edge.
 	_build_screen_layer(80, "res://game/fx/vignette.gdshader", true)
 	_glitch_mat = _build_screen_layer(90, "res://game/fx/glitch.gdshader", false)
 	_glitch_rect = _last_rect
+
+
+## Build the relativity layer inside `vp` (the overscanned world viewport).
+func create_relativity_in(vp: Viewport) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 70
+	vp.add_child(layer)
+	_rel_mat = ShaderMaterial.new()
+	_rel_mat.shader = load("res://game/fx/relativity.gdshader")
+	_rel_rect = ColorRect.new()
+	_rel_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_rel_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rel_rect.material = _rel_mat
+	layer.add_child(_rel_rect)
 
 
 var _last_rect: ColorRect
@@ -108,7 +127,7 @@ func glitch(duration := 0.5, strength := 1.0) -> void:
 ## `strength` (speed); length contraction scales with `gamma_norm` — energy
 ## squashes the sky, because in your rest frame that's what energy does.
 func set_relativity(dir: Vector2, strength: float, gamma_norm := 0.0) -> void:
-	if _rel_mat == null:
+	if _rel_mat == null or _rel_rect == null or not is_instance_valid(_rel_rect):
 		return
 	_rel_rect.visible = strength > 0.02 or gamma_norm > 0.02
 	_rel_mat.set_shader_parameter("motion_dir", dir)

@@ -30,25 +30,25 @@ func _ready() -> void:
 func _spawn_all() -> void:
 	# Thermosphere: auroras and satellites — the early fields you live on.
 	for i in 5:
-		_place(Aurora.new(), _rng.randf_range(-850, 850), 600.0 + i * 640.0 + _rng.randf_range(-180, 180))
+		_place(Aurora.new(), _rng.randf_range(-850, 850), 1800.0 + i * 1920.0 + _rng.randf_range(-500, 500))
 	for i in 10:
-		_place(Satellite.new(), _rng.randf_range(-950, 950), 600.0 + i * 480.0 + _rng.randf_range(-160, 160))
+		_place(Satellite.new(), _rng.randf_range(-950, 950), 1800.0 + i * 1440.0 + _rng.randf_range(-450, 450))
 	# Red sprites flicker over the mesosphere.
 	for i in 3:
-		_place(RedSprite.new(), _rng.randf_range(-800, 800), 5200.0 + i * 1300.0 + _rng.randf_range(-300, 300))
+		_place(RedSprite.new(), _rng.randf_range(-800, 800), 15600.0 + i * 3900.0 + _rng.randf_range(-900, 900))
 	# Mesosphere: noctilucent clouds (shooting stars spawn dynamically).
 	for i in 3:
-		_place(Noctilucent.new(), _rng.randf_range(-900, 900), _rng.randf_range(4300, 6300))
+		_place(Noctilucent.new(), _rng.randf_range(-900, 900), _rng.randf_range(12900, 18900))
 	# Stratosphere: weather balloons.
 	for i in 5:
-		_place(Balloon.new(), _rng.randf_range(-900, 900), 10200.0 + i * 1050.0 + _rng.randf_range(-300, 300))
+		_place(Balloon.new(), _rng.randf_range(-900, 900), 30600.0 + i * 3150.0 + _rng.randf_range(-900, 900))
 	# Troposphere: clouds, birds, airplanes.
 	for i in 7:
-		_place(Cloud.new(), _rng.randf_range(-1000, 1000), _rng.randf_range(16600, 21900))
+		_place(Cloud.new(), _rng.randf_range(-1000, 1000), _rng.randf_range(49800, 65700))
 	for i in 4:
-		_place(BirdFlock.new(), _rng.randf_range(-900, 900), _rng.randf_range(17200, 22300))
+		_place(BirdFlock.new(), _rng.randf_range(-900, 900), _rng.randf_range(51600, 66900))
 	for i in 3:
-		_place(Airplane.new(), _rng.randf_range(-600, 600), 17600.0 + i * 1150.0 + _rng.randf_range(-250, 250))
+		_place(Airplane.new(), _rng.randf_range(-600, 600), 52800.0 + i * 3450.0 + _rng.randf_range(-750, 750))
 	# The finish line.
 	detector = Detector.new()
 	_place(detector, 0.0, Atmos.GROUND_Y - 26.0)

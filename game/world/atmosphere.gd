@@ -58,8 +58,8 @@ func _draw() -> void:
 	# (The sky gradient itself is shader-drawn on the child layer below.)
 
 	# Stars fade out as the air thickens.
-	if top < 12000.0:
-		var star_bottom := minf(bottom, 12000.0)
+	if top < 36000.0:
+		var star_bottom := minf(bottom, 36000.0)
 		var cell := 140.0
 		for cx in range(int(floor(left / cell)), int(ceil((left + width) / cell)) + 1):
 			for cy in range(int(floor(top / cell)), int(ceil(star_bottom / cell)) + 1):
@@ -67,12 +67,20 @@ func _draw() -> void:
 				var fx := float(h % 997) / 997.0
 				var fy := float((h / 997) % 991) / 991.0
 				var pos := Vector2(cx * cell + fx * cell, cy * cell + fy * cell)
-				var air_fade := clampf(1.0 - (pos.y - 5000.0) / 7000.0, 0.0, 1.0)
+				var air_fade := clampf(1.0 - (pos.y - 15000.0) / 21000.0, 0.0, 1.0)
 				if air_fade <= 0.01:
 					continue
 				var twinkle := 0.55 + 0.45 * sin(_t * 1.7 + float(h % 628) * 0.01)
 				var size := 1.2 + float(h % 17) / 9.0
-				draw_circle(pos, size, Color(1.0, 1.0, 0.94, 0.75 * air_fade * twinkle))
+				var star_col := Color(1.0, 1.0, 0.94, 0.75 * air_fade * twinkle)
+				draw_circle(pos, size, star_col)
+				# The brightest stars get a soft cross glint.
+				if size > 2.4:
+					var g := size * 3.2 * twinkle
+					draw_line(pos - Vector2(g, 0), pos + Vector2(g, 0),
+						Color(star_col, star_col.a * 0.35), 1.0, true)
+					draw_line(pos - Vector2(0, g), pos + Vector2(0, g),
+						Color(star_col, star_col.a * 0.35), 1.0, true)
 
 	# Far parallax layer: barely-there haze at 30% of camera speed.
 	var par2 := 0.3
@@ -87,7 +95,7 @@ func _draw() -> void:
 			var q4 := Vector2(cx * p2cell + float(h4 % 700), cy * p2cell + float((h4 / 11) % 700))
 			var p4 := q4 * par2 + center * (1.0 - par2)
 			# No haze in space: fade in below ~50 km where there's air.
-			var air4 := clampf((q4.y - 5000.0) / 5000.0, 0.0, 1.0)
+			var air4 := clampf((q4.y - 15000.0) / 15000.0, 0.0, 1.0)
 			if air4 <= 0.01:
 				continue
 			draw_set_transform(p4, 0.0, Vector2(1.0, 0.34))
@@ -106,7 +114,7 @@ func _draw() -> void:
 				continue
 			var q := Vector2(cx * pcell + float(h3 % 500), cy * pcell + float((h3 / 7) % 500))
 			var p := q * par + center * (1.0 - par)
-			var air := clampf((q.y - 4500.0) / 4500.0, 0.0, 1.0)
+			var air := clampf((q.y - 13500.0) / 13500.0, 0.0, 1.0)
 			if air <= 0.01:
 				continue
 			var rx := 90.0 + float(h3 % 90)

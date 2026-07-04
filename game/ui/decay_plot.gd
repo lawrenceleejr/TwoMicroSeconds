@@ -114,11 +114,27 @@ func _draw() -> void:
 		seg_on = not seg_on
 		prev = pt
 
-	# The "now" line, walking right.
+	# Two "now" lines on the same µs axis: your proper clock (mint) and the
+	# lab clock (sun). Born together; γ pries them apart.
+	var age := 0.0
+	if muon != null and is_instance_valid(muon):
+		age = muon.get("age_us")
+	var tau_x := _x(age, origin)
+	var y_dash := 0.0
+	while y_dash < PLOT_H:
+		draw_line(Vector2(tau_x, origin.y - y_dash),
+			Vector2(tau_x, origin.y - minf(y_dash + 5.0, PLOT_H)), Color(Juice.MINT, 0.85), 1.8, true)
+		y_dash += 9.0
+	var tau_label := "τ %.1f" % age
+	draw_string(font, Vector2(tau_x + 3.0, origin.y - PLOT_H + 10.0), tau_label,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(Juice.MINT, 0.95))
+
 	var now_x := _x(lab, origin)
-	var now_col := Color(1.0, 0.35, 0.42, 0.95) if danger else Color(Juice.MINT, 0.95)
+	var now_col := Color(1.0, 0.35, 0.42, 0.95) if danger else Color(Juice.SUN, 0.95)
 	draw_line(Vector2(now_x, origin.y), Vector2(now_x, origin.y - PLOT_H), now_col, 2.0, true)
 	draw_circle(Vector2(now_x, _y(p_now, origin)), 3.4, now_col)
+	draw_string(font, Vector2(now_x + 3.0, origin.y - PLOT_H + 22.0), "lab %.1f" % lab,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 9, now_col)
 
 	# Readouts.
 	draw_string(Juice.hand_font, Vector2(PAD, PAD + 8.0), "P(decay)",

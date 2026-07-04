@@ -29,7 +29,7 @@ float vnoise(vec2 p) {
 }
 
 vec3 sky_color(float y) {
-	float ys[STOPS] = {-2500.0, 0.0, 4000.0, 9500.0, 16000.0, 20500.0, 23000.0};
+	float ys[STOPS] = {-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0};
 	vec3 cs[STOPS] = {
 		vec3(0.051, 0.051, 0.125), vec3(0.078, 0.078, 0.180),
 		vec3(0.184, 0.188, 0.380), vec3(0.357, 0.373, 0.592),
@@ -52,8 +52,8 @@ void fragment() {
 	vec3 col = sky_color(wy);
 
 	// Nebula wisps in the thin air up high, drifting slowly.
-	if (wy < 11000.0) {
-		float fade = 1.0 - smoothstep(6000.0, 11000.0, wy);
+	if (wy < 33000.0) {
+		float fade = 1.0 - smoothstep(18000.0, 33000.0, wy);
 		vec2 np = vec2(wx * 0.0011 + t * 0.008, wy * 0.0016);
 		float n = vnoise(np) * 0.65 + vnoise(np * 2.3 + 7.7) * 0.35;
 		n = smoothstep(0.55, 0.95, n);
@@ -61,7 +61,7 @@ void fragment() {
 	}
 
 	// A warm sun, resting low over the troposphere.
-	float sd = length(vec2(wx - 620.0, (wy - 16600.0) * 1.35));
+	float sd = length(vec2(wx - 620.0, (wy - 50000.0) * 1.35));
 	col += vec3(1.0, 0.85, 0.55) * exp(-sd / 750.0) * 0.5;
 	col += vec3(1.0, 0.95, 0.8) * exp(-sd / 220.0) * 0.6;
 

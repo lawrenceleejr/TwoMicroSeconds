@@ -4,7 +4,7 @@ extends "res://game/world/props/prop_base.gd"
 ## and a half-second of digital glitch while its flight computer reboots.
 
 const FloatText := preload("res://game/fx/float_text.gd")
-const BOOST := 200.0
+const BOOST := 90.0
 
 var collected := false
 
