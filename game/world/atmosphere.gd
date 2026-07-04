@@ -126,10 +126,11 @@ func _draw() -> void:
 	# (The sky gradient itself is shader-drawn on the child layer below.)
 
 	# The starfield. At rest: diamond glints. In motion: every star streaks
-	# along the line through the VANISHING POINT — the spot ahead of the
-	# muon you're falling toward — so the whole sky rushes outward from one
-	# comprehensible point, warp-speed style. Streak length grows with both
-	# speed and distance from the vanishing point.
+	# along a line through a shared vanishing point that sits WELL OFF
+	# SCREEN, behind the direction of travel (falling → above the frame).
+	# You never see the point itself — only the fanned slopes of the
+	# streaks imply it, which reads as perspective and speed, not a
+	# hyperspace tunnel. Length grows with speed and distance from it.
 	if (mode == "full" or mode == "world") and top < 36000.0:
 		var mvel := Vector2.ZERO
 		var m = get_tree().get_first_node_in_group("muon")
@@ -137,7 +138,7 @@ func _draw() -> void:
 			mvel = m.get("velocity")
 		var warp := clampf((mvel.length() - 260.0) / 1100.0, 0.0, 1.0)
 		var vdir := mvel.normalized() if mvel.length() > 40.0 else Vector2.DOWN
-		var vpnt := center + vdir * 300.0
+		var vpnt := center - vdir * 950.0
 		var star_bottom := minf(bottom, 36000.0)
 		var cell := 140.0
 		for cx in range(int(floor(left / cell)), int(ceil((left + width) / cell)) + 1):
@@ -156,7 +157,10 @@ func _draw() -> void:
 				var rlen := radial.length()
 				if warp > 0.03 and rlen > 24.0:
 					var rdir := radial / rlen
-					var streak := warp * clampf(rlen / 420.0, 0.12, 2.6) * 130.0
+					# The point is ~1000 px out, so rlen varies gently
+					# across the frame — near-parallel streaks whose
+					# slight fan is what sells the perspective.
+					var streak := warp * clampf(rlen / 1500.0, 0.30, 1.15) * 150.0
 					var w := 1.0 + size * 0.5 * warp
 					# Chroma-split rails, then the cream core — a print
 					# misregistration flying at warp speed.
