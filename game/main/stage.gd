@@ -122,39 +122,31 @@ func _make_plane(vp: SubViewport, z: float, s: float, transparent: bool) -> Mesh
 	return quad
 
 
+## Set dressing between the planes: printed fog bands (flat strata bars,
+## not soft ovals) and four-point star glints. The glints are the
+## near-field starfield — real 3D points that slide with the dolly.
 func _spawn_wisps() -> void:
-	var texs := ["res://assets/sprites/cloud.svg", "res://assets/sprites/noctilucent.svg"]
 	for i in 6:
 		var s := Sprite3D.new()
-		s.texture = load(texs[i % texs.size()])
-		s.pixel_size = 0.011 + (i % 3) * 0.004
-		s.modulate = Color(1, 1, 1, 0.05 + 0.03 * (i % 3))
+		s.texture = load("res://assets/sprites/fogband.svg")
+		s.pixel_size = 0.010 + (i % 3) * 0.004
+		s.modulate = Color(1, 1, 1, 0.06 + 0.04 * (i % 3))
 		s.position = Vector3(randf_range(-7.5, 7.5), randf_range(-5.5, 5.5),
-			randf_range(0.4, 4.2))
+			randf_range(-1.8, 1.3))
 		add_child(s)
 		_wisps.append(s)
 
 
-## Actual 3D geometry drifting between the planes: barely-there unshaded
-## fog masses — depth cues, not set pieces. Kept sparse so the frame
-## stays clean; the parallax does the talking.
 func _spawn_blobs() -> void:
-	for i in 4:
-		var blob := MeshInstance3D.new()
-		var m := SphereMesh.new()
-		m.radius = 0.55
-		m.height = 0.7
-		blob.mesh = m
-		blob.scale = Vector3(randf_range(1.7, 3.0), randf_range(0.5, 0.8), randf_range(0.9, 1.5))
-		var bm := StandardMaterial3D.new()
-		bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		bm.albedo_color = Color(0.93, 0.89, 0.80, 0.05 + 0.03 * float(i % 2))
-		blob.material_override = bm
-		blob.position = Vector3(randf_range(-8.0, 8.0), randf_range(-5.5, 5.5),
-			randf_range(-2.0, 1.3))
-		add_child(blob)
-		_blobs.append(blob)
+	for i in 10:
+		var g := Sprite3D.new()
+		g.texture = load("res://assets/sprites/glint.svg")
+		g.pixel_size = 0.0022 + (i % 4) * 0.0012
+		g.modulate = Color(1, 1, 1, 0.30 + 0.14 * (i % 3))
+		g.position = Vector3(randf_range(-8.0, 8.0), randf_range(-5.5, 5.5),
+			randf_range(0.3, 3.8))
+		add_child(g)
+		_blobs.append(g)
 
 
 func _process(delta: float) -> void:
@@ -200,6 +192,13 @@ func _process(delta: float) -> void:
 	if _muon != null and _env != null:
 		var sky := Atmos.sky_color_at(_muon.global_position.y - 260.0)
 		_env.background_color = _env.background_color.lerp(sky.darkened(0.25), 1.0 - exp(-2.0 * delta))
+
+	# Publish the muon's real-screen position so UI panels (checklist,
+	# chips) can duck out of its way instead of hiding it.
+	if _muon != null and gcam != null and is_instance_valid(gcam):
+		var dpx: Vector2 = _muon.global_position - gcam.get_screen_center_position()
+		var lp := Vector3(dpx.x * (12.8 / BASE_W), -dpx.y * (7.2 / BASE_H), 0.0)
+		Game.muon_screen_pos = _cam.unproject_position(lp)
 
 	# Drift the set dressing. Apparent speed scales with how far in front
 	# of the play plane a piece sits (true parallax rates).

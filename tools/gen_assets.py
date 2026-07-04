@@ -201,6 +201,29 @@ def detector():
     write("detector.svg", svg(540, 320, defs, body))
 
 
+def fogband():
+    """A wide printed cloud band for the 3D stage dressing: flat strata
+    bars, a coral under-pass, an ink hairline. No soft ovals."""
+    body = f"""
+<rect x="20" y="58" width="380" height="34" rx="17" fill="{CORAL}" opacity="0.35"/>
+<rect x="20" y="40" width="420" height="42" rx="21" fill="{PAPER}" opacity="0.9"/>
+<rect x="70" y="22" width="260" height="30" rx="15" fill="#f6f0e2" opacity="0.85"/>
+<rect x="120" y="84" width="230" height="18" rx="9" fill="{PAPER}" opacity="0.6"/>
+<line x1="40" y1="94" x2="360" y2="94" stroke="{INK}" stroke-opacity="0.5" stroke-width="2.5"/>
+"""
+    write("fogband.svg", svg(460, 120, "", body))
+
+
+def glint():
+    """Four-point star glint with a coral misprint copy behind."""
+    star = "M32 2 L38 26 L62 32 L38 38 L32 62 L26 38 L2 32 L26 26 Z"
+    body = f"""
+<path d="{star}" fill="{CORAL}" opacity="0.55" transform="translate(-3 2)"/>
+<path d="{star}" fill="{PAPER}"/>
+"""
+    write("glint.svg", svg(64, 64, "", body))
+
+
 def sparkle():
     defs = radial("core", [(0, "#ffffff", 1), (0.5, "#dff4ff", 0.9), (1, "#bfe9ff", 0)])
     body = """
@@ -234,6 +257,8 @@ def main():
     airplane()
     satellite()
     detector()
+    fogband()
+    glint()
     sparkle()
     streak()
     spark_icon()

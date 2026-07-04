@@ -21,6 +21,8 @@ var shoot_mode := false
 
 
 func _ready() -> void:
+	_apply_ui_scale()
+	get_window().size_changed.connect(_apply_ui_scale)
 	var args := OS.get_cmdline_user_args()
 	if "--shoot" in args:
 		# Screenshot mode: a director drives the game through scripted
@@ -32,6 +34,24 @@ func _ready() -> void:
 		# CI smoke test: boot straight into a run so the whole gameplay
 		# stack (muon, props, HUD) gets exercised headlessly.
 		start_run.call_deferred()
+
+
+## Where the muon sits on the real screen (root-canvas px), published by
+## the 3D stage each frame so UI panels can duck out of its way.
+var muon_screen_pos := Vector2(-1e6, -1e6)
+
+
+func _apply_ui_scale() -> void:
+	# A 720-unit-tall canvas maps to a few centimeters of glass on a phone;
+	# scale the whole UI up on touch screens (portrait gets a bit more).
+	# The 3D world renders at full window resolution either way.
+	var win := get_window()
+	var f := 1.0
+	if DisplayServer.is_touchscreen_available():
+		f = 1.55
+		if win.size.y > win.size.x:
+			f = 1.85
+	win.content_scale_factor = f
 
 
 func start_run() -> void:

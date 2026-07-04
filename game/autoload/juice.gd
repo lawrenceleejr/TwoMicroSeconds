@@ -24,11 +24,14 @@ const CONFETTI_COLORS: Array[Color] = [
 
 var camera: Camera2D = null
 var trauma := 0.0
-## Editorial serif italic — flavor text, toasts, subtitles. Paired with a
-## mono UI it reads "design studio", not "science fair".
-var hand_font := SystemFont.new()
-## Technical monospace for chips, numbers, and instrument readouts.
-var ui_font := SystemFont.new()
+## The embedded type pair (both OFL, shipped in assets/fonts/):
+##  - Fraunces Italic (Undercase Type): a "wonky" old-style display serif —
+##    the SOFT/WONK axes are cranked for warmth and quirk. Display voice.
+##  - Space Mono (Colophon Foundry): an eccentric geometric mono — crossed
+##    zero, odd counters. Instrument voice, the default UI face.
+var hand_font: Font
+var ui_font: Font
+var ui_font_bold: Font
 
 var _noise := FastNoiseLite.new()
 var _t := 0.0
@@ -44,14 +47,21 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_noise.seed = 1137
 	_noise.frequency = 2.0
-	# One type language everywhere: technical mono as the default face.
+	var fraunces := FontVariation.new()
+	fraunces.base_font = load("res://assets/fonts/Fraunces-Italic.ttf")
+	var ts := TextServerManager.get_primary_interface()
+	fraunces.variation_opentype = {
+		ts.name_to_tag("wght"): 540.0,
+		ts.name_to_tag("opsz"): 60.0,
+		ts.name_to_tag("SOFT"): 60.0,
+		ts.name_to_tag("WONK"): 1.0,
+	}
+	hand_font = fraunces
+	ui_font = load("res://assets/fonts/SpaceMono-Regular.ttf")
+	ui_font_bold = load("res://assets/fonts/SpaceMono-Bold.ttf")
+	# One type language everywhere: the mono is the default face; the serif
+	# is opted into per-label for display moments.
 	ThemeDB.fallback_font = ui_font
-	hand_font.font_names = PackedStringArray(
-		["Iowan Old Style", "Palatino", "Georgia", "Times New Roman", "serif"])
-	hand_font.font_italic = true
-	ui_font.font_names = PackedStringArray(
-		["SF Mono", "Menlo", "JetBrains Mono", "Cascadia Code", "Consolas",
-		"Liberation Mono", "monospace"])
 	# Relativity is created inside the gameplay SubViewport by the stage
 	# (see create_relativity_in) so contraction can sample the overscan
 	# margin instead of smearing the screen edge.

@@ -18,11 +18,14 @@ func _ready() -> void:
 func _draw() -> void:
 	if shadow_size <= 0.0:
 		return
-	draw_set_transform(Vector2(0, shadow_drop), 0.0, Vector2(1.0, 0.3))
+	# Print-hatch shadow: stacked ink strokes, shorter as they descend —
+	# an engraver's mark, not a blurry oval.
+	var half := shadow_size * 0.5
 	for i in 3:
-		var f := 1.0 - i * 0.27
-		draw_circle(Vector2.ZERO, shadow_size * 0.5 * f, Color(0.16, 0.15, 0.25, 0.05))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var f := 1.0 - i * 0.3
+		var y := shadow_drop + i * 4.0
+		draw_line(Vector2(-half * f, y), Vector2(half * f, y),
+			Color(Juice.INK, 0.10 - i * 0.02), 2.5)
 
 
 func _setup() -> void:

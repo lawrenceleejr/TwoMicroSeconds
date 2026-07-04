@@ -48,6 +48,20 @@ func _draw_sky_rect() -> void:
 	_sky.draw_rect(Rect2(center - vp * 0.62, vp * 1.24), Color.WHITE)
 
 
+## A printed cloud band: stacked flat strata strokes with a coral under-pass
+## and an ink hairline — the riso answer to "soft oval".
+func _puff(c: CanvasItem, p: Vector2, rx: float, a: float, h: int) -> void:
+	var sway := sin(_t * 0.07 + float(h % 31)) * rx * 0.04
+	c.draw_line(p + Vector2(-rx * 0.72 + sway, rx * 0.24), p + Vector2(rx * 0.86 + sway, rx * 0.24),
+		Color(Juice.PINK, a * 0.55), rx * 0.17)
+	c.draw_line(p + Vector2(-rx, 0), p + Vector2(rx * 0.9, 0),
+		Color(0.95, 0.92, 0.85, a), rx * 0.42)
+	c.draw_line(p + Vector2(-rx * 0.5, -rx * 0.30), p + Vector2(rx * 0.55, -rx * 0.30),
+		Color(0.98, 0.95, 0.90, a * 0.85), rx * 0.26)
+	c.draw_line(p + Vector2(-rx * 0.86, rx * 0.42), p + Vector2(rx * 0.62, rx * 0.42),
+		Color(Juice.INK, a * 0.8), 1.5)
+
+
 func _process(delta: float) -> void:
 	_t += delta
 	var cam := get_viewport().get_camera_2d()
@@ -93,10 +107,7 @@ func _draw_foreground() -> void:
 			if air <= 0.01:
 				continue
 			var rx := 180.0 + float(h % 130)
-			_fg.draw_set_transform(p, 0.0, Vector2(1.0, 0.3))
-			_fg.draw_circle(Vector2.ZERO, rx, Color(1.0, 1.0, 1.0, 0.055 * air))
-			_fg.draw_circle(Vector2.ZERO, rx * 0.6, Color(1.0, 1.0, 1.0, 0.05 * air))
-			_fg.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			_puff(_fg, p, rx, 0.07 * air, h)
 
 
 func _draw() -> void:
@@ -114,9 +125,19 @@ func _draw() -> void:
 
 	# (The sky gradient itself is shader-drawn on the child layer below.)
 
-	# Stars fade out as the air thickens. They live on the gameplay plane
-	# so the relativity pass Doppler-shifts and streaks them.
+	# The starfield. At rest: diamond glints. In motion: every star streaks
+	# along the line through the VANISHING POINT — the spot ahead of the
+	# muon you're falling toward — so the whole sky rushes outward from one
+	# comprehensible point, warp-speed style. Streak length grows with both
+	# speed and distance from the vanishing point.
 	if (mode == "full" or mode == "world") and top < 36000.0:
+		var mvel := Vector2.ZERO
+		var m = get_tree().get_first_node_in_group("muon")
+		if m != null and m.get("velocity") != null:
+			mvel = m.get("velocity")
+		var warp := clampf((mvel.length() - 260.0) / 1100.0, 0.0, 1.0)
+		var vdir := mvel.normalized() if mvel.length() > 40.0 else Vector2.DOWN
+		var vpnt := center + vdir * 300.0
 		var star_bottom := minf(bottom, 36000.0)
 		var cell := 140.0
 		for cx in range(int(floor(left / cell)), int(ceil((left + width) / cell)) + 1):
@@ -129,11 +150,30 @@ func _draw() -> void:
 				if air_fade <= 0.01:
 					continue
 				var twinkle := 0.55 + 0.45 * sin(_t * 1.7 + float(h % 628) * 0.01)
-				var size := 1.2 + float(h % 17) / 9.0
+				var size := 1.4 + float(h % 17) / 8.0
 				var star_col := Color(1.0, 1.0, 0.94, 0.75 * air_fade * twinkle)
-				draw_circle(pos, size, star_col)
-				# The brightest stars get a soft cross glint.
-				if size > 2.4:
+				var radial := pos - vpnt
+				var rlen := radial.length()
+				if warp > 0.03 and rlen > 24.0:
+					var rdir := radial / rlen
+					var streak := warp * clampf(rlen / 420.0, 0.12, 2.6) * 130.0
+					var w := 1.0 + size * 0.5 * warp
+					# Chroma-split rails, then the cream core — a print
+					# misregistration flying at warp speed.
+					var perp := Vector2(-rdir.y, rdir.x) * (1.2 + warp)
+					draw_line(pos - rdir * streak * 0.2 + perp, pos + rdir * streak + perp,
+						Color(Juice.PINK, star_col.a * 0.30), w, true)
+					draw_line(pos - rdir * streak * 0.2 - perp, pos + rdir * streak - perp,
+						Color(Juice.MINT, star_col.a * 0.30), w, true)
+					draw_line(pos - rdir * streak * 0.25, pos + rdir * streak,
+						star_col, w, true)
+				# Diamond glint core (never a plain dot).
+				var s2 := size * (1.0 + 0.4 * twinkle)
+				draw_colored_polygon(PackedVector2Array([
+					pos + Vector2(0, -s2 * 1.6), pos + Vector2(s2 * 0.7, 0),
+					pos + Vector2(0, s2 * 1.6), pos + Vector2(-s2 * 0.7, 0),
+				]), star_col)
+				if size > 2.6:
 					var g := size * 3.2 * twinkle
 					draw_line(pos - Vector2(g, 0), pos + Vector2(g, 0),
 						Color(star_col, star_col.a * 0.35), 1.0, true)
@@ -157,9 +197,7 @@ func _draw() -> void:
 				var air4 := clampf((q4.y - 15000.0) / 15000.0, 0.0, 1.0)
 				if air4 <= 0.01:
 					continue
-				draw_set_transform(p4, 0.0, Vector2(1.0, 0.34))
-				draw_circle(Vector2.ZERO, 150.0 + float(h4 % 120), Color(1.0, 1.0, 1.0, 0.035 * air4))
-				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				_puff(self, p4, 150.0 + float(h4 % 120), 0.045 * air4, h4)
 
 	# Mid parallax layer: haze puffs drifting at 55% of camera speed.
 	if mode == "full" or mode == "world":
@@ -178,10 +216,7 @@ func _draw() -> void:
 				if air <= 0.01:
 					continue
 				var rx := 90.0 + float(h3 % 90)
-				draw_set_transform(p, 0.0, Vector2(1.0, 0.38))
-				draw_circle(Vector2.ZERO, rx, Color(1.0, 1.0, 1.0, 0.05 * air))
-				draw_circle(Vector2.ZERO, rx * 0.65, Color(1.0, 1.0, 1.0, 0.05 * air))
-				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				_puff(self, p, rx, 0.06 * air, h3)
 
 	# Ground. The back plane gets a plain, slightly darker slab (a real
 	# horizon behind the play plane); the gameplay plane gets the meadow.

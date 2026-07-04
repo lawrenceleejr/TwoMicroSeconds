@@ -120,10 +120,21 @@ bass, 104 BPM). To swap in your own music, drop `track.ogg` into `music/`
 (works on the shipped app, no rebuild). Details in
 [`music/README.md`](music/README.md).
 
+## the type
+
+The game ships with an embedded pair (both SIL Open Font License, in
+`assets/fonts/`): **Fraunces Italic** — Undercase Type's wonky old-style
+display serif, with the SOFT/WONK axes cranked — as the display voice, and
+**Space Mono** — Colophon Foundry's eccentric geometric mono — as the
+instrument voice. Every frame gets a print finish on top: film grain, RGB
+misregistration, a rotated halftone dot screen in the shadows, and a laid
+paper-fiber texture.
+
 ## building locally
 
-Everything in this repo is text: all art is drawn in code, all audio is
-synthesized at startup. No binary assets, no imports to fight.
+Almost everything in this repo is text: all art is drawn in code or
+generated SVG, all audio is synthesized at startup. The only binary assets
+are the two OFL font files in `assets/fonts/`.
 
 - Install [Godot 4.4.1-stable](https://godotengine.org/download) and open the
   project, or run it headless-imported from the CLI:

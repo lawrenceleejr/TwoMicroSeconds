@@ -32,6 +32,12 @@ func _process(delta: float) -> void:
 	position = Vector2(vp.x - W - 14.0 + _slide * (W + 40.0), 64.0)
 	if Tasks.all_optional_done() and _stamp_scale < 1.0:
 		_stamp_scale = minf(_stamp_scale + delta * 3.0, 1.0)
+	# Never hide the muon: when it flies behind the note, the paper turns
+	# translucent until it has passed.
+	var muon_ui := get_viewport().get_final_transform().affine_inverse() * Game.muon_screen_pos
+	var ducked := get_rect().grow(46.0).has_point(muon_ui)
+	var alpha_target := 0.22 if (ducked and open) else 1.0
+	modulate.a = lerpf(modulate.a, alpha_target, 1.0 - exp(-9.0 * delta))
 	queue_redraw()
 
 
