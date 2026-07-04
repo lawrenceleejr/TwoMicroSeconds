@@ -182,3 +182,81 @@ jobs:
           name: shoot-log
           path: shoot.log
           if-no-files-found: ignore
+
+  # Playable web build on GitHub Pages. Single-threaded export: Pages can't
+  # serve the COOP/COEP headers SharedArrayBuffer would need.
+  web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot (linux + templates)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-linux
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-linux-web-v1
+
+      - name: Install Godot and export templates
+        run: |
+          set -euo pipefail
+          if [ ! -x "$HOME/godot-linux/godot" ]; then
+            curl -fL --retry 4 --retry-delay 5 -o /tmp/godot.zip \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            mkdir -p "$HOME/godot-linux"
+            unzip -q /tmp/godot.zip -d "$HOME/godot-linux"
+            mv "$HOME/godot-linux/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/godot-linux/godot"
+          fi
+          TPL_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          if [ ! -f "$TPL_DIR/web_nothreads_release.zip" ]; then
+            curl -fL --retry 4 --retry-delay 5 -o /tmp/templates.tpz \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            rm -rf /tmp/godot-templates
+            unzip -q /tmp/templates.tpz -d /tmp/godot-templates
+            mkdir -p "$TPL_DIR"
+            mv /tmp/godot-templates/templates/* "$TPL_DIR/"
+          fi
+          "$HOME/godot-linux/godot" --version
+
+      - name: Import project (headless)
+        run: |
+          "$HOME/godot-linux/godot" --headless --path . --import || true
+          "$HOME/godot-linux/godot" --headless --path . --import
+
+      - name: Export Web
+        run: |
+          set -euo pipefail
+          mkdir -p build/web
+          "$HOME/godot-linux/godot" --headless --path . --export-release "Web" \
+            "$PWD/build/web/index.html" 2>&1 | tee build/export-web.log
+          test -s build/web/index.html
+          test -s build/web/index.wasm
+          if grep -Eq "ERROR: Project export|Failed to export" build/export-web.log; then
+            echo "Web export log contains errors" >&2
+            exit 1
+          fi
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -60,6 +60,15 @@ acceleration) → pulsar wind nebula → magnetar flare → active galactic
 nucleus → **the Oh-My-God particle** (Utah, 1991, 3×10²⁰ eV) — a golden
 muon whose detection earns the game's final ending.
 
+## play in the browser
+
+Every push deploys a web build to GitHub Pages:
+
+**https://lawrenceleejr.github.io/TwoMicroSeconds/**
+
+(Single-threaded WASM via Godot's web export — audio may crackle slightly
+compared to the native build; save data lives in your browser's storage.)
+
 ## download (macOS)
 
 Every push to `main` builds a DMG on GitHub Actions:
