@@ -1,74 +1,141 @@
 extends Control
-## The fate curve: probability of still existing, t seconds from now.
-## A pure exponential survival curve, exp(-t / (gamma * tau)) — when you
-## gain speed the whole curve visibly stretches (time dilation, unlabeled).
-## No axes lectures; it just breathes in the corner and makes you nervous.
+## Cumulative decay probability vs lab time. Quantitative on purpose:
+## a solid curve traces P(decayed) so far, a dashed projection continues
+## it at the current γ, and a "now" line walks right as the clock runs.
+## Boosting stretches the mean life, so the x-axis smoothly zooms out —
+## tick marks compress past you as the window rescales.
 
-const PLOT_W := 232.0
-const PLOT_H := 74.0
+const PLOT_W := 250.0
+const PLOT_H := 92.0
 const PAD := 14.0
-const WINDOW_S := 75.0  # seconds of lab time spanned by the x-axis
+const TITLE_H := 16.0
 
 var muon: Node2D = null
 
-var _gamma_disp := 8.0
+var _xmax := 24.0
+var _hist := PackedVector2Array()  # (lab_t, P) samples
+var _sample_accum := 1.0
 var _t := 0.0
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	size = Vector2(PLOT_W + PAD * 2.0, PLOT_H + PAD * 2.0 + 10.0)
+	size = Vector2(PLOT_W + PAD * 2.0, PLOT_H + PAD * 2.0 + TITLE_H)
 
 
 func _process(delta: float) -> void:
 	_t += delta
 	if muon != null and is_instance_valid(muon):
-		var target: float = muon.get("gamma")
-		_gamma_disp = lerpf(_gamma_disp, target, 1.0 - exp(-3.5 * delta))
+		var lab: float = muon.get("lab_s")
+		var p: float = muon.get("decay_p")
+		_sample_accum += delta
+		if _sample_accum >= 0.2:
+			_sample_accum = 0.0
+			_hist.append(Vector2(lab, p))
+		var gamma: float = muon.get("gamma")
+		var mean_life: float = gamma * 2.2 * 1.5
+		# Window covers the past plus ~2 mean lives of future; boosting
+		# raises the target and the lerp animates the zoom-out.
+		var target_x := maxf(lab * 1.25 + 4.0, mean_life * 2.1)
+		_xmax = lerpf(_xmax, target_x, 1.0 - exp(-2.2 * delta))
 	queue_redraw()
+
+
+func _x(t: float, origin: Vector2) -> float:
+	return origin.x + clampf(t / _xmax, 0.0, 1.0) * PLOT_W
+
+
+func _y(p: float, origin: Vector2) -> float:
+	return origin.y - clampf(p, 0.0, 1.0) * PLOT_H
 
 
 func _draw() -> void:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(Juice.INK, 0.5)
+	sb.bg_color = Color(Juice.INK, 0.55)
 	sb.set_corner_radius_all(12)
 	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
 
-	var origin := Vector2(PAD, PAD + 8.0 + PLOT_H)
-	var mean_life: float = _gamma_disp * 2.2 * 1.5  # gamma * tau, lab seconds
+	var origin := Vector2(PAD, PAD + TITLE_H + PLOT_H)
+	var font := ThemeDB.fallback_font
+	var lab := 0.0
+	var p_now := 0.0
+	var gamma := 1.0
+	if muon != null and is_instance_valid(muon):
+		lab = muon.get("lab_s")
+		p_now = muon.get("decay_p")
+		gamma = muon.get("gamma")
+	var mean_life: float = gamma * 2.2 * 1.5
+	var danger := p_now > 0.9
 
-	# Filled survival curve.
-	var pts := PackedVector2Array()
-	var poly := PackedVector2Array()
-	poly.append(origin)
-	var steps := 40
-	for i in steps + 1:
-		var f := float(i) / steps
-		var t := f * WINDOW_S
-		var p := exp(-t / mean_life)
-		var pt := origin + Vector2(f * PLOT_W, -p * PLOT_H)
-		pts.append(pt)
-		poly.append(pt)
-	poly.append(origin + Vector2(PLOT_W, 0))
-	draw_colored_polygon(poly, Color(Juice.PINK, 0.22))
-	draw_polyline(pts, Color(Juice.CREAM, 0.95), 2.2, true)
+	# Time ticks (they compress and stream by as the window rescales).
+	var tick_dt := 1.0
+	for candidate in [1.0, 2.0, 5.0, 10.0, 15.0, 30.0, 60.0, 120.0]:
+		tick_dt = candidate
+		if _xmax / candidate <= 8.0:
+			break
+	var tick_t := tick_dt
+	var tick_i := 1
+	while tick_t < _xmax:
+		var x := _x(tick_t, origin)
+		draw_line(Vector2(x, origin.y), Vector2(x, origin.y - PLOT_H), Color(Juice.CREAM, 0.10), 1.0, true)
+		if tick_i % 2 == 0:
+			draw_string(font, Vector2(x - 10.0, origin.y + 11.0), "%ds" % int(tick_t),
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(Juice.CREAM, 0.45))
+		tick_t += tick_dt
+		tick_i += 1
 
-	# Baseline.
+	# Probability gridlines: 50% quiet, 90% loud.
+	draw_line(Vector2(origin.x, _y(0.5, origin)), Vector2(origin.x + PLOT_W, _y(0.5, origin)),
+		Color(Juice.CREAM, 0.14), 1.0, true)
+	var y90 := _y(0.9, origin)
+	draw_line(Vector2(origin.x, y90), Vector2(origin.x + PLOT_W, y90),
+		Color(1.0, 0.35, 0.42, 0.55), 1.2, true)
+	draw_string(font, Vector2(origin.x + PLOT_W - 26.0, y90 - 3.0), "90%",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1.0, 0.45, 0.5, 0.8))
 	draw_line(origin, origin + Vector2(PLOT_W, 0), Color(Juice.CREAM, 0.35), 1.4, true)
 
-	# Marker at the mean lifetime — it slides right as gamma grows.
-	var mean_x := clampf(mean_life / WINDOW_S, 0.0, 1.0) * PLOT_W
-	var dash_top := origin + Vector2(mean_x, -PLOT_H)
-	var y := 0.0
-	while y < PLOT_H:
-		draw_line(dash_top + Vector2(0, y), dash_top + Vector2(0, minf(y + 5.0, PLOT_H)),
-			Color(Juice.SUN, 0.8), 1.6, true)
-		y += 10.0
-	draw_circle(origin + Vector2(mean_x, 4.0), 3.0, Juice.SUN)
+	# History: the path P has actually taken.
+	if _hist.size() >= 2:
+		var pts := PackedVector2Array()
+		for s in _hist:
+			pts.append(Vector2(_x(s.x, origin), _y(s.y, origin)))
+		pts.append(Vector2(_x(lab, origin), _y(p_now, origin)))
+		draw_polyline(pts, Color(Juice.CREAM, 0.95), 2.2, true)
 
-	# "now": a nervous little pulse at the origin.
-	var pulse := 3.0 + 1.4 * sin(_t * 5.0)
-	draw_circle(origin + Vector2(0, -PLOT_H), pulse, Color(Juice.MINT, 0.9))
+	# Projection: dashed continuation at the current gamma.
+	var seg_on := true
+	var prev := Vector2(_x(lab, origin), _y(p_now, origin))
+	for i in range(1, 25):
+		var tf := lab + (_xmax - lab) * float(i) / 24.0
+		var pf := 1.0 - (1.0 - p_now) * exp(-(tf - lab) / mean_life)
+		var pt := Vector2(_x(tf, origin), _y(pf, origin))
+		if seg_on:
+			draw_line(prev, pt, Color(Juice.SUN, 0.7), 1.6, true)
+		seg_on = not seg_on
+		prev = pt
 
-	draw_string(Juice.hand_font, Vector2(PAD, PAD + 4.0), "fate",
+	# The "now" line, walking right.
+	var now_x := _x(lab, origin)
+	var now_col := Color(1.0, 0.35, 0.42, 0.95) if danger else Color(Juice.MINT, 0.95)
+	draw_line(Vector2(now_x, origin.y), Vector2(now_x, origin.y - PLOT_H), now_col, 2.0, true)
+	draw_circle(Vector2(now_x, _y(p_now, origin)), 3.4, now_col)
+
+	# Readouts.
+	draw_string(Juice.hand_font, Vector2(PAD, PAD + 8.0), "P(decay)",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.CREAM, 0.75))
+	var pct := "%d%%" % int(round(p_now * 100.0))
+	var pw := font.get_string_size(pct, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+	draw_string(font, Vector2(PAD + PLOT_W - pw, PAD + 9.0), pct,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 15, now_col)
+	var tau_text := "γτ = %.1f s" % mean_life
+	draw_string(font, Vector2(PAD + 78.0, PAD + 8.0), tau_text,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Juice.CREAM, 0.5))
+
+	if danger:
+		var flash := 0.4 + 0.4 * absf(sin(_t * 8.0))
+		var border := StyleBoxFlat.new()
+		border.bg_color = Color(0, 0, 0, 0)
+		border.set_border_width_all(2)
+		border.border_color = Color(1.0, 0.3, 0.38, flash)
+		border.set_corner_radius_all(12)
+		border.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))

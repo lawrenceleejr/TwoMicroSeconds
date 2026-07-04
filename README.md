@@ -37,17 +37,17 @@ blur creeps in as γ climbs.
 
 The to-do list is optional, goose-style: tickle an aurora, high-five a
 satellite, photobomb a shooting star, startle a weather balloon, zip through
-an airplane, make a cloud rain… Each completed prank pays **+1 spark**.
-Finish all ten before being detected and the observatory stamps your receipt
-**A++ MUON**. Fresh solar-flare muons cannot reach the ground — early runs
+an airplane, make a cloud rain… Finish all ten before being detected and
+the observatory stamps your receipt **A++ MUON**. Fresh solar-flare muons cannot reach the ground — early runs
 are for sparks; come back heavier.
 
 ## sparks & the origin shop
 
 Drowsy **satellites** drift through the thermosphere. Bump one and its flight
 computer reboots — the screen glitches out for half a second, you pocket a
-**spark** (two for zipping straight through), and gain a little proper time.
-Finishing a run pays +3 sparks; a perfect mischief sheet pays +5 more.
+**spark**, and its capacitors hurl you downward (hit it fast for a bigger
+kick). Every man-made thing you clip — balloons, airplanes — glitches the
+same way. Finishing a run pays +3 sparks; a perfect mischief sheet +5 more.
 
 Sparks persist between runs and are spent in the **origin shop** (press U on
 the title screen) on better cosmic-ray production mechanisms. Each tier means

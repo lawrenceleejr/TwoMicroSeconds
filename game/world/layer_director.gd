@@ -31,8 +31,8 @@ func _spawn_all() -> void:
 	# Thermosphere: auroras and satellites — the early fields you live on.
 	for i in 5:
 		_place(Aurora.new(), _rng.randf_range(-850, 850), 600.0 + i * 640.0 + _rng.randf_range(-180, 180))
-	for i in 7:
-		_place(Satellite.new(), _rng.randf_range(-950, 950), 700.0 + i * 700.0 + _rng.randf_range(-220, 220))
+	for i in 10:
+		_place(Satellite.new(), _rng.randf_range(-950, 950), 600.0 + i * 480.0 + _rng.randf_range(-160, 160))
 	# Red sprites flicker over the mesosphere.
 	for i in 3:
 		_place(RedSprite.new(), _rng.randf_range(-800, 800), 5200.0 + i * 1300.0 + _rng.randf_range(-300, 300))
@@ -40,15 +40,15 @@ func _spawn_all() -> void:
 	for i in 3:
 		_place(Noctilucent.new(), _rng.randf_range(-900, 900), _rng.randf_range(4300, 6300))
 	# Stratosphere: weather balloons.
-	for i in 3:
-		_place(Balloon.new(), _rng.randf_range(-900, 900), _rng.randf_range(10200, 15300))
+	for i in 5:
+		_place(Balloon.new(), _rng.randf_range(-900, 900), 10200.0 + i * 1050.0 + _rng.randf_range(-300, 300))
 	# Troposphere: clouds, birds, airplanes.
 	for i in 7:
 		_place(Cloud.new(), _rng.randf_range(-1000, 1000), _rng.randf_range(16600, 21900))
 	for i in 4:
 		_place(BirdFlock.new(), _rng.randf_range(-900, 900), _rng.randf_range(17200, 22300))
-	for i in 2:
-		_place(Airplane.new(), _rng.randf_range(-600, 600), _rng.randf_range(17600, 21000))
+	for i in 3:
+		_place(Airplane.new(), _rng.randf_range(-600, 600), 17600.0 + i * 1150.0 + _rng.randf_range(-250, 250))
 	# The finish line.
 	detector = Detector.new()
 	_place(detector, 0.0, Atmos.GROUND_Y - 26.0)

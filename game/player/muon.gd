@@ -42,7 +42,13 @@ var finished := false
 ## decay is a memoryless roll against the dilated hazard rate, like the
 ## real particle.
 var age_us := 0.0
+## Lab-frame time lived so far (game seconds).
+var lab_s := 0.0
+## Cumulative probability of having decayed by now: 1 - exp(-∫dt/γτ).
+var decay_p := 0.0
 var gamma := 1.0
+
+var _hazard_integral := 0.0
 var speed_frac := 0.0
 ## Scripted steering for the screenshot/demo director; zero = player input.
 var autopilot := Vector2.ZERO
@@ -207,13 +213,16 @@ func _process(delta: float) -> void:
 	# birth, so a permanently higher gamma. Your clock ticks 1/gamma as fast.
 	gamma = 1.0 + GAMMA_K * speed_frac * speed_frac + Meta.gamma_bonus()
 	age_us += delta / (gamma * REAL_SECONDS_PER_US)
+	lab_s += delta
 
 	# Decay is memoryless: every instant carries hazard dt / (gamma * tau).
-	if not Game.shoot_mode:
-		var mean_lab_life := gamma * LIFETIME * REAL_SECONDS_PER_US
-		if randf() < delta / mean_lab_life:
-			_die()
-			return
+	# The integral of that hazard gives the cumulative decay probability.
+	var mean_lab_life := gamma * LIFETIME * REAL_SECONDS_PER_US
+	_hazard_integral += delta / mean_lab_life
+	decay_p = 1.0 - exp(-_hazard_integral)
+	if not Game.shoot_mode and randf() < delta / mean_lab_life:
+		_die()
+		return
 
 	if speed > birth_speed * 1.15:
 		Tasks.complete("overclock")

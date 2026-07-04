@@ -4,16 +4,25 @@ extends Node2D
 
 const DUR := 2.4
 
+## Final momentum of the muon — the decay products inherit it, boosted
+## forward like the real e⁻ ν ν̄ would be.
+var motion := Vector2(0, 220)
+
 var _t := 0.0
 var _parts := []
 
 
 func _ready() -> void:
 	z_index = 9
+	if motion.length() < 60.0:
+		motion = Vector2(0, 220)
 	_parts = [
-		{"pos": Vector2.ZERO, "vel": Vector2(-90, -130), "r": 9.0, "color": Juice.MINT, "ghost": false},
-		{"pos": Vector2.ZERO, "vel": Vector2(70, -160), "r": 5.5, "color": Color(1, 1, 1, 0.7), "ghost": true},
-		{"pos": Vector2.ZERO, "vel": Vector2(150, -90), "r": 5.0, "color": Color(1, 1, 1, 0.7), "ghost": true},
+		{"pos": Vector2.ZERO, "vel": motion * 0.9 + motion.orthogonal().normalized() * randf_range(-70, 70),
+			"r": 9.0, "color": Juice.MINT, "ghost": false},
+		{"pos": Vector2.ZERO, "vel": motion * 0.7 + motion.orthogonal().normalized() * randf_range(30, 110),
+			"r": 5.5, "color": Color(1, 1, 1, 0.7), "ghost": true},
+		{"pos": Vector2.ZERO, "vel": motion * 0.55 + motion.orthogonal().normalized() * randf_range(-110, -30),
+			"r": 5.0, "color": Color(1, 1, 1, 0.7), "ghost": true},
 	]
 
 
@@ -24,7 +33,7 @@ func _process(delta: float) -> void:
 		return
 	for p in _parts:
 		p["pos"] += p["vel"] * delta
-		p["vel"] += Vector2(0, -18.0) * delta  # they escape upward, gently
+		p["vel"] *= 1.0 - 0.5 * delta  # bleed off, wave goodbye
 	queue_redraw()
 
 

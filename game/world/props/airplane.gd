@@ -42,6 +42,9 @@ func _process(delta: float) -> void:
 			_thread_cd = 3.0
 			_waggle = 1.0
 			Sfx.play("boing", -6.0)
+			# You just flew through the avionics bay.
+			Juice.glitch(0.4, 0.8)
+			Sfx.play("glitch", -5.0)
 			Tasks.complete("thread_airplane")
 			var tw := create_tween()
 			tw.tween_property(self, "_waggle", 0.0, 1.2) \

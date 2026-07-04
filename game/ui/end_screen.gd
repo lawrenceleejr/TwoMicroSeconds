@@ -34,7 +34,7 @@ func _ready() -> void:
 	_panel.add_child(_vbox)
 
 
-func show_win(run_sparks: int, omg: bool, age_us: float) -> void:
+func show_win(run_sparks: int, omg: bool, age_us: float, lab_s: float) -> void:
 	_build_common()
 	if omg:
 		_line("C L I C K .", 44, Color("b8860b"))
@@ -43,8 +43,8 @@ func show_win(run_sparks: int, omg: bool, age_us: float) -> void:
 		_line("CLICK.", 44, Juice.INK)
 		_line("counted.", 22, Color(Juice.INK, 0.8))
 	_line("", 8, Juice.INK)
-	_line("lived %.2f µs · fell 100 km · mischief %d/%d" % [
-		age_us, Tasks.optional_done_count(), Tasks.optional_total()], 16, Juice.INK)
+	_line("lived %.2f µs proper · %.0f s lab · mischief %d/%d" % [
+		age_us, lab_s, Tasks.optional_done_count(), Tasks.optional_total()], 16, Juice.INK)
 	_line("sparks +%d  ·  wallet %d" % [run_sparks, Meta.sparks], 16, Juice.PERIWINKLE)
 	if Tasks.all_optional_done():
 		_line("A++ MUON — the front desk is framing this.", 16, Color("e05c6e"))
@@ -57,14 +57,14 @@ func show_win(run_sparks: int, omg: bool, age_us: float) -> void:
 	_pop_in()
 
 
-func show_lose(altitude_km: float, run_sparks: int, age_us: float) -> void:
+func show_lose(altitude_km: float, run_sparks: int, age_us: float, lab_s: float) -> void:
 	_build_common()
 	_line("poof.", 44, Juice.INK)
 	_line("an electron and two neutrinos carry on without you.", 20, Color(Juice.INK, 0.8))
 	_line("", 8, Juice.INK)
-	_line("lived %.2f µs · made it to %d km · mischief %d/%d" % [
-		age_us, int(round(altitude_km)), Tasks.optional_done_count(), Tasks.optional_total()],
-		16, Juice.INK)
+	_line("lived %.2f µs proper · %.0f s lab · made it to %d km" % [
+		age_us, lab_s, int(round(altitude_km))], 16, Juice.INK)
+	_line("mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()], 16, Juice.INK)
 	if run_sparks > 0:
 		_line("sparks +%d  ·  wallet %d" % [run_sparks, Meta.sparks], 16, Juice.PERIWINKLE)
 	_line("", 4, Juice.INK)

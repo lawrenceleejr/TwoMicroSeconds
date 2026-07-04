@@ -44,10 +44,13 @@ func _startle() -> void:
 	Sfx.play("boing", -4.0)
 	if not Tasks.is_done("startle_balloon"):
 		Tasks.complete("startle_balloon")
-	# Static discharge: a startled balloon lets a little charge go.
+	# Static discharge: a startled balloon lets a little charge go — and
+	# man-made electronics always glitch you.
 	var m := muon()
 	if m != null and muon_dist() < 160.0:
 		m.boost(55.0, "static")
+		Juice.glitch(0.35, 0.7)
+		Sfx.play("glitch", -6.0)
 	var tw := create_tween()
 	tw.tween_property(self, "_jump", -26.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(self, "_jump", 0.0, 0.7).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)

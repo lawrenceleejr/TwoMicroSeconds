@@ -35,6 +35,13 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+	# Red alert wash (P(decay) > 90%), beneath everything else.
+	_alert_rect = ColorRect.new()
+	_alert_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_alert_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_alert_rect.visible = false
+	add_child(_alert_rect)
+
 	# The clock: big, centered, unmissable.
 	_timer_label = Label.new()
 	_timer_label.add_theme_font_size_override("font_size", 46)
@@ -45,6 +52,25 @@ func _ready() -> void:
 	_timer_label.add_theme_constant_override("shadow_offset_y", 3)
 	_timer_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_timer_label)
+
+	# The same moment in the other frame, quietly underneath.
+	_lab_label = Label.new()
+	_lab_label.add_theme_font_size_override("font_size", 14)
+	_lab_label.add_theme_color_override("font_color", Color(Juice.CREAM, 0.75))
+	_lab_label.add_theme_color_override("font_outline_color", Juice.INK)
+	_lab_label.add_theme_constant_override("outline_size", 5)
+	_lab_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_lab_label)
+
+	_alert_label = Label.new()
+	_alert_label.text = "DECAY PROBABILITY EXCEEDS 90%"
+	_alert_label.add_theme_font_size_override("font_size", 22)
+	_alert_label.add_theme_color_override("font_color", Color(1.0, 0.32, 0.4))
+	_alert_label.add_theme_color_override("font_outline_color", Juice.INK)
+	_alert_label.add_theme_constant_override("outline_size", 7)
+	_alert_label.visible = false
+	_alert_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_alert_label)
 
 	# γ / velocity chip with a small dilation bar.
 	var gamma_pair := _mk_chip(14, "")
@@ -90,6 +116,9 @@ var _alt_chip: PanelContainer
 var _mischief_chip: PanelContainer
 var _sparks_chip: PanelContainer
 var _plot: Control
+var _lab_label: Label
+var _alert_rect: ColorRect
+var _alert_label: Label
 
 
 func _mk_chip(font_size: int, icon_path: String) -> Array:
@@ -138,10 +167,24 @@ func _process(delta: float) -> void:
 	else:
 		_timer_label.add_theme_color_override("font_color", Juice.CREAM)
 
+	var lab: float = muon.get("lab_s")
+	_lab_label.text = "proper · lab %.1f s" % lab
+	_lab_label.position = Vector2(vp.x * 0.5 - _lab_label.size.x * 0.5, 60.0)
+
+	# Red alert: the dice are loaded now.
+	var p_now: float = muon.get("decay_p")
+	var in_danger: bool = p_now > 0.9 and muon.get("alive") and not muon.get("finished")
+	_alert_rect.visible = in_danger
+	_alert_label.visible = in_danger and int(_t * 3.0) % 2 == 0
+	if in_danger:
+		_alert_rect.color = Color(1.0, 0.2, 0.28, 0.055 + 0.05 * absf(sin(_t * 8.0)))
+		_alert_label.position = Vector2(vp.x * 0.5 - _alert_label.size.x * 0.5, 168.0)
+		Juice.trauma = maxf(Juice.trauma, 0.10)  # a sustained, nervous tremble
+
 	var beta := sqrt(maxf(1.0 - 1.0 / (gamma * gamma), 0.0))
 	_gamma_label.text = "γ %.1f · %.3fc" % [gamma, beta]
-	_gamma_chip.position = Vector2(vp.x * 0.5 - _gamma_chip.size.x * 0.5, 68.0)
-	_gamma_bar.position = Vector2(vp.x * 0.5 - 60.0, 100.0)
+	_gamma_chip.position = Vector2(vp.x * 0.5 - _gamma_chip.size.x * 0.5, 84.0)
+	_gamma_bar.position = Vector2(vp.x * 0.5 - 60.0, 116.0)
 	_gamma_bar.size = Vector2(120.0, 8.0)
 	_gamma_bar.queue_redraw()
 
@@ -157,7 +200,7 @@ func _process(delta: float) -> void:
 	if layer != _last_layer:
 		_last_layer = layer
 		_show_toast(_toasts[layer])
-	_toast_chip.position = Vector2(vp.x * 0.5 - _toast_chip.size.x * 0.5, 130.0)
+	_toast_chip.position = Vector2(vp.x * 0.5 - _toast_chip.size.x * 0.5, 138.0)
 
 	if _plot.get("muon") == null:
 		_plot.set("muon", muon)

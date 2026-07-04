@@ -19,10 +19,11 @@ func _setup() -> void:
 	add_to_group("satellite")
 	_t = randf() * 8.0
 	_spin = randf_range(-0.15, 0.15)
-	_sprite = make_sprite("res://assets/sprites/satellite.svg", 0.55, Vector2(0, 4))
-	shadow_size = 80.0
-	shadow_drop = 46.0
+	_sprite = make_sprite("res://assets/sprites/satellite.svg", 0.75, Vector2(0, 5))
+	shadow_size = 108.0
+	shadow_drop = 58.0
 	_overlay = make_overlay(_draw_face)
+	_overlay.scale = Vector2.ONE * (0.75 / 0.55)
 
 
 func _process(delta: float) -> void:
@@ -35,23 +36,23 @@ func _process(delta: float) -> void:
 		if m != null and m.get("alive") and not m.get("finished"):
 			var d := muon_dist()
 			var fast: bool = float(m.get("speed")) > 750.0
-			if d < 62.0 or (fast and d < 80.0):
+			if d < 88.0 or (fast and d < 110.0):
 				_collect(m, fast)
 	_overlay.queue_redraw()
 
 
 func _collect(m, clean_hit: bool) -> void:
 	collected = true
-	var pts := 2 if clean_hit else 1
-	Meta.add_sparks(pts)
-	m.boost(BOOST, "satellite")
+	Meta.add_sparks(1)
+	# Sparks come slow; a clean fast hit pays in speed instead.
+	m.boost(BOOST * (1.35 if clean_hit else 1.0), "satellite")
 	Tasks.complete("bonk_satellite")
 	Juice.glitch(0.5)
 	Juice.hitstop(0.05, 0.15)
 	Sfx.play("glitch", -2.0)
 	var suffix := "  clean hit!" if clean_hit else ""
-	FloatText.spawn(get_parent(), global_position + Vector2(0, -40),
-		"+%d spark%s%s" % [pts, "s" if pts > 1 else "", suffix], Juice.MINT)
+	FloatText.spawn(get_parent(), global_position + Vector2(0, -46),
+		"+1 spark%s" % suffix, Juice.MINT)
 
 
 func zapped(_source: Node2D) -> void:
