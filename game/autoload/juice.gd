@@ -1,5 +1,9 @@
 extends Node
-## The juice drawer: screen shake, hitstop, and the game's pastel palette.
+## The juice drawer: palette, screen shake, hitstop, full-screen effect
+## layers (relativity / vignette / glitch), and the shared UI style kit.
+##
+## Screen-effect layer order (UI lives above all of them, on layer 100):
+##   world (0) -> relativity (70) -> vignette (80) -> glitch (90) -> UI (100)
 
 const INK := Color("454063")
 const CREAM := Color("fff5e1")
@@ -17,6 +21,9 @@ const CONFETTI_COLORS: Array[Color] = [
 
 var camera: Camera2D = null
 var trauma := 0.0
+## A friendly hand-written system font where available (macOS ships several);
+## falls back to the default sans elsewhere.
+var hand_font := SystemFont.new()
 
 var _noise := FastNoiseLite.new()
 var _t := 0.0
@@ -24,44 +31,43 @@ var _in_hitstop := false
 var _glitch_rect: ColorRect
 var _glitch_mat: ShaderMaterial
 var _glitch_tween: Tween
+var _rel_rect: ColorRect
+var _rel_mat: ShaderMaterial
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_noise.seed = 1137
 	_noise.frequency = 2.0
-	_build_glitch_layer()
+	hand_font.font_names = PackedStringArray(
+		["Marker Felt", "Chalkboard SE", "Comic Sans MS", "Comic Neue"])
+	_rel_mat = _build_screen_layer(70, "res://game/fx/relativity.gdshader", true)
+	_rel_rect = _last_rect
+	_build_screen_layer(80, "res://game/fx/vignette.gdshader", true)
+	_glitch_mat = _build_screen_layer(90, "res://game/fx/glitch.gdshader", false)
+	_glitch_rect = _last_rect
 
 
-func _build_glitch_layer() -> void:
+var _last_rect: ColorRect
+
+
+func _build_screen_layer(layer_num: int, shader_path: String, start_visible: bool) -> ShaderMaterial:
 	var layer := CanvasLayer.new()
-	layer.layer = 90
+	layer.layer = layer_num
 	add_child(layer)
-	_glitch_mat = ShaderMaterial.new()
-	_glitch_mat.shader = load("res://game/fx/glitch.gdshader")
-	_glitch_rect = ColorRect.new()
-	_glitch_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_glitch_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_glitch_rect.material = _glitch_mat
-	_glitch_rect.visible = false
-	layer.add_child(_glitch_rect)
+	var mat := ShaderMaterial.new()
+	mat.shader = load(shader_path)
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.material = mat
+	rect.visible = start_visible
+	layer.add_child(rect)
+	_last_rect = rect
+	return mat
 
 
-## Digital-artifact screen glitch + shake, decaying to nothing over `duration`.
-func glitch(duration := 0.5, strength := 1.0) -> void:
-	if _glitch_tween != null and _glitch_tween.is_valid():
-		_glitch_tween.kill()
-	_glitch_rect.visible = true
-	_glitch_mat.set_shader_parameter("intensity", strength)
-	shake(0.45 * strength)
-	_glitch_tween = create_tween()
-	_glitch_tween.tween_method(func(v: float) -> void:
-		_glitch_mat.set_shader_parameter("intensity", v)
-	, strength, 0.0, duration)
-	_glitch_tween.tween_callback(func() -> void:
-		_glitch_rect.visible = false
-	)
-
+# ------------------------------------------------------------- effects ----
 
 func register_camera(cam: Camera2D) -> void:
 	camera = cam
@@ -82,6 +88,34 @@ func hitstop(duration := 0.06, time_scale := 0.05) -> void:
 	_in_hitstop = false
 
 
+## Digital-artifact screen glitch + shake, decaying to nothing over `duration`.
+func glitch(duration := 0.5, strength := 1.0) -> void:
+	if _glitch_tween != null and _glitch_tween.is_valid():
+		_glitch_tween.kill()
+	_glitch_rect.visible = true
+	_glitch_mat.set_shader_parameter("intensity", strength)
+	shake(0.45 * strength)
+	_glitch_tween = create_tween()
+	_glitch_tween.tween_method(func(v: float) -> void:
+		_glitch_mat.set_shader_parameter("intensity", v)
+	, strength, 0.0, duration)
+	_glitch_tween.tween_callback(func() -> void:
+		_glitch_rect.visible = false
+	)
+
+
+## Relativistic view: length contraction + Doppler + motion blur, all scaled
+## by `strength` 0..1 along screen-space `dir`. Called by the muon each frame.
+func set_relativity(dir: Vector2, strength: float) -> void:
+	if _rel_mat == null:
+		return
+	_rel_rect.visible = strength > 0.02
+	_rel_mat.set_shader_parameter("motion_dir", dir)
+	_rel_mat.set_shader_parameter("contraction", 0.17 * strength)
+	_rel_mat.set_shader_parameter("doppler", 0.55 * strength)
+	_rel_mat.set_shader_parameter("blur_amount", 0.0075 * strength)
+
+
 func _process(delta: float) -> void:
 	var real_delta := delta / maxf(Engine.time_scale, 0.001)
 	_t += real_delta
@@ -94,3 +128,34 @@ func _process(delta: float) -> void:
 		_noise.get_noise_2d(0.0, _t * 60.0)
 	) * 22.0 * s
 	camera.rotation = _noise.get_noise_2d(_t * 45.0, 99.0) * 0.05 * s
+
+
+# ------------------------------------------------------------ UI kit ------
+# One visual system: consistent radii, shadows, and margins everywhere.
+
+func ui_panel(bg := PAPER, alpha := 0.95, radius := 14) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(bg, alpha)
+	sb.set_corner_radius_all(radius)
+	sb.shadow_color = Color(INK, 0.22)
+	sb.shadow_size = 10
+	sb.shadow_offset = Vector2(0, 3)
+	sb.content_margin_left = 18
+	sb.content_margin_right = 18
+	sb.content_margin_top = 12
+	sb.content_margin_bottom = 12
+	return sb
+
+
+func ui_chip(bg := PAPER, alpha := 0.88) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(bg, alpha)
+	sb.set_corner_radius_all(99)
+	sb.shadow_color = Color(INK, 0.16)
+	sb.shadow_size = 5
+	sb.shadow_offset = Vector2(0, 2)
+	sb.content_margin_left = 13
+	sb.content_margin_right = 13
+	sb.content_margin_top = 5
+	sb.content_margin_bottom = 5
+	return sb

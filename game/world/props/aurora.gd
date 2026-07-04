@@ -1,29 +1,38 @@
 extends "res://game/world/props/prop_base.gd"
-## A wavy ribbon of light. Fly through it (or zap it) to tickle it.
+## A wavy ribbon of light. Fly through it and its electrojet gives you a
+## push (auroral electric fields really do accelerate charged particles).
 
 const SEGS := 22
 const SEG_W := 34.0
+const BOOST := 70.0
 
 var _t := 0.0
 var _glow := 0.0
 var _hue_shift := 0.0
+var _boost_cd := 0.0
 
 
 func _setup() -> void:
 	_t = randf() * 10.0
 	_hue_shift = randf_range(-0.06, 0.06)
 	z_index = 1
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	material = mat
 
 
 func _process(delta: float) -> void:
 	_t += delta
 	_glow = maxf(_glow - delta * 0.8, 0.0)
+	_boost_cd = maxf(_boost_cd - delta, 0.0)
 	var m := muon()
 	if m != null and m.get("alive") and absf(m.global_position.y - global_position.y) < 140.0:
-		var vel: Vector2 = m.get("velocity")
 		for i in SEGS:
-			if _point(i).distance_to(m.global_position) < 55.0 and vel.length() > 140.0:
+			if _point(i).distance_to(m.global_position) < 55.0:
 				_tickle()
+				if _boost_cd <= 0.0:
+					_boost_cd = 1.6
+					m.boost(BOOST, "auroral electrojet")
 				break
 	queue_redraw()
 

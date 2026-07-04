@@ -24,7 +24,8 @@ func _draw() -> void:
 		var vel: Vector2 = muon_node.get("velocity") if muon_node.get("velocity") != null else Vector2.ZERO
 		if vel.length() > 20.0:
 			look = vel.normalized() * 3.0
-		mouth_o = bool(muon_node.get("dashing"))
+		# Mouth goes "o" when screaming through the sky.
+		mouth_o = vel.length() > 820.0
 	# Blush.
 	draw_circle(Vector2(-9.5, 3.0), 3.6, Color(Juice.BLUSH, 0.85))
 	draw_circle(Vector2(9.5, 3.0), 3.6, Color(Juice.BLUSH, 0.85))

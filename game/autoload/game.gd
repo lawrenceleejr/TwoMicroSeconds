@@ -12,10 +12,20 @@ func _enter_tree() -> void:
 	_register_inputs()
 
 
+var shoot_mode := false
+
+
 func _ready() -> void:
-	# CI smoke test: `game -- --smoke` boots straight into a run so the
-	# whole gameplay stack (muon, props, HUD) gets exercised headlessly.
-	if "--smoke" in OS.get_cmdline_user_args():
+	var args := OS.get_cmdline_user_args()
+	if "--shoot" in args:
+		# Screenshot mode: a director drives the game through scripted
+		# moments and saves PNGs (used by CI for the visual feedback loop).
+		shoot_mode = true
+		seed(7)
+		add_child(load("res://game/dev/shot_director.gd").new())
+	elif "--smoke" in args:
+		# CI smoke test: boot straight into a run so the whole gameplay
+		# stack (muon, props, HUD) gets exercised headlessly.
 		start_run.call_deferred()
 
 
@@ -60,8 +70,8 @@ func _register_inputs() -> void:
 	_add_action("move_right", [KEY_D, KEY_RIGHT], [], [[JOY_AXIS_LEFT_X, 1.0]])
 	_add_action("move_up", [KEY_W, KEY_UP], [], [[JOY_AXIS_LEFT_Y, -1.0]])
 	_add_action("move_down", [KEY_S, KEY_DOWN], [], [[JOY_AXIS_LEFT_Y, 1.0]])
-	_add_action("dash", [KEY_SPACE, KEY_SHIFT], [JOY_BUTTON_A], [])
-	_add_action("zap", [KEY_Z, KEY_X], [JOY_BUTTON_X], [])
+	# No throttle: a muon can't accelerate itself. Steering + zap only.
+	_add_action("zap", [KEY_Z, KEY_X, KEY_SPACE], [JOY_BUTTON_X, JOY_BUTTON_A], [])
 	_add_action("toggle_checklist", [KEY_TAB], [JOY_BUTTON_Y], [])
 	_add_action("restart", [KEY_R], [JOY_BUTTON_START], [])
 	# Mouse click also zaps.

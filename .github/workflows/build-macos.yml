@@ -118,3 +118,65 @@ jobs:
           name: build-logs
           path: build/*.log
           if-no-files-found: ignore
+
+  # Visual feedback loop: run the game under Xvfb, let the shot director
+  # drive it through scripted moments, and upload the PNGs.
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot (linux)
+        uses: actions/cache@v4
+        with:
+          path: ~/godot-linux
+          key: godot-${{ env.GODOT_VERSION }}-linux-v1
+
+      - name: Install Godot
+        run: |
+          set -euo pipefail
+          if [ ! -x "$HOME/godot-linux/godot" ]; then
+            curl -fL --retry 4 --retry-delay 5 -o /tmp/godot.zip \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            mkdir -p "$HOME/godot-linux"
+            unzip -q /tmp/godot.zip -d "$HOME/godot-linux"
+            mv "$HOME/godot-linux/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/godot-linux/godot"
+          fi
+          "$HOME/godot-linux/godot" --version
+
+      - name: Install Xvfb and Mesa
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q xvfb mesa-vulkan-drivers libegl1 libgl1 mesa-utils
+
+      - name: Import project (headless)
+        run: |
+          "$HOME/godot-linux/godot" --headless --path . --import || true
+          "$HOME/godot-linux/godot" --headless --path . --import
+
+      - name: Run shot director
+        run: |
+          set -euo pipefail
+          timeout 240 xvfb-run -a -s "-screen 0 1280x720x24" \
+            "$HOME/godot-linux/godot" --path . \
+            --rendering-method gl_compatibility --rendering-driver opengl3 \
+            -- --shoot 2>&1 | tee shoot.log || true
+          SHOTS_DIR="$HOME/.local/share/godot/app_userdata/Two Microseconds/shots"
+          ls -la "$SHOTS_DIR"
+          test -n "$(ls "$SHOTS_DIR"/*.png 2>/dev/null)"
+          mkdir -p out && cp "$SHOTS_DIR"/*.png out/
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: out/*.png
+          retention-days: 14
+
+      - name: Upload shoot log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shoot-log
+          path: shoot.log
+          if-no-files-found: ignore

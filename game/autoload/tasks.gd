@@ -4,15 +4,15 @@ extends Node
 signal task_completed(task: Dictionary)
 
 const DEFS := [
-	{"id": "tickle_aurora", "layer": 0, "text": "tickle an aurora"},
+	{"id": "tickle_aurora", "layer": 0, "text": "surf an aurora's electric field"},
 	{"id": "bonk_satellite", "layer": 0, "text": "high-five a satellite"},
-	{"id": "triple_dash", "layer": 0, "text": "zip three times in five seconds"},
+	{"id": "overclock", "layer": 0, "text": "go faster than you were born"},
 	{"id": "photobomb_star", "layer": 1, "text": "photobomb a shooting star"},
 	{"id": "zap_noctilucent", "layer": 1, "text": "zap a night-glowing cloud"},
 	{"id": "startle_balloon", "layer": 2, "text": "startle a weather balloon"},
 	{"id": "ozone_circle", "layer": 2, "text": "draw a circle in the ozone"},
 	{"id": "scatter_birds", "layer": 3, "text": "scatter a flock of birds"},
-	{"id": "thread_airplane", "layer": 3, "text": "zip through an airplane"},
+	{"id": "thread_airplane", "layer": 3, "text": "fly through an airplane"},
 	{"id": "make_rain", "layer": 3, "text": "make a cloud rain"},
 	{"id": "get_detected", "layer": 4, "text": "get counted by the detector"},
 ]

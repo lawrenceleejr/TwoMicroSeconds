@@ -8,6 +8,9 @@ var _t := 0.0
 
 func _ready() -> void:
 	z_index = 8
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	material = mat
 
 
 func _process(delta: float) -> void:

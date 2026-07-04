@@ -20,15 +20,11 @@ func _ready() -> void:
 	add_child(_dim)
 
 	_panel = PanelContainer.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Juice.PAPER
-	sb.set_corner_radius_all(14)
+	var sb := Juice.ui_panel(Juice.PAPER, 1.0, 16)
 	sb.content_margin_left = 34
 	sb.content_margin_right = 34
 	sb.content_margin_top = 26
 	sb.content_margin_bottom = 26
-	sb.shadow_color = Color(Juice.INK, 0.3)
-	sb.shadow_size = 12
 	_panel.add_theme_stylebox_override("panel", sb)
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_panel)

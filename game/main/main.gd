@@ -25,7 +25,8 @@ var _sparks_at_start := 0
 
 
 func _ready() -> void:
-	randomize()
+	if not Game.shoot_mode:
+		randomize()
 	Tasks.reset()
 	Game.mark_run_start()
 	_sparks_at_start = Meta.sparks
@@ -50,7 +51,10 @@ func _ready() -> void:
 		# The Oh-My-God particle arrives with authority.
 		Juice.glitch(0.4, 0.7)
 
+	# UI sits above the full-screen effect layers (relativity 70,
+	# vignette 80, glitch 90) so text stays crisp and un-shifted.
 	var ui_layer := CanvasLayer.new()
+	ui_layer.layer = 100
 	add_child(ui_layer)
 	var hud = HudScript.new()
 	hud.muon = muon

@@ -51,15 +51,10 @@ func _on_task_completed(task: Dictionary) -> void:
 
 func _draw() -> void:
 	# Paper.
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(Juice.PAPER, 0.93)
-	sb.set_corner_radius_all(10)
-	sb.shadow_color = Color(Juice.INK, 0.25)
-	sb.shadow_size = 6
-	sb.shadow_offset = Vector2(2, 3)
+	var sb := Juice.ui_panel(Juice.PAPER, 0.93, 14)
 	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
 
-	var font := ThemeDB.fallback_font
+	var font: Font = Juice.hand_font
 	draw_string(font, Vector2(16, 28), "to-do", HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Juice.INK)
 	draw_string(font, Vector2(76, 28), "(mischief optional)", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(Juice.INK, 0.55))
 	draw_line(Vector2(14, 36), Vector2(W - 14, 36), Color(Juice.INK, 0.25), 1.5)

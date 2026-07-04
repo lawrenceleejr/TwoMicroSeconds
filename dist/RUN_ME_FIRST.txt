@@ -63,15 +63,17 @@ the slower your clock ticks (this is real physics — special
 relativity's time dilation). Reach the detector before you decay,
 and cause some optional mischief on the way down.
 
-  WASD / arrows / left stick ... move
-  SPACE (or SHIFT / gamepad A) . zip (dash)
-  Z / X / click (gamepad X) .... zap (your honk)
+  WASD / arrows / left stick ... steer (that's all you get)
+  SPACE / Z / X / click ........ zap (your honk)
   TAB .......................... to-do list
   U (title screen) ............. origin shop
   ESC .......................... pause
   F / M ........................ fullscreen / mute
 
-Move fast. Fast muons age slowly.
+You cannot throttle a muon — only electric fields accelerate a
+charged particle. The air slowly drags you; auroras, zapped
+thunderclouds, and satellites speed you back up. Fast muons age
+slowly, and the view goes full special-relativity as you speed up.
 
 Bump the drowsy satellites up top: they pay out SPARKS (zip through
 for double). Sparks persist between lives and buy you a better origin

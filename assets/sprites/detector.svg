@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540" height="320" viewBox="0 0 540 320">
+<defs>
+<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff8e8" stop-opacity="1"/><stop offset="1" stop-color="#eeddbc" stop-opacity="1"/></linearGradient><linearGradient id="roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb9c4" stop-opacity="1"/><stop offset="1" stop-color="#ff8fa0" stop-opacity="1"/></linearGradient><linearGradient id="door" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a7fc0" stop-opacity="1"/><stop offset="1" stop-color="#565b9b" stop-opacity="1"/></linearGradient><linearGradient id="dglass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3f5f0" stop-opacity="1"/><stop offset="1" stop-color="#a8d8cf" stop-opacity="1"/></linearGradient>
+</defs>
+
+<ellipse cx="270" cy="286" rx="235" ry="18" fill="#4a4460" opacity="0.18"/>
+<rect x="80" y="120" width="380" height="162" rx="10" fill="url(#wall)"/>
+<rect x="80" y="238" width="380" height="44" rx="10" fill="#dcc9a3" opacity="0.55"/>
+<rect x="80" y="120" width="380" height="162" rx="10" fill="none" stroke="#4a4460" stroke-opacity="0.4" stroke-width="4"/>
+<rect x="66" y="94" width="408" height="36" rx="14" fill="url(#roof)" stroke="#4a4460" stroke-opacity="0.35" stroke-width="4"/>
+<rect x="74" y="99" width="392" height="7" rx="3.5" fill="#ffffff" opacity="0.5"/>
+<rect x="240" y="192" width="60" height="90" rx="8" fill="url(#door)" stroke="#4a4460" stroke-opacity="0.4" stroke-width="3.5"/>
+<circle cx="270" cy="218" r="10" fill="#ffffff" opacity="0.85"/>
+<circle cx="288" cy="240" r="3.5" fill="#ffe08a"/>
+<rect x="128" y="160" width="46" height="36" rx="6" fill="url(#dglass)" stroke="#4a4460" stroke-opacity="0.35" stroke-width="3"/>
+<rect x="366" y="160" width="46" height="36" rx="6" fill="url(#dglass)" stroke="#4a4460" stroke-opacity="0.35" stroke-width="3"/>
+<polygon points="132,162 150,162 138,194 132,194" fill="#ffffff" opacity="0.5"/>
+<polygon points="370,162 388,162 376,194 370,194" fill="#ffffff" opacity="0.5"/>
+<rect x="170" y="136" width="200" height="32" rx="9" fill="#ffffff" stroke="#4a4460" stroke-opacity="0.35" stroke-width="3"/>
+<rect x="418" y="52" width="9" height="44" fill="#4a4460" opacity="0.7"/>
+<circle cx="423" cy="46" r="21" fill="#f2f2f6" stroke="#4a4460" stroke-opacity="0.4" stroke-width="3.5"/>
+<circle cx="417" cy="40" r="6" fill="#ffffff" opacity="0.8"/>
+<line x1="423" y1="46" x2="435" y2="30" stroke="#4a4460" stroke-opacity="0.5" stroke-width="3"/>
+<circle cx="110" cy="150" r="9" fill="#d9d9de" stroke="#4a4460" stroke-opacity="0.35" stroke-width="2.5"/>
+
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="380" height="150" viewBox="0 0 380 150">
+<defs>
+<linearGradient id="fus" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffdf6" stop-opacity="1"/><stop offset="1" stop-color="#e5ddcc" stop-opacity="1"/></linearGradient><linearGradient id="fin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb9c4" stop-opacity="1"/><stop offset="1" stop-color="#ff8fa0" stop-opacity="1"/></linearGradient><linearGradient id="wing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd7dd" stop-opacity="1"/><stop offset="1" stop-color="#ffadbb" stop-opacity="1"/></linearGradient><linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaf7ff" stop-opacity="1"/><stop offset="1" stop-color="#9fd0f5" stop-opacity="1"/></linearGradient>
+</defs>
+
+<polygon points="52,60 86,60 74,16 46,16" fill="url(#fin)" stroke="#4a4460" stroke-opacity="0.28" stroke-width="3"/>
+<rect x="40" y="55" width="282" height="46" rx="23" fill="url(#fus)"/>
+<circle cx="320" cy="78" r="23" fill="url(#fus)"/>
+<ellipse cx="180" cy="97" rx="140" ry="10" fill="#cfc6b2" opacity="0.55"/>
+<rect x="40" y="55" width="282" height="46" rx="23" fill="none" stroke="#4a4460" stroke-opacity="0.25" stroke-width="3.5"/>
+<polygon points="150,94 232,94 198,132 126,132" fill="url(#wing)" stroke="#4a4460" stroke-opacity="0.28" stroke-width="3"/>
+<path d="M306 60 Q322 60 326 74 L306 74 Z" fill="url(#glass)" stroke="#4a4460" stroke-opacity="0.3" stroke-width="2.5"/>
+<circle cx="110" cy="72" r="9" fill="url(#glass)" stroke="#4a4460" stroke-opacity="0.3" stroke-width="2.5"/><circle cx="106" cy="68" r="2.6" fill="#ffffff" opacity="0.85"/><circle cx="140" cy="72" r="9" fill="url(#glass)" stroke="#4a4460" stroke-opacity="0.3" stroke-width="2.5"/><circle cx="136" cy="68" r="2.6" fill="#ffffff" opacity="0.85"/><circle cx="170" cy="72" r="9" fill="url(#glass)" stroke="#4a4460" stroke-opacity="0.3" stroke-width="2.5"/><circle cx="166" cy="68" r="2.6" fill="#ffffff" opacity="0.85"/><circle cx="200" cy="72" r="9" fill="url(#glass)" stroke="#4a4460" stroke-opacity="0.3" stroke-width="2.5"/><circle cx="196" cy="68" r="2.6" fill="#ffffff" opacity="0.85"/><circle cx="230" cy="72" r="9" fill="url(#glass)" stroke="#4a4460" stroke-opacity="0.3" stroke-width="2.5"/><circle cx="226" cy="68" r="2.6" fill="#ffffff" opacity="0.85"/><circle cx="260" cy="72" r="9" fill="url(#glass)" stroke="#4a4460" stroke-opacity="0.3" stroke-width="2.5"/><circle cx="256" cy="68" r="2.6" fill="#ffffff" opacity="0.85"/>
+<ellipse cx="120" cy="60" rx="52" ry="6" fill="#ffffff" opacity="0.6"/>
+
+</svg>

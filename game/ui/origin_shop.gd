@@ -70,11 +70,7 @@ func _try_buy() -> void:
 
 
 func _draw() -> void:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(Juice.PAPER, 0.97)
-	sb.set_corner_radius_all(14)
-	sb.shadow_color = Color(Juice.INK, 0.35)
-	sb.shadow_size = 12
+	var sb := Juice.ui_panel(Juice.PAPER, 0.97, 16)
 	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
 
 	var font := ThemeDB.fallback_font

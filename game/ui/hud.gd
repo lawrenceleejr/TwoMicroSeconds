@@ -1,16 +1,21 @@
 extends Control
-## Proper-time countdown, gamma meter, altitude readout, layer toasts, hints.
+## In-run HUD. One visual system: pill chips on an 8-px spacing grid,
+## grouped by meaning — left: where/what; center: the clock (the star of
+## the show); right side is kept clear for the checklist.
 
 var muon: Node2D = null
 
 var _timer_label: Label
+var _gamma_chip: PanelContainer
 var _gamma_label: Label
+var _gamma_bar: Control
 var _alt_label: Label
 var _mischief_label: Label
 var _sparks_label: Label
+var _toast_chip: PanelContainer
 var _toast_label: Label
+var _hint_chip: PanelContainer
 var _hint_label: Label
-var _gamma_bar: Control
 var _last_layer := -1
 var _last_bucket := -1
 var _hint_t := 0.0
@@ -29,34 +34,81 @@ const TOASTS := [
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_timer_label = _mk_label(46)
-	_gamma_label = _mk_label(16)
-	_alt_label = _mk_label(17)
-	_mischief_label = _mk_label(15)
-	_sparks_label = _mk_label(15)
-	_toast_label = _mk_label(24)
-	# The birth toast names your origin story.
-	_toasts = TOASTS.duplicate()
-	var o := Meta.origin()
-	_toasts[0] = "born of a %s · E ≈ %s" % [o["name"], o["energy"]]
-	_toast_label.modulate.a = 0.0
-	_hint_label = _mk_label(17)
-	_hint_label.text = "move fast — fast muons age slowly.   SPACE zip · Z zap · TAB to-do list"
+
+	# The clock: big, centered, unmissable.
+	_timer_label = Label.new()
+	_timer_label.add_theme_font_size_override("font_size", 46)
+	_timer_label.add_theme_color_override("font_color", Juice.CREAM)
+	_timer_label.add_theme_color_override("font_outline_color", Juice.INK)
+	_timer_label.add_theme_constant_override("outline_size", 8)
+	_timer_label.add_theme_color_override("font_shadow_color", Color(Juice.INK, 0.35))
+	_timer_label.add_theme_constant_override("shadow_offset_y", 3)
+	_timer_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_timer_label)
+
+	# γ / velocity chip with a small dilation bar.
+	var gamma_pair := _mk_chip(14, "")
+	_gamma_chip = gamma_pair[0]
+	_gamma_label = gamma_pair[1]
 	_gamma_bar = Control.new()
 	_gamma_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_gamma_bar.draw.connect(_draw_gamma_bar)
 	add_child(_gamma_bar)
 
+	# Left column chips.
+	var alt_pair := _mk_chip(14, "")
+	_alt_label = alt_pair[1]
+	_alt_chip = alt_pair[0]
+	var mischief_pair := _mk_chip(14, "")
+	_mischief_label = mischief_pair[1]
+	_mischief_chip = mischief_pair[0]
+	var sparks_pair := _mk_chip(14, "res://assets/sprites/spark_icon.svg")
+	_sparks_label = sparks_pair[1]
+	_sparks_chip = sparks_pair[0]
 
-func _mk_label(font_size: int) -> Label:
-	var l := Label.new()
-	l.add_theme_font_size_override("font_size", font_size)
-	l.add_theme_color_override("font_color", Juice.CREAM)
-	l.add_theme_color_override("font_outline_color", Juice.INK)
-	l.add_theme_constant_override("outline_size", 7)
-	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(l)
-	return l
+	# Toast + hint.
+	var toast_pair := _mk_chip(19, "")
+	_toast_chip = toast_pair[0]
+	_toast_label = toast_pair[1]
+	_toast_label.add_theme_font_override("font", Juice.hand_font)
+	_toast_chip.modulate.a = 0.0
+	var hint_pair := _mk_chip(14, "")
+	_hint_chip = hint_pair[0]
+	_hint_label = hint_pair[1]
+	_hint_chip.add_theme_stylebox_override("panel", Juice.ui_chip(Juice.INK, 0.45))
+	_hint_label.add_theme_color_override("font_color", Juice.CREAM)
+	_hint_label.text = "steer with WASD — only electric fields can speed you up.   SPACE zap · TAB to-dos"
+
+	_toasts = TOASTS.duplicate()
+	var o := Meta.origin()
+	_toasts[0] = "born of a %s · E ≈ %s" % [o["name"], o["energy"]]
+
+
+var _alt_chip: PanelContainer
+var _mischief_chip: PanelContainer
+var _sparks_chip: PanelContainer
+
+
+func _mk_chip(font_size: int, icon_path: String) -> Array:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", Juice.ui_chip())
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	panel.add_child(row)
+	if icon_path != "":
+		var icon := TextureRect.new()
+		icon.texture = load(icon_path)
+		icon.custom_minimum_size = Vector2(18, 18)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		row.add_child(icon)
+	var label := Label.new()
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", Juice.INK)
+	row.add_child(label)
+	add_child(panel)
+	return [panel, label]
 
 
 func _process(delta: float) -> void:
@@ -68,7 +120,7 @@ func _process(delta: float) -> void:
 	var gamma: float = muon.get("gamma")
 
 	_timer_label.text = "%.2f µs" % pt
-	_timer_label.position = Vector2(vp.x * 0.5 - _timer_label.size.x * 0.5, 14.0)
+	_timer_label.position = Vector2(vp.x * 0.5 - _timer_label.size.x * 0.5, 12.0)
 	_timer_label.pivot_offset = _timer_label.size * 0.5
 	var bucket := int(pt * 20.0)
 	if bucket != _last_bucket:
@@ -82,38 +134,40 @@ func _process(delta: float) -> void:
 	else:
 		_timer_label.add_theme_color_override("font_color", Juice.CREAM)
 
-	_gamma_label.text = "γ = %.1f" % gamma
-	_gamma_label.position = Vector2(vp.x * 0.5 - 80.0, 68.0)
-	_gamma_bar.position = Vector2(vp.x * 0.5 - 80.0 + _gamma_label.size.x + 10.0, 76.0)
-	_gamma_bar.size = Vector2(120.0, 10.0)
+	# β = v/c from γ — the physics readout.
+	var beta := sqrt(maxf(1.0 - 1.0 / (gamma * gamma), 0.0))
+	_gamma_label.text = "γ %.1f · v %.4f c" % [gamma, beta]
+	_gamma_chip.position = Vector2(vp.x * 0.5 - _gamma_chip.size.x * 0.5, 68.0)
+	_gamma_bar.position = Vector2(vp.x * 0.5 - 60.0, 100.0)
+	_gamma_bar.size = Vector2(120.0, 8.0)
 	_gamma_bar.queue_redraw()
 
 	var y_pos: float = muon.global_position.y
 	var layer := Atmos.layer_index_at(y_pos)
 	_alt_label.text = "%d km · %s" % [int(round(Atmos.altitude_at(y_pos))), Atmos.LAYER_NAMES[layer]]
-	_alt_label.position = Vector2(16.0, 12.0)
+	_alt_chip.position = Vector2(16.0, 12.0)
 	_mischief_label.text = "mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()]
-	_mischief_label.position = Vector2(16.0, 40.0)
-	_sparks_label.text = "sparks %d" % Meta.sparks
-	_sparks_label.position = Vector2(16.0, 66.0)
+	_mischief_chip.position = Vector2(16.0, 12.0 + 40.0)
+	_sparks_label.text = str(Meta.sparks)
+	_sparks_chip.position = Vector2(16.0, 12.0 + 80.0)
 
 	if layer != _last_layer:
 		_last_layer = layer
 		_show_toast(_toasts[layer])
-	_toast_label.position = Vector2(vp.x * 0.5 - _toast_label.size.x * 0.5, 120.0)
+	_toast_chip.position = Vector2(vp.x * 0.5 - _toast_chip.size.x * 0.5, 130.0)
 
 	_hint_t += delta
-	_hint_label.position = Vector2(vp.x * 0.5 - _hint_label.size.x * 0.5, vp.y - 54.0)
-	if _hint_t > 8.0 and _hint_label.modulate.a > 0.0:
-		_hint_label.modulate.a = maxf(_hint_label.modulate.a - delta * 0.8, 0.0)
+	_hint_chip.position = Vector2(vp.x * 0.5 - _hint_chip.size.x * 0.5, vp.y - 52.0)
+	if _hint_t > 9.0 and _hint_chip.modulate.a > 0.0:
+		_hint_chip.modulate.a = maxf(_hint_chip.modulate.a - delta * 0.8, 0.0)
 
 
 func _show_toast(text: String) -> void:
 	_toast_label.text = text
 	var tw := create_tween()
-	tw.tween_property(_toast_label, "modulate:a", 1.0, 0.3)
+	tw.tween_property(_toast_chip, "modulate:a", 1.0, 0.3)
 	tw.tween_interval(2.2)
-	tw.tween_property(_toast_label, "modulate:a", 0.0, 0.5)
+	tw.tween_property(_toast_chip, "modulate:a", 0.0, 0.5)
 
 
 func _draw_gamma_bar() -> void:
@@ -121,6 +175,12 @@ func _draw_gamma_bar() -> void:
 		return
 	var gamma: float = muon.get("gamma")
 	var frac := clampf((gamma - 1.0) / 24.0, 0.0, 1.0)
-	_gamma_bar.draw_rect(Rect2(0, 0, 120, 10), Color(Juice.INK, 0.5))
-	var col := Juice.MINT.lerp(Juice.SUN, frac)
-	_gamma_bar.draw_rect(Rect2(1, 1, 118.0 * frac, 8), col)
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(Juice.INK, 0.5)
+	bg.set_corner_radius_all(4)
+	bg.draw(_gamma_bar.get_canvas_item(), Rect2(0, 0, 120, 8))
+	if frac > 0.02:
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = Juice.MINT.lerp(Juice.SUN, frac)
+		fill.set_corner_radius_all(4)
+		fill.draw(_gamma_bar.get_canvas_item(), Rect2(1, 1, 118.0 * frac, 6))

@@ -19,7 +19,10 @@ var _star_timer := 2.0
 
 
 func _ready() -> void:
-	_rng.randomize()
+	if Game.shoot_mode:
+		_rng.seed = 12345  # deterministic world for the screenshot director
+	else:
+		_rng.randomize()
 	_spawn_all()
 
 

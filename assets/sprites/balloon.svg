@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="170" height="240" viewBox="0 0 170 240">
+<defs>
+<radialGradient id="bal" cx="0.5" cy="0.5" r="0.5" fx="0.38" fy="0.3"><stop offset="0" stop-color="#ffd9df" stop-opacity="1"/><stop offset="0.6" stop-color="#ff9dad" stop-opacity="1"/><stop offset="1" stop-color="#e26b81" stop-opacity="1"/></radialGradient><linearGradient id="box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4de" stop-opacity="1"/><stop offset="1" stop-color="#e9d0a6" stop-opacity="1"/></linearGradient>
+</defs>
+
+<path d="M85 146 Q77 196 93 196" fill="none" stroke="#4a4460" stroke-opacity="0.55" stroke-width="2.5"/>
+<ellipse cx="85" cy="78" rx="56" ry="64" fill="url(#bal)"/>
+<ellipse cx="85" cy="78" rx="56" ry="64" fill="none" stroke="#4a4460" stroke-opacity="0.22" stroke-width="4"/>
+<ellipse cx="63" cy="48" rx="14" ry="22" fill="#ffffff" opacity="0.75" transform="rotate(-18 63 48)"/>
+<circle cx="58" cy="80" r="5" fill="#ffffff" opacity="0.5"/>
+<path d="M78 138 L92 138 L85 150 Z" fill="#e26b81"/>
+<rect x="69" y="196" width="48" height="36" rx="7" fill="url(#box)" stroke="#4a4460" stroke-opacity="0.35" stroke-width="3"/>
+<line x1="81" y1="196" x2="81" y2="232" stroke="#4a4460" stroke-opacity="0.25" stroke-width="3"/>
+<line x1="105" y1="196" x2="105" y2="232" stroke="#4a4460" stroke-opacity="0.25" stroke-width="3"/>
+
+</svg>

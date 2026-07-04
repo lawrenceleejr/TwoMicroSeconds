@@ -17,14 +17,22 @@ the way down.
 
 | input | action |
 |---|---|
-| WASD / arrows / left stick | move |
-| SPACE (or SHIFT / gamepad A) | **zip** — a dash, with input buffering |
-| Z / X / mouse click (gamepad X) | **zap** — your honk; everything reacts |
+| WASD / arrows / left stick | **steer** (that's all the control you get) |
+| SPACE / Z / X / click (gamepad A/X) | **zap** — your honk; everything reacts |
 | TAB | to-do list |
 | U | origin shop (title screen) |
 | ESC | pause |
 | R | restart (on the end screen) |
 | F / M | fullscreen / mute |
+
+**You cannot throttle a muon.** Nothing accelerates a charged particle but an
+electric field: the atmosphere constantly bleeds your speed away (ionization
+drag), and you get it back by surfing **auroral electrojets**, triggering
+**thundercloud fields** (zap a cloud), or bumping **satellites**. Speed is
+your clock — and the view tells you so, *A Slower Speed of Light*-style:
+the world **length-contracts** along your direction of motion, **Doppler
+shifts** (blue ahead, red behind, with a headlight brightening), and motion
+blur creeps in as γ climbs.
 
 The to-do list is optional, goose-style: tickle an aurora, high-five a
 satellite, photobomb a shooting star, startle a weather balloon, zip through
