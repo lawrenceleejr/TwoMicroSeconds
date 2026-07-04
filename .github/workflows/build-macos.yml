@@ -94,6 +94,8 @@ jobs:
           mkdir -p build/dmg-root
           ditto "$APP_PATH" "build/dmg-root/$(basename "$APP_PATH")"
           cp dist/RUN_ME_FIRST.txt "build/dmg-root/RUN ME FIRST.txt"
+          # Classic drag-to-install: a link to /Applications inside the DMG.
+          ln -s /Applications build/dmg-root/Applications
           for attempt in 1 2 3; do
             if hdiutil create -volname "Two Microseconds" -srcfolder build/dmg-root \
                 -ov -format UDZO "build/TwoMicroseconds-macOS.dmg"; then

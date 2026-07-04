@@ -9,12 +9,12 @@ macOS just doesn't know us. Pick ONE of the options below.
 
 EASIEST — Terminal (works on every macOS version)
 -------------------------------------------------
-1. Drag "Two Microseconds.app" out of this disk image to wherever
-   you like (e.g. ~/Applications or your Desktop).
-2. Open Terminal and run (adjust the path to where you put it):
+1. Drag "Two Microseconds.app" onto the Applications link right
+   here in this window.
+2. Open Terminal and run:
 
-     xattr -cr ~/Applications/"Two Microseconds.app"
-     open ~/Applications/"Two Microseconds.app"
+     xattr -cr "/Applications/Two Microseconds.app"
+     open "/Applications/Two Microseconds.app"
 
    `xattr -cr` removes the com.apple.quarantine attribute that your
    browser attached when the file was downloaded. That attribute is
@@ -40,7 +40,7 @@ LAST RESORT — run the raw binary from the command line
 ------------------------------------------------------
 The executable inside the app bundle can be launched directly:
 
-     "/path/to/Two Microseconds.app/Contents/MacOS/Two Microseconds"
+     "/Applications/Two Microseconds.app/Contents/MacOS/Two Microseconds"
 
 (Tab-completion is your friend. Quotes matter — there's a space.)
 
@@ -49,7 +49,7 @@ CHECKING STATUS
 ---------------
 To see what Gatekeeper thinks of the app:
 
-     spctl --assess -vv "/path/to/Two Microseconds.app"
+     spctl --assess -vv "/Applications/Two Microseconds.app"
 
 "rejected" is normal for an ad-hoc signed app; it will still run
 fine once the quarantine attribute has been cleared as above.

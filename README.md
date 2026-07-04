@@ -64,19 +64,20 @@ Every push to `main` builds a DMG on GitHub Actions:
 
 1. Grab the **TwoMicroseconds-macOS** artifact from the latest
    [build-macos run](https://github.com/lawrenceleejr/TwoMicroSeconds/actions/workflows/build-macos.yml).
-2. Unzip it, open `TwoMicroseconds-macOS.dmg`.
+2. Unzip it, open `TwoMicroseconds-macOS.dmg`, and drag the app onto the
+   bundled **Applications** link.
 3. Read **RUN ME FIRST.txt** inside the DMG — the app is ad-hoc signed (no
    Apple Developer ID), so Gatekeeper needs one nudge. The short version:
 
    ```sh
-   xattr -cr "/path/to/Two Microseconds.app"
-   open "/path/to/Two Microseconds.app"
+   xattr -cr "/Applications/Two Microseconds.app"
+   open "/Applications/Two Microseconds.app"
    ```
 
    or run the raw binary directly:
 
    ```sh
-   "/path/to/Two Microseconds.app/Contents/MacOS/Two Microseconds"
+   "/Applications/Two Microseconds.app/Contents/MacOS/Two Microseconds"
    ```
 
 ## the physics (yes, really)
