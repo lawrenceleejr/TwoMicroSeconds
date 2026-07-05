@@ -5,7 +5,7 @@
 
 <circle cx="64" cy="64" r="62" fill="url(#halo)"/>
 <circle cx="64" cy="64" r="44" fill="url(#body)"/>
-<circle cx="60" cy="60" r="46" fill="none" stroke="#ff5c4d" stroke-opacity="0.85" stroke-width="2.5"/>
+<circle cx="64" cy="64" r="46" fill="none" stroke="#ff5c4d" stroke-opacity="0.7" stroke-width="2.0"/>
 <circle cx="64" cy="64" r="44" fill="none" stroke="#171226" stroke-opacity="0.9" stroke-width="3"/>
 <ellipse cx="52" cy="46" rx="14" ry="8" fill="#ffffff" opacity="0.55" transform="rotate(-20 52 46)"/>
 

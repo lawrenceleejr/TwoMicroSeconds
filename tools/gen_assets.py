@@ -60,7 +60,7 @@ def muon(name, core, glow):
     body = f"""
 <circle cx="64" cy="64" r="62" fill="url(#halo)"/>
 <circle cx="64" cy="64" r="44" fill="url(#body)"/>
-<circle cx="60" cy="60" r="46" fill="none" stroke="{CORAL}" stroke-opacity="0.85" stroke-width="2.5"/>
+<circle cx="64" cy="64" r="46" fill="none" stroke="{CORAL}" stroke-opacity="0.7" stroke-width="2.0"/>
 <circle cx="64" cy="64" r="44" fill="none" stroke="{INK}" stroke-opacity="0.9" stroke-width="3"/>
 <ellipse cx="52" cy="46" rx="14" ry="8" fill="#ffffff" opacity="0.55" transform="rotate(-20 52 46)"/>
 """
@@ -71,10 +71,7 @@ def cloud():
     """Flat paper cloud with a coral misprint copy behind and an ink hairline."""
     defs = linear("puff", [(0, PAPER, 1), (1, "#d4c9b2", 1)])
     lobes = [(82, 112, 70, 46), (162, 84, 88, 58), (242, 112, 64, 42), (162, 130, 112, 40)]
-    shifted = "".join(
-        f'<ellipse cx="{x - 9}" cy="{y - 7}" rx="{rx}" ry="{ry}" fill="{CORAL}" opacity="0.5"/>'
-        for x, y, rx, ry in lobes)
-    body = shifted + "".join(
+    body = "".join(
         f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="url(#puff)"/>'
         for x, y, rx, ry in lobes)
     body += f"""
@@ -89,10 +86,7 @@ def noctilucent():
     """Electric night cloud: teal inks, thin strata lines."""
     defs = linear("nlc", [(0, "#bfeee2", 0.8), (1, TEAL, 0.4)])
     lobes = [(76, 82, 62, 34), (150, 62, 78, 42), (224, 84, 56, 30), (150, 96, 100, 30)]
-    shifted = "".join(
-        f'<ellipse cx="{x - 7}" cy="{y - 5}" rx="{rx}" ry="{ry}" fill="{VIOLET}" opacity="0.35"/>'
-        for x, y, rx, ry in lobes)
-    body = shifted + "".join(
+    body = "".join(
         f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="url(#nlc)"/>'
         for x, y, rx, ry in lobes)
     body += f"""
@@ -107,7 +101,6 @@ def balloon():
     defs = linear("box", [(0, PAPER, 1), (1, "#d4c9b2", 1)])
     body = f"""
 <path d="M85 146 Q77 196 93 196" fill="none" stroke="{INK}" stroke-opacity="0.7" stroke-width="2.5"/>
-<ellipse cx="79" cy="72" rx="56" ry="64" fill="{VIOLET}" opacity="0.45"/>
 <ellipse cx="85" cy="78" rx="56" ry="64" fill="{CORAL}"/>
 <path d="M60 32 A 52 60 0 0 0 38 78 L 52 78 A 40 48 0 0 1 68 42 Z" fill="#ffffff" opacity="0.35"/>
 <ellipse cx="85" cy="78" rx="56" ry="64" fill="none" stroke="{INK}" stroke-opacity="0.75" stroke-width="3"/>
@@ -129,7 +122,6 @@ def airplane():
     )
     body = f"""
 <polygon points="52,60 86,60 74,16 46,16" fill="{CORAL}" stroke="{INK}" stroke-opacity="0.7" stroke-width="3"/>
-<rect x="34" y="52" width="282" height="46" rx="23" fill="{VIOLET}" opacity="0.4"/>
 <rect x="40" y="55" width="282" height="46" rx="23" fill="url(#fus)"/>
 <circle cx="320" cy="78" r="23" fill="url(#fus)"/>
 <rect x="40" y="55" width="282" height="46" rx="23" fill="none" stroke="{INK}" stroke-opacity="0.8" stroke-width="3"/>
@@ -151,8 +143,7 @@ def satellite():
             f'<line x1="{x + 2}" y1="{59 + r * 17}" x2="{x + 72}" y2="{59 + r * 17}" '
             f'stroke="{INK}" stroke-width="2" opacity="0.65"/>' for r in range(1, 3)
         )
-        return (f'<rect x="{x - 5}" y="52" width="74" height="56" rx="3" fill="{VIOLET}" opacity="0.4"/>'
-                f'<rect x="{x}" y="57" width="74" height="56" rx="3" fill="{TEAL}" '
+        return (f'<rect x="{x}" y="57" width="74" height="56" rx="3" fill="{TEAL}" '
                 f'stroke="{INK}" stroke-width="3"/>' + grid)
 
     stripes = "".join(
@@ -164,7 +155,6 @@ def satellite():
 {array(178)}
 <rect x="82" y="79" width="16" height="12" fill="{INK}" opacity="0.8"/>
 <rect x="162" y="79" width="16" height="12" fill="{INK}" opacity="0.8"/>
-<rect x="90" y="48" width="68" height="64" rx="5" fill="{CORAL}" opacity="0.55"/>
 <rect x="96" y="53" width="68" height="64" rx="5" fill="{AMBER}"/>
 {stripes}
 <rect x="140" y="53" width="24" height="64" fill="{PAPER}"/>
@@ -265,7 +255,6 @@ def glint():
     """Four-point star glint with a coral misprint copy behind."""
     star = "M32 2 L38 26 L62 32 L38 38 L32 62 L26 38 L2 32 L26 26 Z"
     body = f"""
-<path d="{star}" fill="{CORAL}" opacity="0.55" transform="translate(-3 2)"/>
 <path d="{star}" fill="{PAPER}"/>
 """
     write("glint.svg", svg(64, 64, "", body))
@@ -289,7 +278,7 @@ def streak():
 
 def spark_icon():
     body = f"""
-<path d="M20 3 L37 20 L20 37 L3 20 Z" fill="{VIOLET}" opacity="0.6" transform="translate(2 2)"/>
+<path d="M22 3 L39 22 L22 41 L5 22 Z" fill="{VIOLET}" opacity="0.35"/>
 <path d="M22 3 L39 22 L22 41 L5 22 Z" fill="{TEAL}" stroke="{INK}" stroke-opacity="0.8" stroke-width="2.5"/>
 """
     write("spark_icon.svg", svg(44, 44, defs="", body=body))

@@ -1,14 +1,10 @@
 extends Control
-## Touchscreen controls (web/mobile): drag anywhere on the left side to
-## steer with a floating joystick; tap the right side to zap. Hidden and
-## inert when no touchscreen exists.
-
-const STICK_RADIUS := 70.0
+## Touchscreen control: STEERING ONLY. Hold anywhere and slide left/right;
+## how far from center you hold sets how hard the fall angles that way.
+## No taps, no zap button (the muon auto-zaps what it passes), no vertical
+## control (a muon only falls). Inert when there's no touchscreen.
 
 var _steer_id := -1
-var _anchor := Vector2.ZERO
-var _vec := Vector2.ZERO
-var _zap_pressed := false
 
 
 func _ready() -> void:
@@ -21,55 +17,39 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	# Never leave a stale steer vector behind on scene changes mid-drag.
-	Game.touch_steer = Vector2.ZERO
-	if _zap_pressed:
-		Input.action_release("zap")
+	Game.touch_steer_x = 0.0
 
 
-func _process(_delta: float) -> void:
-	# Release the zap action one frame after the tap so
-	# is_action_just_pressed fires exactly once.
-	if _zap_pressed:
-		_zap_pressed = false
-		Input.action_release("zap")
+func _steer_from(x: float) -> void:
+	# Proportional to horizontal distance from screen center: the edges
+	# are full lock, the middle is a dead-ahead dive.
+	var w := get_viewport_rect().size.x
+	Game.touch_steer_x = clampf((x - w * 0.5) / (w * 0.34), -1.0, 1.0)
 
 
 func _input(event: InputEvent) -> void:
-	# Something above us (the to-do note's tap target) took this touch.
-	if get_viewport().is_input_handled():
-		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
-			# The to-do note owns its tab/body: a tap there toggles the
-			# list and is NOT a zap. touch_controls is the single router
-			# for touches, so there's no ordering ambiguity.
-			var note := get_tree().get_first_node_in_group("checklist")
-			if note != null and note.wants_touch(event.position):
-				note.toggle_from_touch()
-				get_viewport().set_input_as_handled()
-				return
-			if event.position.x < get_viewport_rect().size.x * 0.55 and _steer_id == -1:
+			if _steer_id == -1:
 				_steer_id = event.index
-				_anchor = event.position
-				_vec = Vector2.ZERO
-			else:
-				Input.action_press("zap")
-				_zap_pressed = true
+			_steer_from(event.position.x)
+			queue_redraw()
 		elif event.index == _steer_id:
 			_steer_id = -1
-			_vec = Vector2.ZERO
-			Game.touch_steer = Vector2.ZERO
-		queue_redraw()
+			Game.touch_steer_x = 0.0
+			queue_redraw()
 	elif event is InputEventScreenDrag and event.index == _steer_id:
-		_vec = ((event.position - _anchor) / STICK_RADIUS).limit_length(1.0)
-		Game.touch_steer = _vec
+		_steer_from(event.position.x)
 		queue_redraw()
 
 
 func _draw() -> void:
 	if _steer_id == -1:
 		return
-	draw_circle(_anchor, STICK_RADIUS, Color(1, 1, 1, 0.10))
-	draw_arc(_anchor, STICK_RADIUS, 0, TAU, 40, Color(1, 1, 1, 0.30), 2.0, true)
-	draw_circle(_anchor + _vec * (STICK_RADIUS - 16.0), 22.0, Color(1, 1, 1, 0.35))
+	# A slim steering bar along the bottom, with the current lock marked.
+	var vp := get_viewport_rect().size
+	var y := vp.y - 34.0
+	draw_line(Vector2(vp.x * 0.16, y), Vector2(vp.x * 0.84, y), Color(1, 1, 1, 0.14), 4.0)
+	var cx := vp.x * 0.5 + Game.touch_steer_x * (vp.x * 0.34)
+	draw_circle(Vector2(cx, y), 16.0, Color(1, 1, 1, 0.32))
+	draw_circle(Vector2(vp.x * 0.5, y), 3.0, Color(1, 1, 1, 0.25))

@@ -23,9 +23,9 @@ you play, with the γ-stretched lab-frame distribution underneath.
 
 | input | action |
 |---|---|
-| WASD / arrows / left stick | **steer** (that's all the control you get) |
+| A / D · arrows · left stick | **steer left / right** — you always fall; you only angle it |
 | SPACE / Z / X (gamepad A/X) | **zap** — your honk; everything reacts |
-| touch: drag left half / tap right half | **steer** (floating joystick) / **zap** |
+| touch: hold & slide left / right | **steer** (zaps fire on their own) |
 | TAB | to-do list |
 | U | origin shop (title screen) |
 | ESC | pause |
@@ -72,9 +72,10 @@ Every push deploys a web build to GitHub Pages:
 (Single-threaded WASM via Godot's web export — audio may crackle slightly
 compared to the native build; save data lives in your browser's storage.)
 
-Works on phones and tablets: drag anywhere on the left half of the screen
-for a floating steering stick, tap the right half to zap, tap the title
-chips for the origin shop, tap the end screen to go again.
+Works on phones and tablets: hold and slide left or right to steer (you're
+always falling — you only angle it), and the muon auto-zaps whatever it
+passes. Tap the title chips for the origin shop, tap the end screen to go
+again.
 
 ## download (macOS)
 

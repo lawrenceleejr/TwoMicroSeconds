@@ -27,8 +27,9 @@ void fragment() {
 	vec2 p = uv - vec2(0.5);
 	float edge = smoothstep(0.12, 0.72, length(p));
 
-	// Channel misregistration: R and B pull apart slightly, more at edges.
-	vec2 shift = normalize(p + vec2(1e-5)) * 0.0016 * edge;
+	// Channel misregistration: R and B pull apart a hair at the far edges
+	// only. Kept tiny — too much reads as "seeing double", not "print".
+	vec2 shift = normalize(p + vec2(1e-5)) * 0.0006 * edge;
 	float r = texture(screen_tex, uv + shift).r;
 	vec2 gb = texture(screen_tex, uv).gb;
 	float b = texture(screen_tex, uv - shift).b;

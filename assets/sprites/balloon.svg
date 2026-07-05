@@ -4,7 +4,6 @@
 </defs>
 
 <path d="M85 146 Q77 196 93 196" fill="none" stroke="#171226" stroke-opacity="0.7" stroke-width="2.5"/>
-<ellipse cx="79" cy="72" rx="56" ry="64" fill="#6a5cff" opacity="0.45"/>
 <ellipse cx="85" cy="78" rx="56" ry="64" fill="#ff5c4d"/>
 <path d="M60 32 A 52 60 0 0 0 38 78 L 52 78 A 40 48 0 0 1 68 42 Z" fill="#ffffff" opacity="0.35"/>
 <ellipse cx="85" cy="78" rx="56" ry="64" fill="none" stroke="#171226" stroke-opacity="0.75" stroke-width="3"/>

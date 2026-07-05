@@ -107,6 +107,12 @@ func _process(delta: float) -> void:
 
 
 func _on_task_completed(task: Dictionary) -> void:
+	# On touch there's no way to open the list by hand (steering only), so
+	# it flashes itself open to show the strike-through, then re-tucks.
+	if Game.is_touch():
+		open = true
+		_user_touched = false
+		_peek_left = maxf(_peek_left, 2.2)
 	var id: String = task["id"]
 	_strikes[id] = 0.0
 	var tw := create_tween()

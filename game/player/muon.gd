@@ -67,6 +67,7 @@ var speed_frac := 0.0
 var autopilot := Vector2.ZERO
 
 var _zap_cd := 0.0
+var _autozap_cd := 0.0
 var _ghost_timer := 0.0
 var _brem_timer := 0.0
 var _cam_lead := 0.0
@@ -207,26 +208,35 @@ func _process(delta: float) -> void:
 
 	_zap_cd = maxf(_zap_cd - delta, 0.0)
 
-	# Steering only: rotate the heading toward the input direction.
-	var steer := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	if Game.touch_steer != Vector2.ZERO:
-		steer = Game.touch_steer
+	# LEFT/RIGHT steering only — you can never aim up. Input just angles
+	# the ever-downward fall to the side; released, it settles to straight
+	# down. (The screenshot director may still fly free via autopilot.)
+	var target_dir := Vector2.DOWN
 	if autopilot != Vector2.ZERO:
-		steer = autopilot
+		target_dir = autopilot.normalized()
+	else:
+		var steer_x := Input.get_axis("move_left", "move_right")
+		if Game.touch_steer_x != 0.0:
+			steer_x = Game.touch_steer_x
+		# Full steer angles the descent ~66° off vertical, never upward.
+		target_dir = Vector2(steer_x * 2.2, 1.0).normalized()
 	speed_frac = clampf(speed / REF_SPEED, 0.0, 1.5)
 	var turn_rate := lerpf(TURN_RATE_SLOW, TURN_RATE_FAST, clampf(speed / SPEED_CAP, 0.0, 1.0))
 	_turn_pop_cd = maxf(_turn_pop_cd - delta, 0.0)
-	if steer.length() > 0.2:
-		var ang := heading.angle_to(steer.normalized())
-		var applied := clampf(ang, -turn_rate * delta, turn_rate * delta)
-		heading = heading.rotated(applied)
-		# A hard bank gets a little anticipation squash — goose rules.
-		if absf(applied) > 3.4 * delta and absf(ang) > 1.1 and _turn_pop_cd <= 0.0:
-			_turn_pop_cd = 0.45
-			_pop_scale(Vector2(0.82, 1.2))
-	else:
-		var ang_down := heading.angle_to(Vector2.DOWN)
-		heading = heading.rotated(clampf(ang_down, -DOWN_BIAS * delta, DOWN_BIAS * delta))
+	var ang := heading.angle_to(target_dir)
+	var applied := clampf(ang, -turn_rate * delta, turn_rate * delta)
+	heading = heading.rotated(applied)
+	# A hard bank gets a little anticipation squash — goose rules.
+	if absf(applied) > 3.4 * delta and absf(ang) > 1.1 and _turn_pop_cd <= 0.0:
+		_turn_pop_cd = 0.45
+		_pop_scale(Vector2(0.82, 1.2))
+
+	# On touch there's no zap button, so auto-zap nearby reactables.
+	if Game.is_touch():
+		_autozap_cd = maxf(_autozap_cd - delta, 0.0)
+		if _autozap_cd <= 0.0 and _zappable_near():
+			_autozap_cd = 0.85
+			_zap()
 
 	# No drag while coasting: a drifting particle keeps its momentum.
 	# Speed only ever changes through field events (boosts).
@@ -291,6 +301,14 @@ func boost(amount: float, source: String) -> void:
 		get_tree().create_timer(0.05 * i).timeout.connect(_spawn_ghost)
 	FloatText.spawn(get_parent(), global_position + Vector2(0, -46),
 		"+ %s" % source, Juice.SUN)
+
+
+## Any reactable within zap range right now? (drives touch auto-zap.)
+func _zappable_near() -> bool:
+	for node in get_tree().get_nodes_in_group("zappable"):
+		if node is Node2D and node.global_position.distance_to(global_position) < ZAP_RADIUS:
+			return true
+	return false
 
 
 func _zap() -> void:

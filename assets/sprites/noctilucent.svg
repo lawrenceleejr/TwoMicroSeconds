@@ -2,7 +2,7 @@
 <defs>
 <linearGradient id="nlc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfeee2" stop-opacity="0.8"/><stop offset="1" stop-color="#3ecfb2" stop-opacity="0.4"/></linearGradient>
 </defs>
-<ellipse cx="69" cy="77" rx="62" ry="34" fill="#6a5cff" opacity="0.35"/><ellipse cx="143" cy="57" rx="78" ry="42" fill="#6a5cff" opacity="0.35"/><ellipse cx="217" cy="79" rx="56" ry="30" fill="#6a5cff" opacity="0.35"/><ellipse cx="143" cy="91" rx="100" ry="30" fill="#6a5cff" opacity="0.35"/><ellipse cx="76" cy="82" rx="62" ry="34" fill="url(#nlc)"/><ellipse cx="150" cy="62" rx="78" ry="42" fill="url(#nlc)"/><ellipse cx="224" cy="84" rx="56" ry="30" fill="url(#nlc)"/><ellipse cx="150" cy="96" rx="100" ry="30" fill="url(#nlc)"/>
+<ellipse cx="76" cy="82" rx="62" ry="34" fill="url(#nlc)"/><ellipse cx="150" cy="62" rx="78" ry="42" fill="url(#nlc)"/><ellipse cx="224" cy="84" rx="56" ry="30" fill="url(#nlc)"/><ellipse cx="150" cy="96" rx="100" ry="30" fill="url(#nlc)"/>
 <line x1="52" y1="88" x2="252" y2="88" stroke="#3ecfb2" stroke-opacity="0.8" stroke-width="2"/>
 <line x1="70" y1="100" x2="236" y2="100" stroke="#3ecfb2" stroke-opacity="0.5" stroke-width="1.5"/>
 

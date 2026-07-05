@@ -56,7 +56,7 @@ func _ready() -> void:
 	_hint_chip = _mk_chip(Juice.INK, 0.4)
 	var hint_text := "WASD steer · SPACE zap · TAB to-dos · U origin shop · F fullscreen · M mute"
 	if Game.is_touch():
-		hint_text = "drag left — steer · tap right — zap · tap a chip for the origin shop"
+		hint_text = "hold & slide to steer left / right · tap a chip for the origin shop"
 	var hint := _chip_label(_hint_chip, hint_text, 13)
 	hint.add_theme_color_override("font_color", Juice.CREAM)
 

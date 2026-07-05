@@ -3,7 +3,7 @@
 
 </defs>
 
-<path d="M20 3 L37 20 L20 37 L3 20 Z" fill="#6a5cff" opacity="0.6" transform="translate(2 2)"/>
+<path d="M22 3 L39 22 L22 41 L5 22 Z" fill="#6a5cff" opacity="0.35"/>
 <path d="M22 3 L39 22 L22 41 L5 22 Z" fill="#3ecfb2" stroke="#171226" stroke-opacity="0.8" stroke-width="2.5"/>
 
 </svg>

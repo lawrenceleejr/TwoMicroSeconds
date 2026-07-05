@@ -5,8 +5,9 @@ const MAIN_SCENE := "res://game/main/stage.tscn"
 const TITLE_SCENE := "res://game/main/title.tscn"
 
 var run_start_msec := 0
-## Steering vector from the on-screen touch joystick (zero = none).
-var touch_steer := Vector2.ZERO
+## Horizontal steer from touch (-1 left … +1 right, 0 = none). Vertical
+## control does not exist: a muon only ever falls.
+var touch_steer_x := 0.0
 ## Set by the 3D stage before it instances the world: the atmosphere then
 ## splits itself across the stage's real depth planes (sky/world/near haze).
 var stage_planes := false
