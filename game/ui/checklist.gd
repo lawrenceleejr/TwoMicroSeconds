@@ -90,9 +90,13 @@ func _process(delta: float) -> void:
 	if Tasks.all_optional_done() and _stamp_scale < 1.0:
 		_stamp_scale = minf(_stamp_scale + delta * 3.0, 1.0)
 	# Never hide the muon: when it flies behind the note, the paper turns
-	# translucent until it has passed.
+	# translucent until it has passed. When tucked, always recover to
+	# full opacity — otherwise a duck frozen at tuck time leaves the
+	# grab-tab invisible (the "where did my to-do list go" bug).
 	if open:
 		Juice.duck_behind_muon(self, delta, 46.0)
+	else:
+		modulate.a = lerpf(modulate.a, 1.0, 1.0 - exp(-9.0 * delta))
 	queue_redraw()
 
 
