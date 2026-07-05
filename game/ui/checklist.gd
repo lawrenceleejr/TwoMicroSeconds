@@ -36,9 +36,11 @@ func _ready() -> void:
 
 
 ## The tab's hit area in canvas coordinates, padded well past Apple's
-## 44-pt minimum so a thumb can't miss it.
+## 44-pt minimum so a thumb can't miss it. (The tab is drawn INSIDE the
+## control's rect — a fully off-screen control gets culled, draw
+## commands and all.)
 func _tab_rect() -> Rect2:
-	return Rect2(global_position + Vector2(-TAB_W - 26.0, TAB_Y - 18.0),
+	return Rect2(global_position + Vector2(-26.0, TAB_Y - 18.0),
 		Vector2(TAB_W + 54.0, TAB_H + 36.0))
 
 
@@ -82,11 +84,11 @@ func _process(delta: float) -> void:
 	var target := 0.0 if open else 1.0
 	_slide = lerpf(_slide, target, 1.0 - exp(-10.0 * delta))
 	var vp := get_viewport_rect().size
-	# Tucked away, the note slides fully off screen; only the grab-tab
-	# (drawn at the note's left edge) stays visible. On narrow (portrait)
+	# Tucked away, the note slides out until only the grab-tab column
+	# (its first TAB_W units) stays on screen. On narrow (portrait)
 	# screens the note starts below the HUD's center cluster.
 	var y_top := 64.0 if vp.x > 900.0 else 150.0
-	position = Vector2(vp.x - W - 14.0 + _slide * (W + 20.0), y_top)
+	position = Vector2(vp.x - W - 14.0 + _slide * (W - TAB_W + 8.0), y_top)
 	if Tasks.all_optional_done() and _stamp_scale < 1.0:
 		_stamp_scale = minf(_stamp_scale + delta * 3.0, 1.0)
 	# Never hide the muon: when it flies behind the note, the paper turns
@@ -117,31 +119,29 @@ func _on_task_completed(task: Dictionary) -> void:
 
 
 func _draw() -> void:
-	# The grab-tab: a paper tongue sticking out of the note's left edge —
-	# THE way back once the note has tucked itself off screen.
-	if _slide > 0.1:
-		var tab := Rect2(-TAB_W, TAB_Y, TAB_W + 10.0, TAB_H)
-		draw_rect(Rect2(tab.position + Vector2(3, 4), tab.size), Color(Juice.PINK, 0.5))
+	# Mostly tucked: draw ONLY the grab-tab, a paper tongue occupying the
+	# note's first on-screen column — THE way to bring the note back.
+	if _slide > 0.5:
+		var tab := Rect2(0.0, TAB_Y, TAB_W, TAB_H)
+		draw_rect(Rect2(tab.position + Vector2(-4, 4), tab.size), Color(Juice.PINK, 0.5))
 		draw_rect(tab, Juice.PAPER)
 		draw_rect(tab, Color(Juice.INK, 0.75), false, 1.5)
 		# Chevron + list glyph + mischief count, stacked.
 		draw_colored_polygon(PackedVector2Array([
-			Vector2(-TAB_W + 30.0, TAB_Y + 18.0), Vector2(-TAB_W + 18.0, TAB_Y + 27.0),
-			Vector2(-TAB_W + 30.0, TAB_Y + 36.0),
+			Vector2(28.0, TAB_Y + 18.0), Vector2(16.0, TAB_Y + 27.0),
+			Vector2(28.0, TAB_Y + 36.0),
 		]), Color(Juice.INK, 0.75))
 		for li in 3:
 			var ly := TAB_Y + 52.0 + li * 9.0
-			draw_rect(Rect2(-TAB_W + 12.0, ly, 6.0, 3.0), Color(Juice.MINT, 0.9))
-			draw_rect(Rect2(-TAB_W + 22.0, ly, 14.0, 3.0), Color(Juice.INK, 0.55))
-		draw_string(Juice.ui_font, Vector2(-TAB_W + 12.0, TAB_Y + 104.0),
+			draw_rect(Rect2(10.0, ly, 6.0, 3.0), Color(Juice.MINT, 0.9))
+			draw_rect(Rect2(20.0, ly, 14.0, 3.0), Color(Juice.INK, 0.55))
+		draw_string(Juice.ui_font, Vector2(12.0, TAB_Y + 104.0),
 			"%d" % Tasks.optional_done_count(), HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
 			Juice.INK)
+		return
 	# Paper, held up by a piece of washi tape.
 	var sb := Juice.ui_panel(Juice.PAPER, 0.93, 14)
 	sb.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
-	# Fully tucked: the note body is off screen; skip its content.
-	if _slide > 0.5:
-		return
 	draw_set_transform(Vector2(W * 0.5, 0.0), 0.06, Vector2.ONE)
 	draw_rect(Rect2(-26, -8, 52, 16), Color(Juice.MINT, 0.55))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
