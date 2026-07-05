@@ -148,17 +148,22 @@ func _run() -> void:
 	if muon == null:
 		_finish()
 		return
-	muon.set("speed", 420.0)
-	muon.set("global_position", Vector2(0, 68600))
+	muon.set("speed", 480.0)
 	muon.set("heading", Vector2.DOWN)
 	muon.set("autopilot", Vector2(0, 1))
-	await _wait(1.2)
-	await _shot("18_bedrock")
-	muon.set("global_position", Vector2(0, 73850))
-	await _wait(1.5)
-	await _shot("19_detected")
+	# Just above the turf, then let it cross naturally so the surface
+	# burst actually fires (it triggers on crossing GROUND_Y).
+	muon.set("global_position", Vector2(0, Atmos.GROUND_Y - 260.0))
+	await _wait(0.55)
+	await _shot("18_surface_burst")
+	await _wait(0.9)
+	await _shot("19_bedrock")
+	# Into the cavern: the 3D CMS rig is revealed and the muon dives in.
+	muon.set("global_position", Vector2(0, 73900))
+	await _wait(1.6)
+	await _shot("20_cms")
 	await _wait(1.8)
-	await _shot("20_end_win")
+	await _shot("21_end_win")
 	_finish()
 
 

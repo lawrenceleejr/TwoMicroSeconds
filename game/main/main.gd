@@ -14,6 +14,7 @@ const BirthSequence := preload("res://game/fx/birth_sequence.gd")
 const TaskPop := preload("res://game/fx/task_pop.gd")
 const FloatText := preload("res://game/fx/float_text.gd")
 const TouchControlsScript := preload("res://game/ui/touch_controls.gd")
+const SurfaceBurst := preload("res://game/fx/surface_burst.gd")
 
 # Untyped: these expose script-defined members/methods.
 var muon
@@ -90,13 +91,20 @@ func _process(_delta: float) -> void:
 	if _ended:
 		return
 	# Punching through the surface: the Ridiculous Fishing moment — the
-	# meadow was never the finish line.
-	if not _underground and muon.alive and muon.global_position.y >= Atmos.GROUND_Y + 40.0:
+	# meadow was never the finish line. Big, loud, once.
+	if not _underground and muon.alive and muon.global_position.y >= Atmos.GROUND_Y + 20.0:
 		_underground = true
-		Sfx.play("decay", -8.0, 0.3)
-		Juice.shake(0.45)
-		Juice.hitstop(0.04, 0.15)
-		TaskPop.confetti(self, muon.global_position, 18)
+		var burst: Node2D = SurfaceBurst.new()
+		burst.position = Vector2(muon.global_position.x, Atmos.GROUND_Y + 30.0)
+		burst.motion = muon.velocity
+		add_child(burst)
+		Sfx.play("zap", -1.0, 0.0)
+		Sfx.play("decay", -6.0, 0.35)
+		Juice.shake(0.7)
+		Juice.hitstop(0.06, 0.12)
+		Juice.glitch(0.22, 0.4)
+		FloatText.spawn(self, muon.global_position + Vector2(0, -60),
+			"THROUGH!", Juice.SUN)
 	if muon.alive and not muon.finished and muon.global_position.y >= Atmos.DETECT_Y:
 		_win()
 
@@ -149,7 +157,6 @@ func _win() -> void:
 		director.detector.count()
 	muon.absorb(pad)
 	Tasks.complete("get_detected")
-	Sfx.play("detected", 0.0, 0.0)
 	Juice.shake(0.2)
 	# Completion bonus, plus a fat tip for a perfect mischief sheet.
 	var bonus := 3

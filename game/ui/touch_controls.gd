@@ -41,6 +41,14 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
+			# The to-do note owns its tab/body: a tap there toggles the
+			# list and is NOT a zap. touch_controls is the single router
+			# for touches, so there's no ordering ambiguity.
+			var note := get_tree().get_first_node_in_group("checklist")
+			if note != null and note.wants_touch(event.position):
+				note.toggle_from_touch()
+				get_viewport().set_input_as_handled()
+				return
 			if event.position.x < get_viewport_rect().size.x * 0.55 and _steer_id == -1:
 				_steer_id = event.index
 				_anchor = event.position

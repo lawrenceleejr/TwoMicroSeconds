@@ -39,8 +39,10 @@ var _in_hitstop := false
 var _glitch_rect: ColorRect
 var _glitch_mat: ShaderMaterial
 var _glitch_tween: Tween
-var _rel_rects: Array = []
-var _rel_mat: ShaderMaterial
+## Relativity now lives on each depth-plane's 3D quad material (see
+## RelativityPlaneShader), so the viewport texture is drawn exactly once.
+var _rel_mats: Array = []
+const RelativityPlaneShader := preload("res://game/fx/relativity_plane.gdshader")
 
 
 func _ready() -> void:
@@ -62,31 +64,23 @@ func _ready() -> void:
 	# One type language everywhere: the mono is the default face; the serif
 	# is opted into per-label for display moments.
 	ThemeDB.fallback_font = ui_font
-	# Relativity is created inside the gameplay SubViewport by the stage
-	# (see create_relativity_in) so contraction can sample the overscan
-	# margin instead of smearing the screen edge.
+	# Relativity lives on the stage's depth-plane quads (see
+	# make_relativity_material) so it displaces the world in place.
 	_build_screen_layer(80, "res://game/fx/vignette.gdshader", true)
 	_glitch_mat = _build_screen_layer(90, "res://game/fx/glitch.gdshader", false)
 	_glitch_rect = _last_rect
 
 
-## Build a relativity layer inside `vp`. Call once per world viewport (the
-## sky plane and the gameplay plane each get one); they share one material
-## so contraction/Doppler stay in lockstep across the depth planes.
-func create_relativity_in(vp: Viewport) -> void:
-	var layer := CanvasLayer.new()
-	layer.layer = 70
-	vp.add_child(layer)
-	if _rel_mat == null:
-		_rel_mat = ShaderMaterial.new()
-		_rel_mat.shader = load("res://game/fx/relativity.gdshader")
-	var rect := ColorRect.new()
-	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rect.material = _rel_mat
-	layer.add_child(rect)
-	_rel_rects = _rel_rects.filter(func(r) -> bool: return is_instance_valid(r))
-	_rel_rects.append(rect)
+## A relativity material for a depth plane's quad, bound to that plane's
+## viewport texture. Each plane gets its own material (different texture);
+## set_relativity drives them all in lockstep.
+func make_relativity_material(world_tex: Texture2D) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = RelativityPlaneShader
+	mat.set_shader_parameter("world_tex", world_tex)
+	_rel_mats = _rel_mats.filter(func(m) -> bool: return is_instance_valid(m))
+	_rel_mats.append(mat)
+	return mat
 
 
 var _last_rect: ColorRect
@@ -149,16 +143,20 @@ func glitch(duration := 0.5, strength := 1.0) -> void:
 ## `strength` (speed); length contraction scales with `gamma_norm` — energy
 ## squashes the sky, because in your rest frame that's what energy does.
 func set_relativity(dir: Vector2, strength: float, gamma_norm := 0.0) -> void:
-	if _rel_mat == null:
-		return
-	var on := strength > 0.02 or gamma_norm > 0.02
-	for r in _rel_rects:
-		if is_instance_valid(r):
-			r.visible = on
-	_rel_mat.set_shader_parameter("motion_dir", dir)
-	_rel_mat.set_shader_parameter("contraction", 0.06 + 0.34 * gamma_norm)
-	_rel_mat.set_shader_parameter("doppler", 0.85 * strength)
-	_rel_mat.set_shader_parameter("blur_amount", 0.016 * strength)
+	# Crisp at true rest; contraction/Doppler/blur ramp in with motion.
+	var c := 0.0
+	var dop := 0.0
+	var bl := 0.0
+	if strength > 0.02 or gamma_norm > 0.02:
+		c = 0.06 + 0.34 * gamma_norm
+		dop = 0.85 * strength
+		bl = 0.016 * strength
+	for m in _rel_mats:
+		if is_instance_valid(m):
+			m.set_shader_parameter("motion_dir", dir)
+			m.set_shader_parameter("contraction", c)
+			m.set_shader_parameter("doppler", dop)
+			m.set_shader_parameter("blur_amount", bl)
 
 
 func _process(delta: float) -> void:

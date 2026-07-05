@@ -23,6 +23,7 @@ var _user_touched := false
 
 
 func _ready() -> void:
+	add_to_group("checklist")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	size = Vector2(W, Tasks.DEFS.size() * 26.0 + 78.0)
 	pivot_offset = Vector2(W * 0.5, 0.0)
@@ -35,37 +36,40 @@ func _ready() -> void:
 		_peek_left = PEEK_T
 
 
-## The tab's hit area in canvas coordinates, padded well past Apple's
-## 44-pt minimum so a thumb can't miss it. (The tab is drawn INSIDE the
-## control's rect — a fully off-screen control gets culled, draw
-## commands and all.)
-func _tab_rect() -> Rect2:
-	return Rect2(global_position + Vector2(-26.0, TAB_Y - 18.0),
-		Vector2(TAB_W + 54.0, TAB_H + 36.0))
-
-
 func _toggle() -> void:
 	open = not open
 	_user_touched = true
 	Sfx.play("pop", -10.0)
 
 
+## Does a raw screen-space press (window pixels) land on our tap target?
+## Uses the canvas-with-stretch transform so it is correct under the phone
+## content_scale_factor — the plain viewport transform is off by that
+## factor, which is why a small tucked tab was un-tappable before.
+func wants_touch(screen_pos: Vector2) -> bool:
+	var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * screen_pos
+	if _slide > 0.5:
+		# Tucked: only the grab-tab column is on screen. Generous padding.
+		return Rect2(-30.0, TAB_Y - 24.0, TAB_W + 62.0, TAB_H + 48.0).has_point(local)
+	# Open: the whole note dismisses on tap.
+	return Rect2(Vector2.ZERO, size).grow(10.0).has_point(local)
+
+
+## Touchscreen router (touch_controls) forwards a tab/note tap here.
+func toggle_from_touch() -> void:
+	_toggle()
+
+
 func _input(event: InputEvent) -> void:
-	# Tap/click the note (or its grab-tab) toggles it.
-	# (On touch devices, taps also arrive as emulated mouse clicks — only
-	# listen to one kind per device class to avoid double toggles.)
-	var pt := Vector2.ZERO
-	if event is InputEventScreenTouch and event.pressed:
-		pt = event.position
-	elif event is InputEventMouseButton and event.pressed \
-			and event.button_index == MOUSE_BUTTON_LEFT \
-			and not Game.is_touch():
-		pt = event.position
-	else:
+	# Desktop only: click the note (or its grab-tab) to toggle. On touch
+	# devices the routing goes through touch_controls (single owner) so a
+	# tap can't also fire a zap.
+	if Game.is_touch():
 		return
-	var canvas_pt: Vector2 = get_viewport().get_final_transform().affine_inverse() * pt
-	if _tab_rect().has_point(canvas_pt) \
-			or (open and get_global_rect().grow(8.0).has_point(canvas_pt)):
+	var mb := event as InputEventMouseButton
+	if mb == null or not mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if wants_touch(mb.position):
 		get_viewport().set_input_as_handled()
 		_toggle()
 

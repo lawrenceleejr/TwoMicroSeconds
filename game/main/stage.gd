@@ -12,6 +12,7 @@ extends Node3D
 ## genuinely parallax against each other. The UI lives on the real screen.
 
 const AtmosphereScript := preload("res://game/world/atmosphere.gd")
+const CmsRigScript := preload("res://game/main/cms_rig.gd")
 
 const BASE_W := 1280.0
 const BASE_H := 720.0
@@ -39,6 +40,9 @@ var _bank := 0.0
 var _t := 0.0
 var _dolly := Vector3.ZERO
 var _env: Environment
+var _cms  # the 3D CMS rig, revealed underground
+var _cms_shown := false
+var _cms_celebrated := false
 
 
 func _ready() -> void:
@@ -58,11 +62,10 @@ func _ready() -> void:
 	back_root.add_child(_cam_back)
 	_vp_back.add_child(back_root)
 	_cam_back.make_current()
-	# The sky contracts and Doppler-shifts too (shared material).
-	Juice.create_relativity_in(_vp_back)
 	# Generous margin: the dolly + bank can reach well past the frustum.
+	# The sky contracts and Doppler-shifts too (relativity on its quad).
 	var back_scale := (d0 - BACK_Z) / d0 * 1.6
-	_make_plane(_vp_back, BACK_Z, back_scale, false)
+	_make_plane(_vp_back, BACK_Z, back_scale, false, true)
 
 	# --- Gameplay plane ----------------------------------------------------
 	_vp = SubViewport.new()
@@ -71,8 +74,7 @@ func _ready() -> void:
 	_vp.transparent_bg = true
 	add_child(_vp)
 	_vp.add_child(load("res://game/main/main.tscn").instantiate())
-	Juice.create_relativity_in(_vp)
-	_make_plane(_vp, 0.0, 1.0, true)
+	_make_plane(_vp, 0.0, 1.0, true, true)
 
 	# --- Near-haze plane (in front of the action) --------------------------
 	_vp_front = SubViewport.new()
@@ -89,7 +91,7 @@ func _ready() -> void:
 	_vp_front.add_child(front_root)
 	_cam_front.make_current()
 	var front_scale := (d0 - FRONT_Z) / d0 * 1.3
-	_make_plane(_vp_front, FRONT_Z, front_scale, true)
+	_make_plane(_vp_front, FRONT_Z, front_scale, true, false)
 
 	_cam = Camera3D.new()
 	_cam.fov = CAM_FOV
@@ -104,23 +106,36 @@ func _ready() -> void:
 	world_env.environment = _env
 	add_child(world_env)
 
+	# CMS lives behind the gameplay plane (z < 0), seen at the camera's
+	# oblique angle so its barrel genuinely recedes. Hidden until the
+	# muon punches underground.
+	_cms = CmsRigScript.new()
+	_cms.position = Vector3(0.0, -0.7, -1.15)
+	add_child(_cms)
+
 	_spawn_wisps()
 	_spawn_blobs()
 
 
-func _make_plane(vp: SubViewport, z: float, s: float, transparent: bool) -> MeshInstance3D:
+func _make_plane(vp: SubViewport, z: float, s: float, transparent: bool,
+		relativity := false) -> MeshInstance3D:
 	var quad := MeshInstance3D.new()
 	var mesh := QuadMesh.new()
 	# 7.2 world-units tall fills the un-overscanned frame at the camera
 	# distance; each plane is scaled for its depth plus a safety margin.
 	mesh.size = Vector2(12.8, 7.2) * OVERSCAN * s
 	quad.mesh = mesh
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_texture = vp.get_texture()
-	if transparent:
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	quad.material_override = mat
+	if relativity:
+		# The plane displaces its own texture in place — the ONLY draw of
+		# this viewport, so contraction never leaves a doubled original.
+		quad.material_override = Juice.make_relativity_material(vp.get_texture())
+	else:
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_texture = vp.get_texture()
+		if transparent:
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		quad.material_override = mat
 	quad.position = Vector3(0.0, 0.0, z)
 	add_child(quad)
 	return quad
@@ -196,6 +211,16 @@ func _process(delta: float) -> void:
 	if _muon != null and _env != null:
 		var sky := Atmos.sky_color_at(_muon.global_position.y - 260.0)
 		_env.background_color = _env.background_color.lerp(sky.darkened(0.25), 1.0 - exp(-2.0 * delta))
+
+	# Reveal the 3D CMS rig as the muon punches into the bedrock, and let
+	# it blaze when the muon is finally counted.
+	if _muon != null and _cms != null:
+		if not _cms_shown and _muon.global_position.y > Atmos.GROUND_Y + 20.0:
+			_cms_shown = true
+			_cms.reveal()
+		if not _cms_celebrated and _muon.get("finished"):
+			_cms_celebrated = true
+			_cms.celebrate()
 
 	# Publish the muon's real-screen position so UI panels (checklist,
 	# chips) can duck out of its way instead of hiding it.
