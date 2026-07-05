@@ -223,11 +223,17 @@ func _process(delta: float) -> void:
 			_cms.celebrate()
 
 	# Publish the muon's real-screen position so UI panels (checklist,
-	# chips) can duck out of its way instead of hiding it.
+	# chips) can duck out of its way instead of hiding it. `lp` is the
+	# muon's point on the gameplay quad in stage space.
 	if _muon != null and gcam != null and is_instance_valid(gcam):
 		var dpx: Vector2 = _muon.global_position - gcam.get_screen_center_position()
 		var lp := Vector3(dpx.x * (12.8 / BASE_W), -dpx.y * (7.2 / BASE_H), 0.0)
 		Game.muon_screen_pos = _cam.unproject_position(lp)
+		# Anchor the CMS wheel directly behind the muon so it dives dead
+		# into the beam spot, regardless of exact framing.
+		if _cms != null and _cms_shown:
+			var cms_target := Vector3(lp.x, lp.y - 0.15, -1.15)
+			_cms.position = _cms.position.lerp(cms_target, 1.0 - exp(-3.0 * delta))
 
 	# Drift the set dressing. Apparent speed scales with how far in front
 	# of the play plane a piece sits (true parallax rates).
