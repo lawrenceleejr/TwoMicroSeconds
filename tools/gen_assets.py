@@ -175,6 +175,47 @@ def satellite():
     write("satellite.svg", svg(260, 170, defs="", body=body))
 
 
+def cms():
+    """The CMS end-cap, riso-flat: rings of coral yoke segments around a
+    paper disc, a teal tracker ring, the amber beam spot dead center,
+    all on a violet misprint echo. 480x480, wheel center at (240, 240)."""
+    import math
+    segs = []
+    # Outer yoke: 12 coral wedges with ink gaps.
+    for i in range(12):
+        a0 = i * 30 + 2
+        a1 = (i + 1) * 30 - 2
+        r0, r1 = 150, 218
+        x0, y0 = 240 + r0 * math.cos(math.radians(a0)), 240 + r0 * math.sin(math.radians(a0))
+        x1, y1 = 240 + r1 * math.cos(math.radians(a0)), 240 + r1 * math.sin(math.radians(a0))
+        x2, y2 = 240 + r1 * math.cos(math.radians(a1)), 240 + r1 * math.sin(math.radians(a1))
+        x3, y3 = 240 + r0 * math.cos(math.radians(a1)), 240 + r0 * math.sin(math.radians(a1))
+        segs.append(
+            f'<polygon points="{x0:.0f},{y0:.0f} {x1:.0f},{y1:.0f} {x2:.0f},{y2:.0f} '
+            f'{x3:.0f},{y3:.0f}" fill="{CORAL}" stroke="{INK}" stroke-width="3"/>')
+    bolts = "".join(
+        f'<circle cx="{240 + 128 * math.cos(math.radians(b * 30 + 15)):.0f}" '
+        f'cy="{240 + 128 * math.sin(math.radians(b * 30 + 15)):.0f}" r="4" fill="{INK}" opacity="0.7"/>'
+        for b in range(12))
+    body = f"""
+<circle cx="228" cy="232" r="220" fill="{VIOLET}" opacity="0.30"/>
+<circle cx="240" cy="240" r="220" fill="#4a3b35"/>
+<circle cx="240" cy="240" r="220" fill="none" stroke="{INK}" stroke-width="4"/>
+{''.join(segs)}
+<circle cx="240" cy="240" r="146" fill="{PAPER}" stroke="{INK}" stroke-width="3.5"/>
+{bolts}
+<circle cx="240" cy="240" r="104" fill="#d8cdb6" stroke="{INK}" stroke-width="3"/>
+<circle cx="240" cy="240" r="70" fill="{TEAL}" stroke="{INK}" stroke-width="3"/>
+<circle cx="240" cy="240" r="40" fill="{PAPER}" stroke="{INK}" stroke-width="2.5"/>
+<circle cx="240" cy="240" r="14" fill="{AMBER}" stroke="{INK}" stroke-width="2.5"/>
+<circle cx="240" cy="240" r="5" fill="#ffffff"/>
+<rect x="96" y="430" width="288" height="22" rx="4" fill="{INK}"/>
+<polygon points="150,452 210,452 190,388 170,388" fill="{INK}" opacity="0.85"/>
+<polygon points="270,452 330,452 310,388 290,388" fill="{INK}" opacity="0.85"/>
+"""
+    write("cms.svg", svg(480, 480, "", body))
+
+
 def detector():
     """The observatory: warm paper block, coral roof, ink line work,
     an amber instrument dome. Architectural, not gingerbread."""
@@ -263,6 +304,7 @@ def main():
     airplane()
     satellite()
     detector()
+    cms()
     fogband()
     glint()
     sparkle()

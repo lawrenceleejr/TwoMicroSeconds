@@ -12,11 +12,12 @@ Your mean proper lifetime is **2.2 µs**, decay is genuinely random, and the
 game plays out in **your own rest frame**: energy can never stretch your
 clock — what it does is **length-contract the atmosphere**, so a hotter birth
 makes the ground arrive sooner while Earth's lab clock races ahead of yours.
-You can't throttle (only electric fields accelerate a charged particle; the
-fields that steer you do no work). Reach the Muon Observatory before the dice
-come up decay. Every death is logged: a persistent histogram of proper
-lifetimes converges on 2.2 µs as you play, with the γ-stretched lab-frame
-distribution underneath.
+You can't throttle — you coast, and only the sky's own machinery (auroras,
+lightning, satellites) can speed you up. And the meadow was never the finish
+line: muons punch straight through it. The run ends 100 m down, through the
+bedrock, in the cavern at LHC Point 5 — counted by **CMS**. Every death is
+logged: a persistent histogram of proper lifetimes converges on 2.2 µs as
+you play, with the γ-stretched lab-frame distribution underneath.
 
 ## how to play
 
@@ -31,11 +32,10 @@ distribution underneath.
 | R | restart (on the end screen) |
 | F / M | fullscreen / mute |
 
-**You cannot throttle a muon.** Nothing accelerates a charged particle but an
-electric field: you coast without losing speed, and the only way to gain any
-is surfing **auroral electrojets**, triggering **thundercloud fields** (zap a
-cloud), or bumping **satellites**. Speed is your clock — and the view tells
-you so, *A Slower Speed of Light*-style:
+**You cannot throttle a muon.** You coast without losing speed, and the only
+way to gain any is surfing **auroral electrojets**, triggering **lightning**
+(zap a cloud), or bumping **satellites**. Speed is your clock — and the view
+tells you so, *A Slower Speed of Light*-style:
 the world **length-contracts** along your direction of motion, **Doppler
 shifts** (blue ahead, red behind, with a headlight brightening), and motion
 blur creeps in as γ climbs.
@@ -43,8 +43,8 @@ blur creeps in as γ climbs.
 The to-do list is optional, goose-style: tickle an aurora, high-five a
 satellite, photobomb a shooting star, startle a weather balloon, zip through
 an airplane, make a cloud rain… Finish all ten before being detected and
-the observatory stamps your receipt **A++ MUON**. Fresh solar-flare muons cannot reach the ground — early runs
-are for sparks; come back heavier.
+CMS stamps your receipt **A++ MUON**. Fresh solar-flare muons cannot even
+reach the ground — early runs are for sparks; come back heavier.
 
 ## sparks & the origin shop
 
@@ -103,7 +103,9 @@ Every push to `main` builds a DMG on GitHub Actions:
 Cosmic-ray muons are created ~15 km up and live 2.2 µs in their own frame.
 Classically they'd travel ~660 m before decaying; relativistically, time
 dilation (γ = 1/√(1−v²/c²)) stretches their laboratory lifetime enough to
-reach the ground in droves — about one per cm² per minute reaches sea level.
+reach the ground in droves — about one per cm² per minute reaches sea level,
+and plenty keep going: underground detectors like CMS see cosmic muons
+through 100 m of rock (they're even used to align it).
 Muons arriving at your detector are one of the classic demonstrations of
 special relativity — and in the muon's own frame the resolution is length
 contraction, which is exactly the mechanic here. The decay products are an
@@ -134,7 +136,7 @@ paper-fiber texture.
 
 Almost everything in this repo is text: all art is drawn in code or
 generated SVG, all audio is synthesized at startup. The only binary assets
-are the two OFL font files in `assets/fonts/`.
+are the OFL font files in `assets/fonts/`.
 
 - Install [Godot 4.4.1-stable](https://godotengine.org/download) and open the
   project, or run it headless-imported from the CLI:

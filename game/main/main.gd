@@ -23,6 +23,7 @@ var pause_overlay
 
 var _ended := false
 var _sparks_at_start := 0
+var _underground := false
 var _ui_layer: CanvasLayer
 
 
@@ -88,6 +89,14 @@ func _exit_tree() -> void:
 func _process(_delta: float) -> void:
 	if _ended:
 		return
+	# Punching through the surface: the Ridiculous Fishing moment — the
+	# meadow was never the finish line.
+	if not _underground and muon.alive and muon.global_position.y >= Atmos.GROUND_Y + 40.0:
+		_underground = true
+		Sfx.play("decay", -8.0, 0.3)
+		Juice.shake(0.45)
+		Juice.hitstop(0.04, 0.15)
+		TaskPop.confetti(self, muon.global_position, 18)
 	if muon.alive and not muon.finished and muon.global_position.y >= Atmos.DETECT_Y:
 		_win()
 
@@ -133,9 +142,10 @@ func _on_decayed() -> void:
 func _win() -> void:
 	_ended = true
 	pause_overlay.can_pause = false
-	var pad := Vector2(0.0, Atmos.GROUND_Y - 40.0)
+	var pad := Vector2(0.0, Atmos.CMS_Y)
 	if director.detector != null:
-		pad = director.detector.global_position + Vector2(0, -14.0)
+		# Absorbed at the beam spot, dead center of the wheel.
+		pad = director.detector.global_position
 		director.detector.count()
 	muon.absorb(pad)
 	Tasks.complete("get_detected")

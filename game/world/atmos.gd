@@ -1,14 +1,21 @@
 class_name Atmos
 extends RefCounted
 ## World geometry and the sky gradient. y=0 is where the muon is born
-## ("100 km up", with some poetic license); GROUND_Y is the detector lab.
+## ("100 km up", with some poetic license). GROUND_Y is the surface —
+## but muons don't stop there: the run ends ~100 m down, in the CMS
+## cavern at LHC Point 5.
 
-const WORLD_DEPTH := 72000.0
+const WORLD_DEPTH := 76000.0
 const GROUND_Y := 69000.0
-const DETECT_Y := 68820.0
+## The CMS cavern: crossing this depth counts you.
+const DETECT_Y := 74450.0
+const CMS_Y := 74650.0
 const X_LIMIT := 1150.0
 
-const LAYER_NAMES := ["thermosphere", "mesosphere", "stratosphere", "troposphere", "the ground"]
+const LAYER_NAMES := [
+	"thermosphere", "mesosphere", "stratosphere", "troposphere",
+	"the ground", "the bedrock",
+]
 
 # [y, altitude_km] anchors for the piecewise altitude readout.
 const BANDS := [
@@ -19,9 +26,21 @@ const BANDS := [
 	[69000.0, 0.0],
 ]
 
+
+## Metres below the surface (0 above ground). The cavern sits at ~100 m,
+## like the real one.
+static func depth_m_at(y: float) -> float:
+	if y <= GROUND_Y:
+		return 0.0
+	return (y - GROUND_Y) / (CMS_Y - GROUND_Y) * 100.0
+
 # Riso dusk: violet-black space, electric violet upper air, a dusty mauve
-# middle, then a burnt coral dusk band into warm paper at the horizon.
-const SKY_YS := [-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0]
+# middle, a burnt coral dusk band into warm paper at the horizon — then
+# below the turf, warm sediment inks darkening toward the cavern.
+const SKY_YS := [
+	-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0,
+	69120.0, 72500.0, 76000.0,
+]
 const SKY_COLORS := [
 	Color("0b0817"),
 	Color("120e22"),
@@ -30,6 +49,9 @@ const SKY_COLORS := [
 	Color("a05f77"),
 	Color("e08a5f"),
 	Color("ecd9b8"),
+	Color("41302a"),
+	Color("2b201c"),
+	Color("171110"),
 ]
 
 const GRASS := Color("7aa98c")
@@ -51,6 +73,8 @@ static func altitude_at(y: float) -> float:
 
 
 static func layer_index_at(y: float) -> int:
+	if y >= GROUND_Y + 120.0:
+		return 5
 	if y >= GROUND_Y - 1200.0:
 		return 4
 	if y >= 48000.0:

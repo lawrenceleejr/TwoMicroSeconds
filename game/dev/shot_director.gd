@@ -140,19 +140,25 @@ func _run() -> void:
 	await _wait(1.8)
 	await _shot("17_end_lose")
 
-	# Restart and run the happy ending.
+	# Restart and run the happy ending: punch through the meadow, fall
+	# through the bedrock, get counted by CMS.
 	_press(KEY_R)
 	await _wait(3.2)  # scene reload + birth sequence
 	muon = get_tree().get_first_node_in_group("muon")
 	if muon == null:
 		_finish()
 		return
-	muon.set("global_position", Vector2(0, 68300))
+	muon.set("speed", 420.0)
+	muon.set("global_position", Vector2(0, 68600))
+	muon.set("heading", Vector2.DOWN)
 	muon.set("autopilot", Vector2(0, 1))
-	await _wait(1.6)
-	await _shot("18_detected")
+	await _wait(1.2)
+	await _shot("18_bedrock")
+	muon.set("global_position", Vector2(0, 73850))
+	await _wait(1.5)
+	await _shot("19_detected")
 	await _wait(1.8)
-	await _shot("19_end_win")
+	await _shot("20_end_win")
 	_finish()
 
 

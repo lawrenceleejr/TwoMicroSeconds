@@ -9,7 +9,7 @@ uniform float cam_h = 900.0;
 uniform float cam_w = 1600.0;
 uniform float t = 0.0;
 
-const int STOPS = 7;
+const int STOPS = 10;
 
 float hash12(vec2 p) {
 	vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -29,13 +29,16 @@ float vnoise(vec2 p) {
 }
 
 vec3 sky_color(float y) {
-	// Riso dusk inks — must match Atmos.SKY_COLORS.
-	float ys[STOPS] = {-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0};
+	// Riso dusk inks (+ sediment below the turf) — must match Atmos.SKY_COLORS.
+	float ys[STOPS] = {-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0,
+		69120.0, 72500.0, 76000.0};
 	vec3 cs[STOPS] = {
 		vec3(0.043, 0.031, 0.090), vec3(0.071, 0.055, 0.133),
 		vec3(0.169, 0.137, 0.314), vec3(0.325, 0.263, 0.494),
 		vec3(0.627, 0.373, 0.467), vec3(0.878, 0.541, 0.373),
-		vec3(0.925, 0.851, 0.722)
+		vec3(0.925, 0.851, 0.722),
+		vec3(0.255, 0.188, 0.165), vec3(0.169, 0.125, 0.110),
+		vec3(0.090, 0.067, 0.063)
 	};
 	if (y <= ys[0]) { return cs[0]; }
 	for (int i = 0; i < STOPS - 1; i++) {

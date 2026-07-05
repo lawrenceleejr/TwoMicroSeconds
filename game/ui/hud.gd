@@ -27,7 +27,8 @@ const TOASTS := [
 	"the mesosphere · where stars come to fall",
 	"the stratosphere · shh, the ozone is sleeping",
 	"the troposphere · weather happens here",
-	"the ground · almost home",
+	"the ground · not the finish line",
+	"the bedrock · 100 m of rock means nothing to you",
 ]
 
 
@@ -116,10 +117,13 @@ func _ready() -> void:
 	if Game.is_touch():
 		_hint_label.text = "drag left — steer · tap right — zap · tap the paper tab — to-dos"
 	else:
-		_hint_label.text = "steer · the sky has fields, find them      SPACE zap · TAB list"
+		_hint_label.text = "steer · ride what the sky throws at you      SPACE zap · TAB list"
 
 	_plot = preload("res://game/ui/decay_plot.gd").new()
 	add_child(_plot)
+
+	_depth = preload("res://game/ui/depth_meter.gd").new()
+	add_child(_depth)
 
 	_toasts = TOASTS.duplicate()
 	_toasts[0] = "born of a %s" % Meta.origin()["name"]
@@ -129,6 +133,7 @@ var _alt_chip: PanelContainer
 var _mischief_chip: PanelContainer
 var _sparks_chip: PanelContainer
 var _plot: Control
+var _depth: Control
 var _lab_label: Label
 var _alert_rect: ColorRect
 var _alert_label: Label
@@ -222,7 +227,10 @@ func _process(delta: float) -> void:
 
 	var y_pos: float = muon.global_position.y
 	var layer := Atmos.layer_index_at(y_pos)
-	_alt_label.text = "%d km · %s" % [int(round(Atmos.altitude_at(y_pos))), Atmos.LAYER_NAMES[layer]]
+	if layer == 5:
+		_alt_label.text = "%d m deep · %s" % [int(round(Atmos.depth_m_at(y_pos))), Atmos.LAYER_NAMES[layer]]
+	else:
+		_alt_label.text = "%d km · %s" % [int(round(Atmos.altitude_at(y_pos))), Atmos.LAYER_NAMES[layer]]
 	_alt_chip.position = Vector2(16.0, 12.0) + jit * 0.7
 	_mischief_label.text = "mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()]
 	_mischief_chip.position = Vector2(16.0, 12.0 + 40.0) - jit * 0.5
@@ -238,6 +246,13 @@ func _process(delta: float) -> void:
 		_plot.set("muon", muon)
 	_plot.position = Vector2(16.0, vp.y - _plot.size.y - 16.0)
 
+	# The descent gauge rides the left edge between the chips and the plot.
+	if _depth.get("muon") == null:
+		_depth.set("muon", muon)
+	var d_top := 148.0
+	_depth.position = Vector2(14.0, d_top)
+	_depth.size = Vector2(52.0, vp.y - _plot.size.y - 40.0 - d_top)
+
 	_hint_t += delta
 	_hint_chip.position = Vector2(vp.x * 0.5 - _hint_chip.size.x * 0.5, vp.y - 52.0)
 	if _hint_t > 9.0 and _hint_chip.modulate.a > 0.0:
@@ -247,7 +262,7 @@ func _process(delta: float) -> void:
 	# way down until it has passed. (Toast/hint own their alpha via
 	# tweens; the danger banner stays — it's an alarm.)
 	for el: Control in [_timer_label, _lab_label, _gamma_chip, _gamma_bar,
-			_alt_chip, _mischief_chip, _sparks_chip, _plot]:
+			_alt_chip, _mischief_chip, _sparks_chip, _plot, _depth]:
 		Juice.duck_behind_muon(el, delta)
 
 

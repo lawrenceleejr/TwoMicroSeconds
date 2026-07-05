@@ -1,7 +1,7 @@
 extends Node2D
 ## The muon. You cannot throttle a muon — nothing accelerates a charged
 ## particle but an electric field. You steer; you coast without losing
-## speed; auroral electrojets, thundercloud fields, and rebooted
+## speed; auroral electrojets, thunderclouds, and rebooted
 ## satellites are the only way to gain it. Speed is your clock.
 
 signal decayed
@@ -167,7 +167,7 @@ func _build_camera() -> void:
 	_camera.limit_left = int(-Atmos.X_LIMIT - 250.0)
 	_camera.limit_right = int(Atmos.X_LIMIT + 250.0)
 	_camera.limit_top = -700
-	_camera.limit_bottom = int(Atmos.GROUND_Y + 500.0)
+	_camera.limit_bottom = int(Atmos.CMS_Y + 620.0)
 	add_child(_camera)
 	_camera.make_current()
 	Juice.register_camera(_camera)
@@ -290,7 +290,7 @@ func boost(amount: float, source: String) -> void:
 	for i in 3:
 		get_tree().create_timer(0.05 * i).timeout.connect(_spawn_ghost)
 	FloatText.spawn(get_parent(), global_position + Vector2(0, -46),
-		"+E field · %s" % source, Juice.SUN)
+		"+ %s" % source, Juice.SUN)
 
 
 func _zap() -> void:

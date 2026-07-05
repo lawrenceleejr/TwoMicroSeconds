@@ -4,7 +4,7 @@ extends Node
 signal task_completed(task: Dictionary)
 
 const DEFS := [
-	{"id": "tickle_aurora", "layer": 0, "text": "surf an aurora's electric field"},
+	{"id": "tickle_aurora", "layer": 0, "text": "surf an aurora"},
 	{"id": "bonk_satellite", "layer": 0, "text": "high-five a satellite"},
 	{"id": "overclock", "layer": 0, "text": "go faster than you were born"},
 	{"id": "photobomb_star", "layer": 1, "text": "photobomb a shooting star"},

@@ -59,7 +59,7 @@ func zapped(source: Node2D) -> void:
 		bolt.from = global_position + Vector2(0, 20)
 		bolt.to = source.global_position
 		get_parent().add_child(bolt)
-		source.boost(BOOST, "thunderstorm field")
+		source.boost(BOOST, "lightning")
 	get_tree().create_timer(3.0).timeout.connect(func() -> void:
 		if is_instance_valid(_rain):
 			_rain.emitting = false

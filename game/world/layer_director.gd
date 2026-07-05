@@ -49,9 +49,9 @@ func _spawn_all() -> void:
 		_place(BirdFlock.new(), _rng.randf_range(-900, 900), _rng.randf_range(51600, 66900))
 	for i in 3:
 		_place(Airplane.new(), _rng.randf_range(-600, 600), 52800.0 + i * 3450.0 + _rng.randf_range(-750, 750))
-	# The finish line.
+	# The finish line: CMS, in its cavern 100 m below the meadow.
 	detector = Detector.new()
-	_place(detector, 0.0, Atmos.GROUND_Y - 26.0)
+	_place(detector, 0.0, Atmos.CMS_Y)
 
 
 func _place(node: Node2D, x: float, y: float) -> void:

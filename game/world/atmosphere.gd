@@ -104,7 +104,7 @@ func _draw_foreground() -> void:
 			var p := q * par + center * (1.0 - par)
 			# Same rule as the other haze: none in space.
 			var air := clampf((q.y - 14000.0) / 14000.0, 0.0, 1.0)
-			if air <= 0.01:
+			if air <= 0.01 or q.y > Atmos.GROUND_Y - 300.0:
 				continue
 			var rx := 180.0 + float(h % 130)
 			_puff(_fg, p, rx, 0.07 * air, h)
@@ -155,6 +155,20 @@ func _draw() -> void:
 					draw_line(pos - Vector2(0, g), pos + Vector2(0, g),
 						Color(star_col, star_col.a * 0.35), 1.0, true)
 
+	# Ridiculous Fishing layer seams: each atmosphere boundary is a band
+	# of hard diagonal stripes — the world changes in cuts, not fades.
+	if mode == "full" or mode == "world":
+		for by: float in [12000.0, 28500.0, 48000.0]:
+			if bottom < by - 170.0 or top > by + 170.0:
+				continue
+			var sx2 := left - 240.0
+			var si := 0
+			while sx2 < left + width + 240.0:
+				var stripe_col := Color(Juice.PAPER, 0.05) if si % 2 == 0 else Color(Juice.INK, 0.06)
+				draw_line(Vector2(sx2, by + 150.0), Vector2(sx2 + 190.0, by - 150.0), stripe_col, 40.0)
+				sx2 += 130.0
+				si += 1
+
 	# Far parallax layer: barely-there haze at 30% of camera speed.
 	if mode == "full" or mode == "back":
 		var par2 := 0.3
@@ -170,7 +184,7 @@ func _draw() -> void:
 				var p4 := q4 * par2 + center * (1.0 - par2)
 				# No haze in space: fade in below ~50 km where there's air.
 				var air4 := clampf((q4.y - 15000.0) / 15000.0, 0.0, 1.0)
-				if air4 <= 0.01:
+				if air4 <= 0.01 or q4.y > Atmos.GROUND_Y - 300.0:
 					continue
 				_puff(self, p4, 150.0 + float(h4 % 120), 0.045 * air4, h4)
 
@@ -188,32 +202,68 @@ func _draw() -> void:
 				var q := Vector2(cx * pcell + float(h3 % 500), cy * pcell + float((h3 / 7) % 500))
 				var p := q * par + center * (1.0 - par)
 				var air := clampf((q.y - 13500.0) / 13500.0, 0.0, 1.0)
-				if air <= 0.01:
+				if air <= 0.01 or q.y > Atmos.GROUND_Y - 300.0:
 					continue
 				var rx := 90.0 + float(h3 % 90)
 				_puff(self, p, rx, 0.06 * air, h3)
 
-	# Ground. The back plane gets a plain, slightly darker slab (a real
-	# horizon behind the play plane); the gameplay plane gets the meadow.
+	# Ground: a TURF BAND, not a floor — muons punch straight through, and
+	# below it the sediment gradient (the sky shader's rock stops) shows.
+	# The back plane gets a plain darker band as the real horizon.
 	if bottom > Atmos.GROUND_Y:
 		if mode == "back":
-			draw_rect(Rect2(left, Atmos.GROUND_Y - 40.0, width, bottom - Atmos.GROUND_Y + 100.0),
-				Atmos.GRASS_DARK.darkened(0.18))
-			return
-		draw_rect(Rect2(left, Atmos.GROUND_Y, width, bottom - Atmos.GROUND_Y + 60.0), Atmos.GRASS)
-		if bottom > Atmos.GROUND_Y + 150.0:
-			draw_rect(
-				Rect2(left, Atmos.GROUND_Y + 150.0, width, bottom - Atmos.GROUND_Y - 90.0),
-				Atmos.GRASS_DARK
-			)
-		# Sparse wildflowers in the print inks — a meadow, not a nursery mural.
-		var fcell := 150.0
-		for cx in range(int(floor(left / fcell)), int(ceil((left + width) / fcell)) + 1):
-			var h2 := absi(hash(Vector2i(cx, 77)))
-			if h2 % 3 == 0:
+			draw_rect(Rect2(left, Atmos.GROUND_Y - 40.0, width,
+				minf(bottom - Atmos.GROUND_Y + 100.0, 220.0)), Atmos.GRASS_DARK.darkened(0.18))
+		else:
+			draw_rect(Rect2(left, Atmos.GROUND_Y, width,
+				minf(bottom - Atmos.GROUND_Y + 60.0, 110.0)), Atmos.GRASS)
+			if bottom > Atmos.GROUND_Y + 110.0:
+				draw_rect(Rect2(left, Atmos.GROUND_Y + 110.0, width, 55.0), Atmos.GRASS_DARK)
+				draw_line(Vector2(left, Atmos.GROUND_Y + 165.0),
+					Vector2(left + width, Atmos.GROUND_Y + 165.0), Color(Juice.INK, 0.45), 2.5)
+			# Sparse wildflowers in the print inks.
+			var fcell := 150.0
+			for cx in range(int(floor(left / fcell)), int(ceil((left + width) / fcell)) + 1):
+				var h2 := absi(hash(Vector2i(cx, 77)))
+				if h2 % 3 == 0:
+					continue
+				var fx2 := float(h2 % 89) / 89.0
+				var pos2 := Vector2(cx * fcell + fx2 * fcell, Atmos.GROUND_Y + 20.0 + float(h2 % 60))
+				var col := Juice.PINK if h2 % 2 == 0 else Juice.SUN
+				draw_line(pos2 + Vector2(0, 6), pos2 + Vector2(0, 16), Color(Juice.INK, 0.5), 1.5)
+				draw_circle(pos2, 3.4, col)
+
+	# The bedrock: wavy sediment strata with occasional misprint echoes,
+	# and till speckles — a Ridiculous-Fishing descent to the cavern.
+	if (mode == "full" or mode == "world") and bottom > Atmos.GROUND_Y + 200.0:
+		var y0 := maxf(top, Atmos.GROUND_Y + 240.0)
+		var yn := minf(bottom, Atmos.WORLD_DEPTH)
+		var row := 340.0
+		for ri in range(int(floor(y0 / row)), int(ceil(yn / row)) + 1):
+			var ry := ri * row
+			if ry < Atmos.GROUND_Y + 240.0 or ry > Atmos.WORLD_DEPTH:
 				continue
-			var fx2 := float(h2 % 89) / 89.0
-			var pos2 := Vector2(cx * fcell + fx2 * fcell, Atmos.GROUND_Y + 30.0 + float(h2 % 100))
-			var col := Juice.PINK if h2 % 2 == 0 else Juice.SUN
-			draw_line(pos2 + Vector2(0, 6), pos2 + Vector2(0, 16), Color(Juice.INK, 0.5), 1.5)
-			draw_circle(pos2, 3.4, col)
+			var hh := absi(hash(ri * 733))
+			var amp := 6.0 + float(hh % 12)
+			var pts := PackedVector2Array()
+			var sx := left
+			while sx <= left + width + 90.0:
+				pts.append(Vector2(sx, ry + sin(sx * 0.004 + float(hh % 40)) * amp))
+				sx += 90.0
+			draw_polyline(pts, Color(Juice.INK, 0.22), 2.0, true)
+			if hh % 3 == 0:
+				var pts2 := PackedVector2Array()
+				for q in pts:
+					pts2.append(q + Vector2(-7.0, 5.0))
+				draw_polyline(pts2, Color(Juice.PINK, 0.10), 2.0, true)
+		var scell := 240.0
+		for cx in range(int(floor(left / scell)), int(ceil((left + width) / scell)) + 1):
+			for cy in range(int(floor(y0 / scell)), int(ceil(yn / scell)) + 1):
+				var h5 := absi(hash(Vector2i(cx + 913, cy + 57)))
+				if h5 % 3 != 0:
+					continue
+				var sp := Vector2(cx * scell + float(h5 % 200), cy * scell + float((h5 / 7) % 200))
+				if sp.y < Atmos.GROUND_Y + 260.0:
+					continue
+				draw_rect(Rect2(sp.x, sp.y, 5.0 + float(h5 % 6), 2.5),
+					Color(Juice.PAPER, 0.10) if h5 % 2 == 0 else Color(Juice.INK, 0.28))

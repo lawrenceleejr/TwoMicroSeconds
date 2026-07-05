@@ -76,7 +76,7 @@ func show_lose(altitude_km: float, run_sparks: int, age_us: float, lab_us: float
 	var histo := preload("res://game/ui/lifetime_histogram.gd").new()
 	_vbox.add_child(histo)
 	_line("", 4, Juice.INK)
-	_line("find more field. come back heavier.", 14, Color(Juice.INK, 0.65))
+	_line("find more sky. come back heavier.", 14, Color(Juice.INK, 0.65))
 	_line("", 8, Juice.INK)
 	var hint := _restart_hint()
 	if not Game.is_touch():
