@@ -130,13 +130,17 @@ func hitstop(duration := 0.06, time_scale := 0.05) -> void:
 var _bullet_tween: Tween
 
 
-func bullet_time(hold := 0.7, slow := 0.14) -> void:
+func bullet_time(hold := 2.0, slow := 0.04) -> void:
+	var ramp_in := 0.18
+	var ramp_out := 0.55
 	if _bullet_tween != null and _bullet_tween.is_valid():
 		_bullet_tween.kill()
+	# Music out, whoosh in, matched to the whole slow window.
+	Sfx.bullet_time_audio(ramp_in + hold + ramp_out, ramp_in, ramp_out)
 	_bullet_tween = create_tween().set_ignore_time_scale(true)
-	_bullet_tween.tween_method(func(v: float) -> void: Engine.time_scale = v, 1.0, slow, 0.10)
+	_bullet_tween.tween_method(func(v: float) -> void: Engine.time_scale = v, 1.0, slow, ramp_in)
 	_bullet_tween.tween_interval(hold)
-	_bullet_tween.tween_method(func(v: float) -> void: Engine.time_scale = v, slow, 1.0, 0.45)
+	_bullet_tween.tween_method(func(v: float) -> void: Engine.time_scale = v, slow, 1.0, ramp_out)
 	_bullet_tween.tween_callback(func() -> void: Engine.time_scale = 1.0)
 
 

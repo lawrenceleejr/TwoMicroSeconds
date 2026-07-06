@@ -130,11 +130,11 @@ func _pass_detector(det: Dictionary) -> void:
 		return
 	Meta.add_sparks(1)
 	Sfx.play("detected", -3.0, 0.0)
-	# Matrix bullet-time: drop into slo-mo so you can actually see the
-	# detector you're punching through before it whips past. (Not during the
-	# screenshot tour, which teleports between detectors on a tight clock.)
+	# Matrix bullet-time: drop into a deep, ~2-second ultra slo-mo so you can
+	# read everything as the detector counts you — music out, whoosh in.
+	# (Not during the screenshot tour, which teleports on a tight clock.)
 	if not Game.shoot_mode:
-		Juice.bullet_time(0.7, 0.13)
+		Juice.bullet_time()
 	Juice.shake(0.2)
 	Juice.glitch(0.25, 0.4)
 	TaskPop.confetti(self, muon.global_position, 22)

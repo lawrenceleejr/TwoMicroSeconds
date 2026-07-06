@@ -17,6 +17,9 @@ const WIND_DB := -30.0
 var _streams := {}
 var _pool: Array[AudioStreamPlayer] = []
 var _music_player: AudioStreamPlayer
+var _whoosh_player: AudioStreamPlayer
+var _bt_music_tween: Tween
+var _bt_whoosh_tween: Tween
 
 
 func _ready() -> void:
@@ -34,6 +37,11 @@ func _ready() -> void:
 	_music_player.finished.connect(_music_player.play)
 	_music_player.play()
 	_start_loop("wind", WIND_DB)
+	# Dedicated player for the bullet-time whoosh (kept silent until used).
+	_whoosh_player = AudioStreamPlayer.new()
+	_whoosh_player.stream = _streams["whoosh"]
+	_whoosh_player.volume_db = -60.0
+	add_child(_whoosh_player)
 
 
 func play(key: String, vol_db := 0.0, pitch_jitter := 0.05) -> void:
@@ -124,6 +132,7 @@ func _build() -> void:
 	_streams["buy"] = _make_buy()
 	_streams["deny"] = _make_deny()
 	_streams["wind"] = _make_wind()
+	_streams["whoosh"] = _make_whoosh()
 
 
 func _pack(samples: PackedFloat32Array, rate: int, loop: bool) -> AudioStreamWAV:
@@ -502,6 +511,55 @@ func _make_discovery_music() -> AudioStreamWAV:
 			var v2 := sin(TAU * freq * t2) * exp(-t2 * 2.4) * 0.06
 			b[(onset + j) % n] += v2
 	_normalize(b, 0.7)
+	return _pack(b, MUSIC_RATE, true)
+
+
+## Bullet-time audio: duck the music right out and swell an airy whoosh in
+## with the slowdown, then back out after. Runs on time-scale-independent
+## tweens so the wall-clock timing is honest while the world crawls.
+func bullet_time_audio(total: float, ramp_in := 0.18, ramp_out := 0.55) -> void:
+	var sustain: float = maxf(total - ramp_in - ramp_out, 0.0)
+	if _bt_music_tween != null and _bt_music_tween.is_valid():
+		_bt_music_tween.kill()
+	_bt_music_tween = create_tween().set_ignore_time_scale(true)
+	_bt_music_tween.tween_property(_music_player, "volume_db", -60.0, ramp_in)
+	_bt_music_tween.tween_interval(sustain)
+	_bt_music_tween.tween_property(_music_player, "volume_db", MUSIC_DB, ramp_out + 0.3)
+
+	if _bt_whoosh_tween != null and _bt_whoosh_tween.is_valid():
+		_bt_whoosh_tween.kill()
+	_whoosh_player.volume_db = -60.0
+	_whoosh_player.play()
+	_bt_whoosh_tween = create_tween().set_ignore_time_scale(true)
+	_bt_whoosh_tween.tween_property(_whoosh_player, "volume_db", -3.0, ramp_in + sustain * 0.25)
+	_bt_whoosh_tween.tween_interval(sustain * 0.35)
+	_bt_whoosh_tween.tween_property(_whoosh_player, "volume_db", -60.0, ramp_out + sustain * 0.4)
+	_bt_whoosh_tween.tween_callback(_whoosh_player.stop)
+
+
+## An airy, loopable whoosh: low-passed noise with a slow swell — the sound
+## of the world stretching out around you.
+func _make_whoosh() -> AudioStreamWAV:
+	var dur := 2.4
+	var n := int(dur * MUSIC_RATE)
+	var b := PackedFloat32Array()
+	b.resize(n)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 91
+	var lp := 0.0
+	var bp := 0.0
+	for i in n:
+		var x := rng.randf() * 2.0 - 1.0
+		lp = lerpf(lp, x, 0.10)          # airy body
+		bp = lerpf(bp, lp, 0.28)         # trailing band for a bit of "sss"
+		var t := float(i) / n
+		var lfo := 0.7 + 0.3 * sin(t * TAU * 1.5)
+		b[i] = (lp * 0.85 + (lp - bp) * 0.7) * lfo
+	_normalize(b, 0.6)
+	var fade := int(0.25 * MUSIC_RATE)
+	for k in fade:
+		var w := float(k) / fade
+		b[n - fade + k] = lerpf(b[n - fade + k], b[k], w)
 	return _pack(b, MUSIC_RATE, true)
 
 
