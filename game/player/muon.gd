@@ -276,8 +276,10 @@ func _process(delta: float) -> void:
 	var root_h: float = get_tree().root.get_visible_rect().size.y
 	if Game.muon_screen_pos.y > -1.0e5 and root_h > 1.0:
 		var err: float = Game.muon_screen_pos.y - root_h * FRAME_FRACTION
-		# +err means the muon sits too low → aim further down to lift it.
-		_aim_y = clampf(_aim_y + clampf(err * 0.20, -60.0, 60.0), -200.0, 1200.0)
+		# +err means the muon sits too low → aim further down to lift it. The
+		# aim is clamped to the window that keeps it in the upper band, so a
+		# sudden jump (a big boost, a teleport) can never wind it to the edge.
+		_aim_y = clampf(_aim_y + clampf(err * 0.20, -60.0, 60.0), 150.0, 380.0)
 	var frame_target := Vector2(velocity.x * 0.12, _aim_y)
 	_camera.position = _camera.position.lerp(frame_target, 1.0 - exp(-6.0 * delta))
 
