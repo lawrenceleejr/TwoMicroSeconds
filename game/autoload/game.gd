@@ -33,6 +33,12 @@ func is_touch() -> bool:
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
 	fake_touch = "--touch" in args
+	# Phones ship 90/120 Hz panels; this scene is GPU-bound (three
+	# every-frame viewports), so uncapped it just runs the battery hot for
+	# frames nobody asked for. Cap the fall to 60 on touch. Desktop is left
+	# to the compositor/vsync.
+	if is_touch():
+		Engine.max_fps = 60
 	_apply_ui_scale()
 	get_window().size_changed.connect(_apply_ui_scale)
 	if "--shoot" in args:

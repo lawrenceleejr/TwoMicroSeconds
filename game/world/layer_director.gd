@@ -22,15 +22,29 @@ var _star_timer := 2.0
 var _shower_cd := 0.0
 var _shower_left := 0.0
 var _shower_timer := 0.0
+var _shower_from_left := true
 
 
 func _ready() -> void:
+	add_to_group("layer_director")
 	if Game.shoot_mode:
 		_rng.seed = 12345  # deterministic world for the screenshot director
 	else:
 		_rng.randomize()
 	_shower_cd = _rng.randf_range(14.0, 26.0)
 	_spawn_all()
+
+
+## Force a meteor shower to start right now (used by the shot director; also
+## a clean hook for scripted events).
+func trigger_meteor_shower() -> void:
+	_shower_cd = _rng.randf_range(22.0, 40.0)
+	_shower_left = _rng.randf_range(4.5, 7.0)
+	_shower_from_left = _rng.randf() < 0.5
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null:
+		hud.meteor_warning()
+	Sfx.play("deny", -3.0, 0.0)
 
 
 func _spawn_all() -> void:
@@ -89,34 +103,42 @@ func _process(delta: float) -> void:
 
 # ------------------------------------------------------- meteor shower ----
 func _update_meteor_shower(delta: float, m: Node2D, muon_y: float) -> void:
-	# Only up in the sky, and never during the birth intro.
-	if muon_y > Atmos.GROUND_Y - 4000.0 or bool(m.get("intro_mode")):
-		return
+	# A shower already running keeps raining until it's spent (as long as
+	# we're still above ground — no meteors underground).
 	if _shower_left > 0.0:
+		if muon_y > Atmos.GROUND_Y:
+			_shower_left = 0.0
+			return
 		_shower_left -= delta
 		_shower_timer -= delta
 		if _shower_timer <= 0.0:
-			_shower_timer = _rng.randf_range(0.12, 0.34)
+			_shower_timer = _rng.randf_range(0.08, 0.22)
 			_spawn_meteor(m)
+		return
+	# Only START one up in the open sky, and never during the birth intro.
+	if muon_y > Atmos.GROUND_Y - 4000.0 or bool(m.get("intro_mode")):
 		return
 	_shower_cd -= delta
 	if _shower_cd <= 0.0:
-		# Kick off a shower: warn loudly, then rain meteors for a few s.
-		_shower_cd = _rng.randf_range(22.0, 40.0)
-		_shower_left = _rng.randf_range(4.5, 7.0)
-		var hud := get_tree().get_first_node_in_group("hud")
-		if hud != null:
-			hud.meteor_warning()
-		Sfx.play("deny", -3.0, 0.0)
+		trigger_meteor_shower()
 
 
 func _spawn_meteor(m: Node2D) -> void:
 	var meteor: Node2D = Meteor.new()
-	var from_left := _rng.randf() < 0.5
-	var x := m.global_position.x + _rng.randf_range(-1100.0, 1100.0)
-	meteor.position = Vector2(x, m.global_position.y - _rng.randf_range(500.0, 900.0))
-	meteor.vel = Vector2((520.0 if from_left else -520.0) + _rng.randf_range(-120, 120),
-		_rng.randf_range(760.0, 1180.0))
+	var mv: Vector2 = m.velocity
+	var side := -1.0 if _shower_from_left else 1.0
+	# Velocity RELATIVE to the falling muon: the camera tracks the muon, so
+	# a meteor sharing its fall speed would hang motionless off-screen. Add a
+	# strong sideways streak plus extra downward speed so a bunch of rocks
+	# sweep diagonally through the frame.
+	meteor.vel = mv + Vector2(side * _rng.randf_range(820.0, 1220.0),
+		_rng.randf_range(320.0, 640.0))
+	# Enter from the leading upper corner, spread across the width, biased
+	# above the muon (which rides the top third) so they rake down past it.
+	var spawn_x := m.global_position.x - side * _rng.randf_range(300.0, 1500.0) \
+		+ _rng.randf_range(-260.0, 260.0)
+	var spawn_y := m.global_position.y - _rng.randf_range(150.0, 640.0)
+	meteor.position = Vector2(spawn_x, spawn_y)
 	add_child(meteor)
 
 

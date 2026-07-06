@@ -26,9 +26,9 @@ const CONTRACT := 0.5
 const ZAP_RADIUS := 175.0
 const ZAP_COOLDOWN := 0.35
 # The camera aims this far BELOW the muon so it rides the top third of
-# the frame and you can see what's coming up from below. (Combined with
-# the 3D stage's upward pitch.)
-const FRAME_AIM_DOWN := 420.0
+# the frame (not jammed against the very top) and you can see what's
+# coming up from below. (Combined with the 3D stage's upward pitch.)
+const FRAME_AIM_DOWN := 150.0
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the
@@ -267,7 +267,10 @@ func _process(delta: float) -> void:
 	# Camera framing: aim BELOW the muon (top-third framing so you see
 	# what's rushing up) plus horizontal lead when steering. One authority
 	# for _camera.position — smoothed here, not fought over elsewhere.
-	var frame_target := Vector2(velocity.x * 0.12, FRAME_AIM_DOWN + velocity.y * 0.16)
+	# A gentle downward lead only — too much and a fast dive pins the muon to
+	# the very top edge. Capped so terminal-velocity plunges stay ~1/3 down.
+	var frame_target := Vector2(velocity.x * 0.12,
+		FRAME_AIM_DOWN + minf(velocity.y * 0.05, 90.0))
 	_camera.position = _camera.position.lerp(frame_target, 1.0 - exp(-3.5 * delta))
 
 	age_us += delta / REAL_SECONDS_PER_US

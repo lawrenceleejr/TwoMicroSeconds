@@ -15,6 +15,9 @@ var _origin_label: Label
 var _sparks_chip: PanelContainer
 var _sparks_label: Label
 var _hint_chip: PanelContainer
+var _footer: VBoxContainer
+var _credits_label: Label
+var _version_label: Label
 var _histo: Control
 var _shop  # untyped: exposes script members (`active`)
 var _root: Control
@@ -60,12 +63,40 @@ func _ready() -> void:
 	var hint := _chip_label(_hint_chip, hint_text, 13)
 	hint.add_theme_color_override("font_color", Juice.CREAM)
 
+	# Footer: authorship credit and the build version. Autowraps so the
+	# line survives a narrow portrait phone.
+	_footer = VBoxContainer.new()
+	_footer.alignment = BoxContainer.ALIGNMENT_CENTER
+	_footer.add_theme_constant_override("separation", 2)
+	_footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_footer)
+	_credits_label = Label.new()
+	_credits_label.text = "made with Claude Code by Lawrence Lee, with support from Tova Holmes — University of Tennessee, Knoxville"
+	_credits_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_credits_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_credits_label.size_flags_horizontal = Control.SIZE_FILL
+	_credits_label.add_theme_font_size_override("font_size", 12)
+	_credits_label.add_theme_color_override("font_color", Color(Juice.CREAM, 0.72))
+	_footer.add_child(_credits_label)
+	_version_label = Label.new()
+	_version_label.text = "Two Microseconds · v%s" % _version_string()
+	_version_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_version_label.size_flags_horizontal = Control.SIZE_FILL
+	_version_label.add_theme_font_size_override("font_size", 12)
+	_version_label.add_theme_color_override("font_color", Color(Juice.MINT, 0.9))
+	_footer.add_child(_version_label)
+
 	_histo = preload("res://game/ui/lifetime_histogram.gd").new()
 	_histo.compact = true
 	_root.add_child(_histo)
 
 	_shop = preload("res://game/ui/origin_shop.gd").new()
 	_root.add_child(_shop)
+
+
+func _version_string() -> String:
+	var v := str(ProjectSettings.get_setting("application/config/version", ""))
+	return v if not v.is_empty() else "dev"
 
 
 func _mk_label(text: String, font_size: int, color: Color) -> Label:
@@ -100,7 +131,7 @@ func _process(delta: float) -> void:
 	var vp := _root.get_viewport_rect().size
 	# Modal focus: while the shop is open, the competing chrome steps out.
 	var modal: bool = _shop != null and _shop.active
-	for c: Control in [_cta_chip, _hint_chip, _histo]:
+	for c: Control in [_cta_chip, _hint_chip, _histo, _footer]:
 		c.modulate.a = lerpf(c.modulate.a, 0.0 if modal else 1.0, 1.0 - exp(-12.0 * delta))
 	_title_label.position = Vector2(vp.x * 0.5 - _title_label.size.x * 0.5, vp.y * 0.16)
 	_title_label.rotation = -0.015
@@ -114,6 +145,10 @@ func _process(delta: float) -> void:
 	_origin_chip.position = Vector2(16, 12)
 	_sparks_chip.position = Vector2(vp.x - _sparks_chip.size.x - 16.0, 12)
 	_hint_chip.position = Vector2(vp.x * 0.5 - _hint_chip.size.x * 0.5, vp.y - 46.0)
+	# Credits/version sit just above the hint bar, clamped to the screen width.
+	var fw: float = minf(vp.x - 40.0, 620.0)
+	_footer.size.x = fw
+	_footer.position = Vector2((vp.x - fw) * 0.5, vp.y - 86.0 - _footer.size.y)
 	_histo.position = Vector2(16.0, vp.y - _histo.size.y - 64.0)
 	_histo.visible = Meta.lifetimes.size() > 0
 	_histo.queue_redraw()

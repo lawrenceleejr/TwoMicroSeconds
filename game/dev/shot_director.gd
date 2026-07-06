@@ -86,6 +86,18 @@ func _run() -> void:
 	await _wait(0.7)
 	await _shot("08_speed")
 
+	# Meteor shower: force one and catch the rocks raking across the frame.
+	var director := get_tree().get_first_node_in_group("layer_director")
+	if director != null:
+		muon.set("global_position", Vector2(0, 22000))
+		muon.set("speed", 520.0)
+		muon.set("heading", Vector2.DOWN)
+		muon.set("autopilot", Vector2(0.1, 1))
+		director.call("trigger_meteor_shower")
+		await _wait(0.7)
+		await _shot("08b_meteors")
+		await _wait(0.4)
+
 	# Weather balloon panic (zap startles it).
 	await _visit_and_zap(muon, "weather_balloon", Vector2(0, 31500), "09_balloon", 0.3)
 

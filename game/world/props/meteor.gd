@@ -28,9 +28,11 @@ func _process(delta: float) -> void:
 	if m != null and not _hit and m.get("alive") and muon_dist() < 44.0:
 		_hit = true
 		m.slow(SLOW, "meteor")
-	# Cull once well past the muon or off the world.
-	if m != null and global_position.y > (m as Node2D).global_position.y + 1400.0:
-		queue_free()
+	# Cull once well past the muon (below, or far off to the side).
+	if m != null:
+		var off: Vector2 = global_position - (m as Node2D).global_position
+		if off.y > 1200.0 or absf(off.x) > 1900.0:
+			queue_free()
 	queue_redraw()
 
 

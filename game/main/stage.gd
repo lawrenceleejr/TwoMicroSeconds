@@ -17,6 +17,9 @@ const DetectorRigScript := preload("res://game/main/detector_rig.gd")
 const BASE_W := 1280.0
 const BASE_H := 720.0
 const OVERSCAN := 1.5
+## Haze planes (sky, near fog) render at this fraction of the gameplay
+## viewport's resolution — they're low-detail, so it's a free ~4x saving.
+const HAZE_RES := 0.5
 const CAM_FOV := 55.0
 # The camera sits LOW and pitches UP: the sky overhead recedes with real
 # perspective (a true vanishing point far above, from foreshortening —
@@ -44,16 +47,30 @@ var _rigs := []  # [{node, y, kind}] — the detector stack, one per depth
 var _discovery := false
 var _disc_t := 0.0
 var _muon_x := 0.0
+var _q := 1.0  # internal-resolution scale (lower on phones)
+
+
+## A depth-plane viewport size: overscanned base × mobile quality × the
+## plane's own detail fraction, floored so it never collapses to nothing.
+func _vp_size(frac: float) -> Vector2i:
+	return Vector2i(
+		maxi(320, int(BASE_W * OVERSCAN * _q * frac)),
+		maxi(180, int(BASE_H * OVERSCAN * _q * frac)))
 
 
 func _ready() -> void:
 	Game.stage_planes = true
 	var d0 := 7.2 / (2.0 * tan(deg_to_rad(CAM_FOV * 0.5)))
+	# Phones render three full-res viewports every frame under Forward+ —
+	# the biggest heat source. Drop the internal resolution on touch, and
+	# render the two blurry haze planes at half of that (they're just
+	# gradients and fog, so it's invisible but quarters their pixel cost).
+	_q = 0.66 if Game.is_touch() else 1.0
 
 	# --- Sky plane (far) ---------------------------------------------------
 	_vp_back = SubViewport.new()
 	_vp_back.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	_vp_back.size = Vector2i(int(BASE_W * OVERSCAN), int(BASE_H * OVERSCAN))
+	_vp_back.size = _vp_size(HAZE_RES)
 	add_child(_vp_back)
 	var back_root := Node2D.new()
 	var back_atmo = AtmosphereScript.new()
@@ -71,7 +88,7 @@ func _ready() -> void:
 	# --- Gameplay plane ----------------------------------------------------
 	_vp = SubViewport.new()
 	_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	_vp.size = Vector2i(int(BASE_W * OVERSCAN), int(BASE_H * OVERSCAN))
+	_vp.size = _vp_size(1.0)
 	_vp.transparent_bg = true
 	add_child(_vp)
 	_vp.add_child(load("res://game/main/main.tscn").instantiate())
@@ -80,7 +97,7 @@ func _ready() -> void:
 	# --- Near-haze plane (in front of the action) --------------------------
 	_vp_front = SubViewport.new()
 	_vp_front.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	_vp_front.size = Vector2i(int(BASE_W * OVERSCAN), int(BASE_H * OVERSCAN))
+	_vp_front.size = _vp_size(HAZE_RES)
 	_vp_front.transparent_bg = true
 	add_child(_vp_front)
 	var front_root := Node2D.new()
@@ -259,17 +276,10 @@ func _process(delta: float) -> void:
 				continue
 			var dy: float = float(r["y"]) - cam_center.y   # world px below camera
 			var qy: float = -dy * (7.2 / BASE_H)            # stage-space y
-			var near: float = clampf(1.0 - absf(dy) / 1400.0, 0.0, 1.0)
+			var near: float = clampf(1.0 - absf(dy) / 2000.0, 0.0, 1.0)
 			rig.set_shown(near)
 			var tgt := Vector3(_muon_x, qy - 0.15, -1.15)
 			rig.position = rig.position.lerp(tgt, 1.0 - exp(-6.0 * delta))
-
-	# Drift the set dressing. Apparent speed scales with how far in front
-	# of the play plane a piece sits (true parallax rates).
-	for w in _wisps:
-		_drift(w, vel, delta)
-	for b in _blobs:
-		_drift(b, vel, delta)
 
 	# Drift the set dressing. Apparent speed scales with how far in front
 	# of the play plane a piece sits (true parallax rates).

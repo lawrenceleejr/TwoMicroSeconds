@@ -116,8 +116,9 @@ func _sphere(r: float, c: Color, pos: Vector3, emit := 0.0) -> MeshInstance3D:
 # end-cap wheel. The muon plunges onto the top of the drum.
 func _build_cms() -> void:
 	var half := 2.3
-	# The red solenoid drum, axis along X.
-	_cyl(1.5, half * 2.0, CORAL, Vector3(0, 0, -0.4), "x")
+	# The red solenoid drum, axis along X. Gently self-lit so the barrel
+	# reads clearly against the near-black rock this deep down.
+	_cyl(1.5, half * 2.0, CORAL, Vector3(0, 0, -0.4), "x", 0.35)
 	# Silver segment bands + ink rings around the drum.
 	for bx: float in [-1.7, -0.85, 0.0, 0.85, 1.7]:
 		_cyl(1.54, 0.16, Color("d8cdb6"), Vector3(bx, 0, -0.4), "x")
@@ -152,11 +153,11 @@ func _ring_x(radius: float, tube: float, c: Color, x: float) -> void:
 # --------------------------------------------------------------- HAWC ------
 # A grid of squat water-Cherenkov tanks on a sunlit surface pad.
 func _build_hawc() -> void:
-	var pad := _cyl(3.0, 0.2, Color("9a8f77"), Vector3(0, -0.4, -0.2), "y")
+	var pad := _cyl(3.0, 0.2, Color("9a8f77"), Vector3(0, -0.4, -0.2), "y", 0.12)
 	for gx in range(-2, 3):
 		for gy in range(-1, 2):
 			var c := CORAL if (gx + gy) % 2 == 0 else PAPER
-			_cyl(0.38, 0.5, c, Vector3(gx * 0.95, -0.15, -0.3 + gy * 0.9))
+			_cyl(0.38, 0.5, c, Vector3(gx * 0.95, -0.15, -0.3 + gy * 0.9), "y", 0.3)
 	# A bright sky-glow disc behind (surface, not a cavern).
 	var glow := _sphere(0.9, AMBER, Vector3(0.0, 2.2, -1.0), 1.4)
 	_beam = glow

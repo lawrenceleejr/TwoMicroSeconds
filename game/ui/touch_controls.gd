@@ -30,6 +30,14 @@ func _steer_from(x: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.pressed:
+			# A tap on the to-do note (or its tucked grab-tab) toggles the
+			# list and must NOT also begin a steer — this is the only route
+			# to reopen it on touch, since there is no keyboard.
+			var cl := get_tree().get_first_node_in_group("checklist")
+			if cl != null and cl.wants_touch(event.position):
+				get_viewport().set_input_as_handled()
+				cl.toggle_from_touch()
+				return
 			if _steer_id == -1:
 				_steer_id = event.index
 			_steer_from(event.position.x)
