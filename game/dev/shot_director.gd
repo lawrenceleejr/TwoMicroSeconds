@@ -76,6 +76,9 @@ func _run() -> void:
 	# Red sprite: zap startles it fully lit.
 	await _visit_and_zap(muon, "red_sprite", Vector2(0, 16500), "07_red_sprite", 0.25)
 
+	# Stray radio wave (below the ionosphere): surf it for a boost.
+	await _visit_and_zap(muon, "radio_wave", Vector2(0, 13500), "07b_radio", 0.2)
+
 	# High-speed streak through the mesosphere (post-boost).
 	muon.set("global_position", Vector2(-500, 18000))
 	muon.set("autopilot", Vector2(1, 0.35))
@@ -140,30 +143,38 @@ func _run() -> void:
 	await _wait(1.8)
 	await _shot("17_end_lose")
 
-	# Restart and run the happy ending: punch through the meadow, fall
-	# through the bedrock, get counted by CMS.
+	# Restart and dive the whole detector stack, ending in the discovery.
 	_press(KEY_R)
 	await _wait(3.2)  # scene reload + birth sequence
 	muon = get_tree().get_first_node_in_group("muon")
 	if muon == null:
 		_finish()
 		return
-	muon.set("speed", 480.0)
+	muon.set("speed", 520.0)
 	muon.set("heading", Vector2.DOWN)
 	muon.set("autopilot", Vector2(0, 1))
-	# Just above the turf, then let it cross naturally so the surface
-	# burst actually fires (it triggers on crossing GROUND_Y).
+	# Surface punch-through + HAWC (fire the crossing naturally).
 	muon.set("global_position", Vector2(0, Atmos.GROUND_Y - 260.0))
-	await _wait(0.55)
-	await _shot("18_surface_burst")
-	await _wait(0.9)
-	await _shot("19_bedrock")
-	# Into the cavern: the 3D CMS rig is revealed and the muon dives in.
-	muon.set("global_position", Vector2(0, 73900))
-	await _wait(1.6)
+	await _wait(0.7)
+	await _shot("18_surface_hawc")
+	# IceCube in the ice.
+	muon.set("global_position", Vector2(0, Atmos.ICECUBE_Y - 260.0))
+	await _wait(0.8)
+	await _shot("19_icecube")
+	# CMS — the cylindrical barrel.
+	muon.set("global_position", Vector2(0, Atmos.CMS_Y - 300.0))
+	await _wait(0.8)
 	await _shot("20_cms")
-	await _wait(1.8)
-	await _shot("21_end_win")
+	# A bedrock/underground-discovery beat on the long way to LZ.
+	muon.set("global_position", Vector2(0, 90000))
+	await _wait(0.8)
+	await _shot("21_deep")
+	# LZ, 1.5 km down — the grand finale: discovery pan + reveal.
+	muon.set("global_position", Vector2(0, Atmos.LZ_Y - 320.0))
+	await _wait(1.4)
+	await _shot("22_lz")
+	await _wait(3.4)   # camera pans up to space; the reveal fades in
+	await _shot("23_discovery")
 	_finish()
 
 

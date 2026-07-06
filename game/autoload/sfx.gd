@@ -453,6 +453,58 @@ func _make_music() -> AudioStreamWAV:
 	return _pack(b, MUSIC_RATE, true)
 
 
+## Swap the soundtrack to the wistful discovery theme (the finale).
+func play_discovery_music() -> void:
+	if _music_player == null:
+		return
+	_music_player.stream = _make_discovery_music()
+	_music_player.volume_db = MUSIC_DB - 1.0
+	_music_player.play()
+
+
+## Slow, dreamy, hopeful: a maj7 pad drift (C - Em - Am - F) with a sparse
+## high bell twinkle and no percussion. Thematically kin to the main loop,
+## but suspended and wide — for the mystery at the bottom of the world.
+func _make_discovery_music() -> AudioStreamWAV:
+	var bar := 3.4
+	var bars := 4
+	var dur := bar * bars
+	var n := int(dur * MUSIC_RATE)
+	var b := PackedFloat32Array()
+	b.resize(n)
+	# maj7/min7 voicings, one per bar, breathing in and out slowly.
+	var chords := [
+		[261.63, 329.63, 392.0, 493.88],   # Cmaj7
+		[164.81, 246.94, 329.63, 392.0],   # Em7
+		[220.0, 261.63, 329.63, 392.0],    # Am7
+		[174.61, 261.63, 349.23, 440.0],   # Fmaj7
+	]
+	for i in n:
+		var t := float(i) / MUSIC_RATE
+		var bar_i := int(t / bar) % 4
+		var bar_pos := fmod(t, bar) / bar
+		var env := sin(bar_pos * PI)  # swell in and out across the bar
+		var chord: Array = chords[bar_i]
+		var v := 0.0
+		for f in chord:
+			v += sin(TAU * float(f) * t) + 0.3 * sin(TAU * float(f) * 2.0 * t)
+		b[i] = v * 0.020 * env
+	# A sparse bell twinkle high above, seeded so it loops the same.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var bells := [1046.5, 1318.5, 1568.0, 1975.5, 2093.0]
+	for k in 14:
+		var onset := int(rng.randf() * dur * MUSIC_RATE)
+		var freq: float = bells[rng.randi() % bells.size()]
+		var length := int(1.1 * MUSIC_RATE)
+		for j in length:
+			var t2 := float(j) / MUSIC_RATE
+			var v2 := sin(TAU * freq * t2) * exp(-t2 * 2.4) * 0.06
+			b[(onset + j) % n] += v2
+	_normalize(b, 0.7)
+	return _pack(b, MUSIC_RATE, true)
+
+
 func _make_wind() -> AudioStreamWAV:
 	var dur := 5.0
 	var n := int(dur * MUSIC_RATE)

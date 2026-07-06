@@ -33,8 +33,26 @@ const TOASTS := [
 
 
 func _ready() -> void:
+	add_to_group("hud")
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Off-screen muon pointer: an arrow at the edge when it steers off-side.
+	_arrow = Control.new()
+	_arrow.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_arrow.draw.connect(_draw_offscreen_arrow)
+	add_child(_arrow)
+
+	# Big transient banner (meteor warning, fusion event).
+	_flash_label = Label.new()
+	_flash_label.add_theme_font_override("font", Juice.ui_font)
+	_flash_label.add_theme_font_size_override("font_size", 30)
+	_flash_label.add_theme_color_override("font_outline_color", Juice.INK)
+	_flash_label.add_theme_constant_override("outline_size", 8)
+	_flash_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_flash_label.visible = false
+	add_child(_flash_label)
 
 	# Red alert wash (P(decay) > 90%), beneath everything else.
 	_alert_rect = ColorRect.new()
@@ -139,6 +157,54 @@ var _alert_rect: ColorRect
 var _alert_label: Label
 var _alert_border: Control
 var _glitch_timer := 0.0
+var _flash_label: Label
+var _flash_t := 0.0
+var _flash_dur := 0.0
+var _flash_col := Color.WHITE
+var _arrow: Control
+
+
+## An arrow at the screen edge when the muon has steered off to one side,
+## so you always know where it is.
+func _draw_offscreen_arrow() -> void:
+	if muon == null or not is_instance_valid(muon):
+		return
+	if not muon.get("alive") or muon.get("finished"):
+		return
+	var vp := _arrow.get_viewport_rect().size
+	var p: Vector2 = get_viewport().get_final_transform().affine_inverse() * Game.muon_screen_pos
+	if p.x >= 24.0 and p.x <= vp.x - 24.0:
+		return  # comfortably on screen
+	var left := p.x < vp.x * 0.5
+	var ex := 34.0 if left else vp.x - 34.0
+	var ey := clampf(p.y, 90.0, vp.y - 90.0)
+	var dir := -1.0 if left else 1.0
+	var pulse := 0.7 + 0.3 * sin(_t * 6.0)
+	# A little chip with a triangle pointing toward the muon.
+	_arrow.draw_circle(Vector2(ex, ey), 20.0, Color(Juice.INK, 0.4))
+	_arrow.draw_colored_polygon(PackedVector2Array([
+		Vector2(ex + dir * 13.0, ey), Vector2(ex - dir * 8.0, ey - 11.0),
+		Vector2(ex - dir * 8.0, ey + 11.0),
+	]), Color(Juice.PINK, pulse))
+	_arrow.draw_circle(Vector2(ex - dir * 12.0, ey), 4.0, Color(Juice.CREAM, pulse))
+
+
+## A big strobing banner: meteor shower warnings, fusion events, etc.
+func _flash_message(text: String, col: Color, dur: float) -> void:
+	_flash_label.text = text
+	_flash_col = col
+	_flash_dur = dur
+	_flash_t = dur
+	_flash_label.visible = true
+
+
+func meteor_warning() -> void:
+	_flash_message("!! METEOR SHOWER INCOMING — DODGE !!", Juice.PINK, 2.6)
+
+
+func fusion_event() -> void:
+	_flash_message("MUON-CATALYZED FUSION EVENT!", Juice.SUN, 3.2)
+	Juice.shake(0.4)
 
 
 func _mk_chip(font_size: int, icon_path: String) -> Array:
@@ -228,10 +294,25 @@ func _process(delta: float) -> void:
 	var y_pos: float = muon.global_position.y
 	var layer := Atmos.layer_index_at(y_pos)
 	if layer == 5:
-		_alt_label.text = "%d m deep · %s" % [int(round(Atmos.depth_m_at(y_pos))), Atmos.LAYER_NAMES[layer]]
+		_alt_label.text = "%d m deep · %s" % [int(round(Atmos.depth_m_at(y_pos))), Atmos.strata_label_at(y_pos)]
 	else:
 		_alt_label.text = "%d km · %s" % [int(round(Atmos.altitude_at(y_pos))), Atmos.LAYER_NAMES[layer]]
 	_alt_chip.position = Vector2(16.0, 12.0) + jit * 0.7
+
+	_arrow.queue_redraw()
+
+	# Big transient banner (meteor warning / fusion event): strobe + fade.
+	if _flash_t > 0.0:
+		_flash_t -= delta
+		var on := int(_t * 8.0) % 2 == 0
+		_flash_label.visible = on
+		var a := clampf(_flash_t / maxf(_flash_dur, 0.01), 0.0, 1.0)
+		_flash_label.add_theme_color_override("font_color", Color(_flash_col, 0.4 + 0.6 * a))
+		_flash_label.pivot_offset = _flash_label.size * 0.5
+		_flash_label.scale = Vector2.ONE * (1.0 + 0.08 * sin(_t * 14.0))
+		_flash_label.position = Vector2(vp.x * 0.5 - _flash_label.size.x * 0.5, vp.y * 0.30)
+		if _flash_t <= 0.0:
+			_flash_label.visible = false
 	_mischief_label.text = "mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()]
 	_mischief_chip.position = Vector2(16.0, 12.0 + 40.0) - jit * 0.5
 	_sparks_label.text = str(Meta.sparks)

@@ -12,7 +12,7 @@ extends Node3D
 ## genuinely parallax against each other. The UI lives on the real screen.
 
 const AtmosphereScript := preload("res://game/world/atmosphere.gd")
-const CmsRigScript := preload("res://game/main/cms_rig.gd")
+const DetectorRigScript := preload("res://game/main/detector_rig.gd")
 
 const BASE_W := 1280.0
 const BASE_H := 720.0
@@ -40,9 +40,10 @@ var _bank := 0.0
 var _t := 0.0
 var _dolly := Vector3.ZERO
 var _env: Environment
-var _cms  # the 3D CMS rig, revealed underground
-var _cms_shown := false
-var _cms_celebrated := false
+var _rigs := []  # [{node, y, kind}] — the detector stack, one per depth
+var _discovery := false
+var _disc_t := 0.0
+var _muon_x := 0.0
 
 
 func _ready() -> void:
@@ -109,12 +110,31 @@ func _ready() -> void:
 	# CMS lives behind the gameplay plane (z < 0), seen at the camera's
 	# oblique angle so its barrel genuinely recedes. Hidden until the
 	# muon punches underground.
-	_cms = CmsRigScript.new()
-	_cms.position = Vector3(0.0, -0.7, -1.15)
-	add_child(_cms)
+	add_to_group("stage")
+	# The detector stack: HAWC, IceCube, CMS, LZ — each built as real 3D
+	# geometry, placed at its true depth, flown through on the way down.
+	for det in Atmos.DETECTORS:
+		var rig = DetectorRigScript.new()
+		rig.kind = det["kind"]
+		rig.label_text = det["label"]
+		rig.sub_text = det["sub"]
+		add_child(rig)
+		_rigs.append({"node": rig, "y": float(det["y"]), "kind": det["kind"]})
 
 	_spawn_wisps()
 	_spawn_blobs()
+
+
+## main.gd calls this as the muon flies through each detector.
+func celebrate_kind(kind: String) -> void:
+	for r in _rigs:
+		if r["kind"] == kind and is_instance_valid(r["node"]):
+			r["node"].celebrate()
+
+
+## The grand finale: the camera pans and tilts up toward space.
+func begin_discovery() -> void:
+	_discovery = true
 
 
 func _make_plane(vp: SubViewport, z: float, s: float, transparent: bool,
@@ -204,36 +224,52 @@ func _process(delta: float) -> void:
 	# Keep the un-overscanned frame filling the window at any fov, then
 	# sit low and pitch up: the oblique perspective is the whole point.
 	var d := 7.2 / (2.0 * tan(deg_to_rad(_cam.fov * 0.5)))
+	var tilt := TILT_DEG
+	if _discovery:
+		# The finale: rise and level off, tilting from the oblique dive
+		# toward looking straight out as the world scrolls up to space.
+		_disc_t += delta
+		tilt = lerpf(TILT_DEG, -6.0, clampf(_disc_t / 5.0, 0.0, 1.0))
+		d += clampf(_disc_t / 6.0, 0.0, 1.0) * 1.3
 	_cam.position = Vector3(sin(_t * 0.23) * 0.08, CAM_Y + sin(_t * 0.31) * 0.05, d) + _dolly
-	_cam.rotation = Vector3(deg_to_rad(TILT_DEG), deg_to_rad(YAW_DEG) + sin(_t * 0.17) * 0.012, _bank)
+	_cam.rotation = Vector3(deg_to_rad(tilt), deg_to_rad(YAW_DEG) + sin(_t * 0.17) * 0.012, _bank)
 
 	# Blend the void past the planes into the local sky.
 	if _muon != null and _env != null:
 		var sky := Atmos.sky_color_at(_muon.global_position.y - 260.0)
 		_env.background_color = _env.background_color.lerp(sky.darkened(0.25), 1.0 - exp(-2.0 * delta))
 
-	# Reveal the 3D CMS rig as the muon punches into the bedrock, and let
-	# it blaze when the muon is finally counted.
-	if _muon != null and _cms != null:
-		if not _cms_shown and _muon.global_position.y > Atmos.GROUND_Y + 20.0:
-			_cms_shown = true
-			_cms.reveal()
-		if not _cms_celebrated and _muon.get("finished"):
-			_cms_celebrated = true
-			_cms.celebrate()
-
-	# Publish the muon's real-screen position so UI panels (checklist,
-	# chips) can duck out of its way instead of hiding it. `lp` is the
-	# muon's point on the gameplay quad in stage space.
+	# Publish the muon's real-screen position so UI panels can duck out of
+	# its way. `lp` is the muon's point on the gameplay quad in stage space.
+	var cam_center := Vector2.ZERO
 	if _muon != null and gcam != null and is_instance_valid(gcam):
-		var dpx: Vector2 = _muon.global_position - gcam.get_screen_center_position()
+		cam_center = gcam.get_screen_center_position()
+		var dpx: Vector2 = _muon.global_position - cam_center
 		var lp := Vector3(dpx.x * (12.8 / BASE_W), -dpx.y * (7.2 / BASE_H), 0.0)
 		Game.muon_screen_pos = _cam.unproject_position(lp)
-		# Anchor the CMS wheel directly behind the muon so it dives dead
-		# into the beam spot, regardless of exact framing.
-		if _cms != null and _cms_shown:
-			var cms_target := Vector3(lp.x, lp.y - 0.15, -1.15)
-			_cms.position = _cms.position.lerp(cms_target, 1.0 - exp(-3.0 * delta))
+		_muon_x = lp.x
+
+	# Place each detector rig at its true depth (behind the play plane),
+	# horizontally anchored to the muon so it's flown through clean. Scale
+	# it in only when the muon is within a couple screens of that depth.
+	if gcam != null and is_instance_valid(gcam):
+		for r in _rigs:
+			var rig = r["node"]
+			if not is_instance_valid(rig):
+				continue
+			var dy: float = float(r["y"]) - cam_center.y   # world px below camera
+			var qy: float = -dy * (7.2 / BASE_H)            # stage-space y
+			var near: float = clampf(1.0 - absf(dy) / 1400.0, 0.0, 1.0)
+			rig.set_shown(near)
+			var tgt := Vector3(_muon_x, qy - 0.15, -1.15)
+			rig.position = rig.position.lerp(tgt, 1.0 - exp(-6.0 * delta))
+
+	# Drift the set dressing. Apparent speed scales with how far in front
+	# of the play plane a piece sits (true parallax rates).
+	for w in _wisps:
+		_drift(w, vel, delta)
+	for b in _blobs:
+		_drift(b, vel, delta)
 
 	# Drift the set dressing. Apparent speed scales with how far in front
 	# of the play plane a piece sits (true parallax rates).

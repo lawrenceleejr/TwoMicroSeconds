@@ -118,7 +118,7 @@ func _draw() -> void:
 	draw_line(Vector2(20, 46), Vector2(W - 20, 46), Color(Juice.INK, 0.2), 1.5)
 
 	for i in Meta.TIERS.size():
-		var t: Dictionary = Meta.TIERS[i]
+		var t: Dictionary = Meta.tier_display(i)
 		var y := 62.0 + i * ROW_H
 		var equipped := i == Meta.tier
 		var owned := i <= Meta.owned_tier

@@ -26,6 +26,10 @@ var _ended := false
 var _sparks_at_start := 0
 var _underground := false
 var _ui_layer: CanvasLayer
+var _hud
+## Detector stack progress.
+var _passed := {}
+var _deepest := ""          # sub-label of the deepest detector reached
 
 
 func _ready() -> void:
@@ -68,9 +72,9 @@ func _ready() -> void:
 	_ui_layer.layer = 100
 	# Touch controls sit under the HUD so chips/toasts stay readable.
 	_ui_layer.add_child(TouchControlsScript.new())
-	var hud = HudScript.new()
-	hud.muon = muon
-	_ui_layer.add_child(hud)
+	_hud = HudScript.new()
+	_hud.muon = muon
+	_ui_layer.add_child(_hud)
 	_ui_layer.add_child(ChecklistScript.new())
 	end_screen = EndScreenScript.new()
 	_ui_layer.add_child(end_screen)
@@ -105,8 +109,33 @@ func _process(_delta: float) -> void:
 		Juice.glitch(0.22, 0.4)
 		FloatText.spawn(self, muon.global_position + Vector2(0, -60),
 			"THROUGH!", Juice.SUN)
-	if muon.alive and not muon.finished and muon.global_position.y >= Atmos.DETECT_Y:
-		_win()
+	# Fly through each detector in the stack as we reach its depth.
+	if muon.alive and not muon.finished:
+		for det in Atmos.DETECTORS:
+			if not _passed.has(det["kind"]) and muon.global_position.y >= float(det["y"]):
+				_pass_detector(det)
+				break
+
+
+## Punch through a detector on the way down. All but LZ are fly-throughs
+## (count, spark, keep falling); LZ is the grand finale.
+func _pass_detector(det: Dictionary) -> void:
+	_passed[det["kind"]] = true
+	_deepest = "%s · %s" % [det["label"], det["sub"]]
+	var stage := get_tree().get_first_node_in_group("stage")
+	if stage != null:
+		stage.celebrate_kind(det["kind"])
+	if det["kind"] == "lz":
+		_discover()
+		return
+	Meta.add_sparks(1)
+	Sfx.play("detected", -3.0, 0.0)
+	Juice.shake(0.2)
+	Juice.hitstop(0.04, 0.12)
+	TaskPop.confetti(self, muon.global_position, 22)
+	FloatText.spawn(self, muon.global_position + Vector2(0, -52),
+		"%s counted you!" % det["label"], Juice.MINT)
+	Tasks.complete("get_detected")
 
 
 func _on_task_completed(task: Dictionary) -> void:
@@ -139,33 +168,38 @@ func _on_decayed() -> void:
 	burst.motion = muon.velocity
 	add_child(burst)
 	var alt := Atmos.altitude_at(muon.global_position.y)
+	var depth := Atmos.depth_m_at(muon.global_position.y)
 	var run_sparks: int = Meta.sparks - _sparks_at_start
 	var age: float = muon.age_us
 	var lab: float = muon.lab_us
+	var deepest := _deepest
 	get_tree().create_timer(1.6).timeout.connect(func() -> void:
-		end_screen.show_lose(alt, run_sparks, age, lab)
+		end_screen.show_lose(alt, depth, deepest, run_sparks, age, lab)
 	)
 
 
-func _win() -> void:
+## The finale: the muon reached LZ, 1.5 km down — deeper than any cosmic
+## ray has any right to. The camera pans up to space; the discovery, and
+## its enduring mystery, is revealed.
+func _discover() -> void:
 	_ended = true
 	pause_overlay.can_pause = false
-	var pad := Vector2(0.0, Atmos.CMS_Y)
-	if director.detector != null:
-		# Absorbed at the beam spot, dead center of the wheel.
-		pad = director.detector.global_position
-		director.detector.count()
-	muon.absorb(pad)
-	Tasks.complete("get_detected")
-	Juice.shake(0.2)
-	# Completion bonus, plus a fat tip for a perfect mischief sheet.
-	var bonus := 3
-	if Tasks.all_optional_done():
-		bonus += 5
-	Meta.add_sparks(bonus)
-	var run_sparks: int = Meta.sparks - _sparks_at_start
+	muon.finished = true
+	Meta.record_lifetime(muon.age_us, muon.lab_us)
+	Meta.add_sparks(20)
+	Meta.mark_discovery()
+	var stage := get_tree().get_first_node_in_group("stage")
+	if stage != null:
+		stage.begin_discovery()
+	Sfx.play("detected", 0.0, 0.0)
+	Sfx.play_discovery_music()
+	Juice.shake(0.3)
+	# Pan up through every layer to space over the reveal.
+	var tw := create_tween()
+	tw.tween_property(muon, "position", Vector2(0.0, -5600.0), 13.0) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	var age: float = muon.age_us
 	var lab: float = muon.lab_us
-	get_tree().create_timer(1.5).timeout.connect(func() -> void:
-		end_screen.show_win(run_sparks, Meta.is_max_tier(), age, lab)
+	get_tree().create_timer(4.0).timeout.connect(func() -> void:
+		end_screen.show_discovery(age, lab)
 	)

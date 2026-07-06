@@ -39,13 +39,14 @@ void fragment() {
 	acc /= 9.0;
 	vec3 col = acc.rgb;
 
-	// Doppler: forward hemisphere shifts blue and brightens.
+	// Doppler: forward hemisphere shifts hard toward blue and brightens;
+	// the rear bleeds deep red. Cranked for a dramatic relativistic view.
 	float fwd = dot(normalize(p + vec2(1e-5, 0.0)), dir);
 	float s = doppler * fwd;
-	col.r *= 1.0 - 0.38 * s;
-	col.g *= 1.0 - 0.13 * s;
-	col.b *= 1.0 + 0.44 * s;
-	col *= 1.0 + 0.20 * doppler * max(fwd, 0.0);
+	col.r *= 1.0 - 0.55 * s;
+	col.g *= 1.0 - 0.18 * s;
+	col.b *= 1.0 + 0.70 * s;
+	col *= 1.0 + 0.30 * doppler * max(fwd, 0.0);
 
 	ALBEDO = col;
 	ALPHA = acc.a;

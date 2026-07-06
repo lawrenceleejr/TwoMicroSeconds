@@ -149,7 +149,7 @@ func set_relativity(dir: Vector2, strength: float, gamma_norm := 0.0) -> void:
 	var bl := 0.0
 	if strength > 0.02 or gamma_norm > 0.02:
 		c = 0.06 + 0.34 * gamma_norm
-		dop = 0.85 * strength
+		dop = 1.4 * strength
 		bl = 0.016 * strength
 	for m in _rel_mats:
 		if is_instance_valid(m):

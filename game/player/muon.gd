@@ -25,10 +25,10 @@ const REAL_SECONDS_PER_US := 12.0    # game seconds per proper µs
 const CONTRACT := 0.5
 const ZAP_RADIUS := 175.0
 const ZAP_COOLDOWN := 0.35
-# The camera aims this far above the muon. Most of the "sky overhead"
-# framing now comes from the 3D stage's upward pitch; this small 2D
-# offset just settles the muon into the lower third.
-const FRAME_LOOK_UP := 70.0
+# The camera aims this far BELOW the muon so it rides the top third of
+# the frame and you can see what's coming up from below. (Combined with
+# the 3D stage's upward pitch.)
+const FRAME_AIM_DOWN := 420.0
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the
@@ -71,6 +71,8 @@ var _autozap_cd := 0.0
 var _ghost_timer := 0.0
 var _brem_timer := 0.0
 var _cam_lead := 0.0
+var _depth_f := 0.0
+var _shower_timer := 0.0
 var _turn_pop_cd := 0.0
 var _clock := 0.0
 var _turn_acc := 0.0
@@ -167,8 +169,10 @@ func _build_camera() -> void:
 	_camera.position_smoothing_speed = 6.0
 	_camera.limit_left = int(-Atmos.X_LIMIT - 250.0)
 	_camera.limit_right = int(Atmos.X_LIMIT + 250.0)
-	_camera.limit_top = -700
-	_camera.limit_bottom = int(Atmos.CMS_Y + 620.0)
+	# Top reaches into space so the discovery finale can pan back up;
+	# bottom reaches the LZ cavern, 1.5 km down.
+	_camera.limit_top = -7200
+	_camera.limit_bottom = int(Atmos.LZ_Y + 900.0)
 	add_child(_camera)
 	_camera.make_current()
 	Juice.register_camera(_camera)
@@ -252,16 +256,19 @@ func _process(delta: float) -> void:
 	position += velocity * delta
 	_apply_bounds()
 
-	# Camera framing. Two ingredients:
-	#  - lead: position smoothing lags a fast target by velocity/speed,
-	#    so the target leads by exactly that lag (otherwise the muon
-	#    slides around the frame with every speed change);
-	#  - look-up: the camera aims a fixed distance ABOVE the muon, so the
-	#    muon rides the bottom half of the screen with the sky it's
-	#    falling out of filling the frame overhead.
-	var lead_y := velocity.y / _camera.position_smoothing_speed
-	_cam_lead = lerpf(_cam_lead, lead_y, 1.0 - exp(-4.0 * delta))
-	_camera.position = Vector2(0.0, _cam_lead - FRAME_LOOK_UP)
+	# Dense-earth drag: below the surface the rock bleeds a little speed,
+	# more the deeper you go — you feel yourself starting to bog down.
+	if global_position.y > Atmos.GROUND_Y:
+		_depth_f = clampf(Atmos.depth_m_at(global_position.y) / 260.0, 0.0, 1.0)
+		speed = maxf(speed - (6.0 + 26.0 * _depth_f) * delta, SPEED_FLOOR)
+	else:
+		_depth_f = 0.0
+
+	# Camera framing: aim BELOW the muon (top-third framing so you see
+	# what's rushing up) plus horizontal lead when steering. One authority
+	# for _camera.position — smoothed here, not fought over elsewhere.
+	var frame_target := Vector2(velocity.x * 0.12, FRAME_AIM_DOWN + velocity.y * 0.16)
+	_camera.position = _camera.position.lerp(frame_target, 1.0 - exp(-3.5 * delta))
 
 	age_us += delta / REAL_SECONDS_PER_US
 	lab_us += gamma * delta / REAL_SECONDS_PER_US
@@ -284,7 +291,7 @@ func _process(delta: float) -> void:
 	_update_trail()
 	_update_squash()
 	_update_speed_fx(delta)
-	_update_camera_lookahead(delta)
+	_update_tail_intensity(delta)
 	_heartbeat()
 
 
@@ -301,6 +308,19 @@ func boost(amount: float, source: String) -> void:
 		get_tree().create_timer(0.05 * i).timeout.connect(_spawn_ghost)
 	FloatText.spawn(get_parent(), global_position + Vector2(0, -46),
 		"+ %s" % source, Juice.SUN)
+
+
+## Ploughing into debris (meteors, space junk) scrubs your speed.
+func slow(amount: float, source: String) -> void:
+	if not alive or finished:
+		return
+	speed = maxf(speed - amount, SPEED_FLOOR)
+	Sfx.play("deny", -4.0)
+	Juice.shake(0.22)
+	Juice.glitch(0.12, 0.3)
+	_pop_scale(Vector2(0.62, 1.45))
+	FloatText.spawn(get_parent(), global_position + Vector2(0, -46),
+		"− %s" % source, Juice.PINK)
 
 
 ## Any reactable within zap range right now? (drives touch auto-zap.)
@@ -416,9 +436,29 @@ func _update_speed_fx(delta: float) -> void:
 			Sfx.play("tick", -14.0, 0.25)
 
 
-func _update_camera_lookahead(delta: float) -> void:
-	var target := velocity * 0.22
-	_camera.position = _camera.position.lerp(target, 1.0 - exp(-3.0 * delta))
+## The tail escalates with depth: wider, hotter, and increasingly a
+## continuous forward shower as the muon rams through ever-denser earth.
+func _update_tail_intensity(delta: float) -> void:
+	var d := _depth_f
+	_trail.width = 15.0 * (1.0 + d * 1.9)
+	_trail_halo.width = 30.0 * (1.0 + d * 1.7)
+	var hot := Color(1.0, 1.0, 0.97).lerp(Color(1.0, 0.46, 0.30), d)
+	_trail.gradient.set_color(1, Color(hot, 0.6 + 0.3 * d))
+	_trail_halo.gradient.set_color(1, Color(hot, 0.16 + 0.22 * d))
+	_sparkles.scale_amount_min = 0.14 + 0.4 * d
+	_sparkles.scale_amount_max = 0.34 + 0.9 * d
+	# Underground, brem showers fire faster and faster — showering like
+	# crazy by the time you're deep.
+	if d > 0.04:
+		_shower_timer -= delta
+		if _shower_timer <= 0.0:
+			_shower_timer = lerpf(0.5, 0.07, d)
+			var burst: Node2D = BremBurst.new()
+			burst.position = global_position + heading * randf_range(70.0, 220.0)
+			burst.dir = heading
+			get_parent().add_child(burst)
+			if d > 0.5 and randf() < 0.3:
+				Sfx.play("tick", -16.0, 0.3)
 
 
 func _heartbeat() -> void:

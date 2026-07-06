@@ -9,7 +9,7 @@ uniform float cam_h = 900.0;
 uniform float cam_w = 1600.0;
 uniform float t = 0.0;
 
-const int STOPS = 10;
+const int STOPS = 14;
 
 float hash12(vec2 p) {
 	vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -29,16 +29,21 @@ float vnoise(vec2 p) {
 }
 
 vec3 sky_color(float y) {
-	// Riso dusk inks (+ sediment below the turf) — must match Atmos.SKY_COLORS.
+	// Riso dusk inks (+ soil, glacial ice, then rock) — must match Atmos.SKY_COLORS.
 	float ys[STOPS] = {-7500.0, 0.0, 12000.0, 28500.0, 48000.0, 61500.0, 69000.0,
-		69120.0, 72500.0, 76000.0};
+		69120.0, 70600.0, 72100.0, 73600.0, 76000.0, 120000.0, 153600.0};
 	vec3 cs[STOPS] = {
 		vec3(0.043, 0.031, 0.090), vec3(0.071, 0.055, 0.133),
 		vec3(0.169, 0.137, 0.314), vec3(0.325, 0.263, 0.494),
 		vec3(0.627, 0.373, 0.467), vec3(0.878, 0.541, 0.373),
 		vec3(0.925, 0.851, 0.722),
-		vec3(0.255, 0.188, 0.165), vec3(0.169, 0.125, 0.110),
-		vec3(0.090, 0.067, 0.063)
+		vec3(0.420, 0.353, 0.290),   // topsoil
+		vec3(0.561, 0.651, 0.722),   // glacial ice
+		vec3(0.435, 0.518, 0.580),   // deeper ice
+		vec3(0.227, 0.173, 0.149),   // bedrock
+		vec3(0.141, 0.102, 0.086),   // deep rock
+		vec3(0.078, 0.059, 0.078),   // deeper rock
+		vec3(0.039, 0.031, 0.063)    // the deep cavern
 	};
 	if (y <= ys[0]) { return cs[0]; }
 	for (int i = 0; i < STOPS - 1; i++) {

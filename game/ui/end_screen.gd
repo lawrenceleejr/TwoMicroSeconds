@@ -62,13 +62,20 @@ func show_win(run_sparks: int, omg: bool, age_us: float, lab_us: float) -> void:
 	_pop_in()
 
 
-func show_lose(altitude_km: float, run_sparks: int, age_us: float, lab_us: float) -> void:
+func show_lose(altitude_km: float, depth_m: float, deepest: String,
+		run_sparks: int, age_us: float, lab_us: float) -> void:
 	_build_common()
 	_line("poof.", 44, Juice.INK)
 	_line("an electron, a neutrino, and an antineutrino carry on.", 20, Color(Juice.INK, 0.8))
 	_line("", 8, Juice.INK)
-	_line("lived %.2f µs proper · %.1f µs lab frame · made it to %d km" % [
-		age_us, lab_us, int(round(altitude_km))], 16, Juice.INK)
+	if depth_m > 0.0:
+		_line("lived %.2f µs proper · %.1f µs lab frame · got %d m down" % [
+			age_us, lab_us, int(round(depth_m))], 16, Juice.INK)
+	else:
+		_line("lived %.2f µs proper · %.1f µs lab frame · made it to %d km" % [
+			age_us, lab_us, int(round(altitude_km))], 16, Juice.INK)
+	if deepest != "":
+		_line("deepest detector reached: %s" % deepest, 16, Color("2e8b57"))
 	_line("mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()], 16, Juice.INK)
 	if run_sparks > 0:
 		_line("sparks +%d  ·  wallet %d" % [run_sparks, Meta.sparks], 16, Juice.PERIWINKLE)
@@ -76,12 +83,33 @@ func show_lose(altitude_km: float, run_sparks: int, age_us: float, lab_us: float
 	var histo := preload("res://game/ui/lifetime_histogram.gd").new()
 	_vbox.add_child(histo)
 	_line("", 4, Juice.INK)
-	_line("find more sky. come back heavier.", 14, Color(Juice.INK, 0.65))
+	_line("go deeper. come back heavier.", 14, Color(Juice.INK, 0.65))
 	_line("", 8, Juice.INK)
 	var hint := _restart_hint()
 	if not Game.is_touch():
 		hint += "  (U — shop)"
 	_line(hint, 16, Color(Juice.PERIWINKLE, 1.0))
+	_pop_in()
+
+
+## The grand finale: reached LZ, 1.5 km down. The impossible energy, and
+## its still-open mystery, revealed as the camera pans up to space.
+func show_discovery(age_us: float, lab_us: float) -> void:
+	_build_common()
+	_line("I M P O S S I B L E .", 40, Color("ffb03a"))
+	_line("you reached LZ — 1.5 km of rock down. no cosmic ray should.", 18, Color(Juice.INK, 0.85))
+	_line("", 8, Juice.INK)
+	_line("you were the Oh-My-God particle. Utah, 1991. 3×10²⁰ eV.", 17, Juice.INK)
+	_line("that is ABOVE the GZK limit — an energy theory says", 15, Color(Juice.INK, 0.8))
+	_line("shouldn't survive the trip here at all.", 15, Color(Juice.INK, 0.8))
+	_line("", 6, Juice.INK)
+	_line("where it came from is still unknown.", 16, Color("6a5cff"))
+	_line("a nearby source? dark matter? something we haven't named yet?", 15, Color(Juice.INK, 0.8))
+	_line("", 6, Juice.INK)
+	_line("lived %.2f µs proper · %.1f µs lab frame" % [age_us, lab_us], 14, Color(Juice.INK, 0.7))
+	_line("the mystery is still open. thank you for chasing it. <3", 15, Color("e05c6e"))
+	_line("", 6, Juice.INK)
+	_line(_restart_hint(), 16, Color(Juice.PERIWINKLE, 1.0))
 	_pop_in()
 
 

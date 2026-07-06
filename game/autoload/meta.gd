@@ -66,6 +66,9 @@ var tier := 0
 ## Highest origin purchased.
 var owned_tier := 0
 var total_sparks_earned := 0
+## The final origin (the Oh-My-God particle) is a mystery — shown as "???"
+## until you carry it all the way down to LZ and unlock its true identity.
+var discovered := false
 ## Proper lifetime (µs) of every decayed muon, ever. Exponentially
 ## distributed by construction; the mean converges on 2.2 as you play.
 var lifetimes: Array = []
@@ -78,7 +81,29 @@ func _ready() -> void:
 
 
 func origin() -> Dictionary:
-	return TIERS[tier]
+	return tier_display(tier)
+
+
+## Is this tier the still-unidentified final origin?
+func is_mystery(i: int) -> bool:
+	return i == TIERS.size() - 1 and not discovered
+
+
+## A tier's shop/title fields, with the final origin masked until unlocked.
+func tier_display(i: int) -> Dictionary:
+	var t: Dictionary = TIERS[i].duplicate()
+	if is_mystery(i):
+		t["name"] = "? ? ?"
+		t["energy"] = "??? eV"
+		t["flavor"] = "an energy that shouldn't exist — take it all the way down"
+	return t
+
+
+func mark_discovery() -> void:
+	if discovered:
+		return
+	discovered = true
+	_save()
 
 
 func gamma_bonus() -> float:
@@ -156,6 +181,7 @@ func reset_save() -> void:
 	tier = 0
 	owned_tier = 0
 	total_sparks_earned = 0
+	discovered = false
 	lifetimes = []
 	lifetimes_lab = []
 	_save()
@@ -171,6 +197,7 @@ func _save() -> void:
 		"tier": tier,
 		"owned": owned_tier,
 		"earned": total_sparks_earned,
+		"discovered": discovered,
 		"lifetimes": lifetimes,
 		"lifetimes_lab": lifetimes_lab,
 	}))
@@ -188,6 +215,7 @@ func _load() -> void:
 		tier = clampi(int(data.get("tier", 0)), 0, TIERS.size() - 1)
 		owned_tier = clampi(int(data.get("owned", tier)), tier, TIERS.size() - 1)
 		total_sparks_earned = maxi(int(data.get("earned", 0)), 0)
+		discovered = bool(data.get("discovered", false))
 		var lts = data.get("lifetimes", [])
 		if lts is Array:
 			lifetimes = lts
