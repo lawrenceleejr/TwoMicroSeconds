@@ -17,11 +17,12 @@ const PX_PER_M := 56.5
 const HAWC_Y := 69010.0     # ~0 m, surface water-Cherenkov array
 const ICECUBE_Y := 72100.0  # ~55 m, strung through glacial ice
 const CMS_Y := 74650.0      # 100 m, LHC Point 5
-const LZ_Y := 152620.0      # ~1.5 km, deep dark-matter cavern (SURF)
+const LZ_Y := 108550.0      # ~700 m, deep dark-matter cavern (kept close
+                            # enough that the descent between stays eventful)
 
 ## Legacy alias (first detection point) — kept for old references.
 const DETECT_Y := 69010.0
-const WORLD_DEPTH := 153600.0
+const WORLD_DEPTH := 109600.0
 
 ## The detector stack, shallow → deep. Each is a fly-through: passing it
 ## "counts" you and pays a spark; the run only ends at decay or at LZ.
@@ -29,7 +30,7 @@ const DETECTORS := [
 	{"kind": "hawc", "y": 69010.0, "depth_m": 0.0, "label": "HAWC", "sub": "surface array"},
 	{"kind": "icecube", "y": 72100.0, "depth_m": 55.0, "label": "ICECUBE", "sub": "in the glacial ice"},
 	{"kind": "cms", "y": 74650.0, "depth_m": 100.0, "label": "CMS", "sub": "LHC Point 5"},
-	{"kind": "lz", "y": 152620.0, "depth_m": 1480.0, "label": "LZ", "sub": "dark matter · 1.5 km down"},
+	{"kind": "lz", "y": 108550.0, "depth_m": 700.0, "label": "LZ", "sub": "dark matter · deep underground"},
 ]
 
 const LAYER_NAMES := [
@@ -63,7 +64,7 @@ static func strata_label_at(y: float) -> String:
 		return "glacial ice"
 	if d < 140.0:
 		return "bedrock"
-	if d < 1350.0:
+	if d < 560.0:
 		return "deep rock"
 	return "the deep cavern"
 

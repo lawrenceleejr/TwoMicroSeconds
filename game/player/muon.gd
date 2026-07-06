@@ -31,10 +31,11 @@ const ZAP_COOLDOWN := 0.35
 # position, so fov breathing, the stage dolly, speed and orientation can't
 # drift it off the line. FRAME_AIM_DOWN is just the starting guess.
 const FRAME_FRACTION := 1.0 / 3.0
-const FRAME_AIM_DOWN := 220.0
+const FRAME_AIM_DOWN := 260.0   # constant feed-forward; the controller trims
 var _aim_correction := 0.0
 var _last_gy := 0.0
 var _frame_settle := 0.0
+var _lamp: Node2D
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the
@@ -133,6 +134,15 @@ func _build_visuals() -> void:
 	_sparkles.scale_amount_curve = twinkle
 	_sparkles.material = add_mat
 	add_child(_sparkles)
+
+	# Headlamp: a forward cone of yellow light, lit only once you're grinding
+	# through rock. Sits behind the body, additively blended over the dark.
+	_lamp = Node2D.new()
+	_lamp.z_index = 3
+	_lamp.z_as_relative = false
+	_lamp.material = add_mat
+	_lamp.draw.connect(_draw_lamp)
+	add_child(_lamp)
 
 	_body = preload("res://game/player/muon_body.gd").new()
 	add_child(_body)
@@ -279,17 +289,19 @@ func _process(delta: float) -> void:
 	# it up. This is the single authority for _camera.position.
 	var gy: float = global_position.y
 	if absf(gy - _last_gy) > 2500.0:
-		_frame_settle = 0.6
+		_frame_settle = 0.45
 	_last_gy = gy
 	_frame_settle = maxf(_frame_settle - delta, 0.0)
-	var feed_forward: float = FRAME_AIM_DOWN + minf(velocity.y * 0.05, 90.0)
 	var root_h: float = get_tree().root.get_visible_rect().size.y
 	if _frame_settle <= 0.0 and Game.muon_screen_pos.y > -1.0e5 and root_h > 1.0:
 		var err: float = Game.muon_screen_pos.y - root_h * FRAME_FRACTION
 		# +err = muon too low → aim further down (which lifts it toward 1/3).
-		_aim_correction = clampf(_aim_correction + clampf(err * 0.15, -25.0, 25.0), -80.0, 80.0)
-	var frame_target := Vector2(velocity.x * 0.12, feed_forward + _aim_correction)
-	_camera.position = _camera.position.lerp(frame_target, 1.0 - exp(-6.0 * delta))
+		_aim_correction = clampf(_aim_correction + clampf(err * 0.22, -50.0, 50.0), -150.0, 150.0)
+	# The vertical aim is set directly (constant feed-forward + trim) so the
+	# only remaining smoothing is the Camera2D's — no speed-driven bob, no
+	# stacked lag. The result holds the muon on the 1/3 line.
+	_camera.position.x = lerpf(_camera.position.x, velocity.x * 0.12, 1.0 - exp(-3.5 * delta))
+	_camera.position.y = FRAME_AIM_DOWN + _aim_correction
 
 	age_us += delta / REAL_SECONDS_PER_US
 	lab_us += gamma * delta / REAL_SECONDS_PER_US
@@ -313,7 +325,38 @@ func _process(delta: float) -> void:
 	_update_squash()
 	_update_speed_fx(delta)
 	_update_tail_intensity(delta)
+	_lamp.queue_redraw()
 	_heartbeat()
+
+
+## The muon's headlamp: a forward cone of warm light, lit only underground
+## where it's grinding through dirt and rock. Points along travel; brightens
+## with depth. Additive over the dark earth (see the _lamp node's material).
+func _draw_lamp() -> void:
+	var ug := clampf((global_position.y - Atmos.GROUND_Y) / 500.0, 0.0, 1.0)
+	if ug <= 0.01:
+		return
+	var dir := velocity
+	if dir.length() < 1.0:
+		dir = heading
+	dir = dir.normalized()
+	var perp := dir.orthogonal()
+	var flick := 0.9 + 0.1 * sin(_clock * 24.0)
+	var beam := Color(1.0, 0.82, 0.32)
+	var near := dir * 10.0
+	var far := dir * (230.0 + 90.0 * ug)
+	var pts := PackedVector2Array([
+		near + perp * 12.0, far + perp * (120.0 + 40.0 * ug),
+		far - perp * (120.0 + 40.0 * ug), near - perp * 12.0,
+	])
+	var a := 0.5 * ug * flick
+	var cols := PackedColorArray([
+		Color(beam, a), Color(beam, 0.0), Color(beam, 0.0), Color(beam, a),
+	])
+	_lamp.draw_polygon(pts, cols)
+	# The lamp itself, a hot little bulb on the leading edge.
+	_lamp.draw_circle(near, 8.0, Color(1.0, 0.95, 0.7, 0.85 * ug))
+	_lamp.draw_circle(near, 4.0, Color(1.0, 1.0, 0.92, ug))
 
 
 ## The only way to gain speed: an electric field did work on you.

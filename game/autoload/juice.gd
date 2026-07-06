@@ -123,6 +123,23 @@ func hitstop(duration := 0.06, time_scale := 0.05) -> void:
 	_in_hitstop = false
 
 
+## Matrix-style bullet time: ease the whole simulation down to a crawl, hold,
+## then ease back. Runs on a time-scale-independent tween so the wall-clock
+## timing is honest no matter how slow the world gets. Audio keeps real time,
+## which is exactly the effect we want.
+var _bullet_tween: Tween
+
+
+func bullet_time(hold := 0.7, slow := 0.14) -> void:
+	if _bullet_tween != null and _bullet_tween.is_valid():
+		_bullet_tween.kill()
+	_bullet_tween = create_tween().set_ignore_time_scale(true)
+	_bullet_tween.tween_method(func(v: float) -> void: Engine.time_scale = v, 1.0, slow, 0.10)
+	_bullet_tween.tween_interval(hold)
+	_bullet_tween.tween_method(func(v: float) -> void: Engine.time_scale = v, slow, 1.0, 0.45)
+	_bullet_tween.tween_callback(func() -> void: Engine.time_scale = 1.0)
+
+
 ## Digital-artifact screen glitch + shake, decaying to nothing over `duration`.
 func glitch(duration := 0.5, strength := 1.0) -> void:
 	if _glitch_tween != null and _glitch_tween.is_valid():

@@ -186,7 +186,9 @@ func _spawn_wisps() -> void:
 		var s := Sprite3D.new()
 		s.texture = load("res://assets/sprites/fogband.svg")
 		s.pixel_size = 0.010 + (i % 3) * 0.004
-		s.modulate = Color(1, 1, 1, 0.06 + 0.04 * (i % 3))
+		var a := 0.06 + 0.04 * (i % 3)
+		s.modulate = Color(1, 1, 1, a)
+		s.set_meta("a0", a)
 		s.position = Vector3(randf_range(-7.5, 7.5), randf_range(-5.5, 5.5),
 			randf_range(-1.8, 1.3))
 		add_child(s)
@@ -198,7 +200,9 @@ func _spawn_blobs() -> void:
 		var g := Sprite3D.new()
 		g.texture = load("res://assets/sprites/glint.svg")
 		g.pixel_size = 0.0022 + (i % 4) * 0.0012
-		g.modulate = Color(1, 1, 1, 0.30 + 0.14 * (i % 3))
+		var a := 0.30 + 0.14 * (i % 3)
+		g.modulate = Color(1, 1, 1, a)
+		g.set_meta("a0", a)
 		g.position = Vector3(randf_range(-8.0, 8.0), randf_range(-5.5, 5.5),
 			randf_range(0.3, 3.8))
 		add_child(g)
@@ -280,6 +284,17 @@ func _process(delta: float) -> void:
 			rig.set_shown(near)
 			var tgt := Vector3(_muon_x, qy - 0.15, -1.15)
 			rig.position = rig.position.lerp(tgt, 1.0 - exp(-6.0 * delta))
+
+	# Underground it's rock, not sky: the sparkle glints (which read as
+	# stars) fade right out, and the haze bands dim to faint dust — so
+	# crossing the surface reads unmistakably as going underground.
+	var ug := 0.0
+	if _muon != null and is_instance_valid(_muon):
+		ug = clampf((_muon.global_position.y - Atmos.GROUND_Y) / 700.0, 0.0, 1.0)
+	for b in _blobs:
+		b.modulate.a = float(b.get_meta("a0", 0.3)) * (1.0 - ug)
+	for w in _wisps:
+		w.modulate.a = float(w.get_meta("a0", 0.06)) * (1.0 - 0.7 * ug)
 
 	# Drift the set dressing. Apparent speed scales with how far in front
 	# of the play plane a piece sits (true parallax rates).

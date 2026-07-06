@@ -76,10 +76,15 @@ func _spawn_all() -> void:
 		_place(BirdFlock.new(), _rng.randf_range(-900, 900), _rng.randf_range(51600, 66900))
 	for i in 3:
 		_place(Airplane.new(), _rng.randf_range(-600, 600), 52800.0 + i * 3450.0 + _rng.randf_range(-750, 750))
-	# Underground curiosities to discover on the long way down.
+	# Underground curiosities to discover on the way down — spread evenly
+	# from just below the surface to just above LZ so the descent between the
+	# detectors always has something to find (tombs, oil, secret tunnels).
 	var kinds := ["tomb", "oil", "tunnel"]
-	for i in 7:
-		var depth_y := _rng.randf_range(Atmos.GROUND_Y + 1500.0, Atmos.LZ_Y - 3000.0)
+	var n_disc := 16
+	for i in n_disc:
+		var frac := (float(i) + 0.5) / float(n_disc)
+		var depth_y := lerpf(Atmos.GROUND_Y + 1100.0, Atmos.LZ_Y - 1400.0, frac) \
+			+ _rng.randf_range(-700.0, 700.0)
 		_place(Discovery.new_kind(kinds[i % kinds.size()]), _rng.randf_range(-950, 950), depth_y)
 
 

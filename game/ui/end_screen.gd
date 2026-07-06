@@ -97,7 +97,7 @@ func show_lose(altitude_km: float, depth_m: float, deepest: String,
 func show_discovery(age_us: float, lab_us: float) -> void:
 	_build_common()
 	_line("I M P O S S I B L E .", 40, Color("ffb03a"))
-	_line("you reached LZ — 1.5 km of rock down. no cosmic ray should.", 18, Color(Juice.INK, 0.85))
+	_line("you reached LZ — deep underground, where no cosmic ray belongs.", 18, Color(Juice.INK, 0.85))
 	_line("", 8, Juice.INK)
 	_line("you were the Oh-My-God particle. Utah, 1991. 3×10²⁰ eV.", 17, Juice.INK)
 	_line("that is ABOVE the GZK limit — an energy theory says", 15, Color(Juice.INK, 0.8))

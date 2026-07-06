@@ -47,6 +47,8 @@ func _toggle() -> void:
 ## content_scale_factor — the plain viewport transform is off by that
 ## factor, which is why a small tucked tab was un-tappable before.
 func wants_touch(screen_pos: Vector2) -> bool:
+	if not visible:
+		return false
 	var local: Vector2 = get_global_transform_with_canvas().affine_inverse() * screen_pos
 	if _slide > 0.5:
 		# Tucked: only the grab-tab column is on screen. Generous padding.
@@ -76,6 +78,15 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
+	# On a vertical phone the note lives in the pause menu only — off the
+	# play field, where it kept getting in the way. (Landscape/desktop keep
+	# the pinned note.)
+	if Game.is_touch():
+		var vsz := get_viewport_rect().size
+		if vsz.y > vsz.x:
+			visible = false
+			return
+	visible = true
 	if Input.is_action_just_pressed("toggle_checklist"):
 		_toggle()
 	# The opening peek: visible for a beat, then it slides itself away

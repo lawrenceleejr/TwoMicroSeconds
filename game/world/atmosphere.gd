@@ -236,6 +236,13 @@ func _draw() -> void:
 	# The bedrock: wavy sediment strata with occasional misprint echoes,
 	# and till speckles — a Ridiculous-Fishing descent to the cavern.
 	if (mode == "full" or mode == "world") and bottom > Atmos.GROUND_Y + 200.0:
+		# A solid earth wash so underground reads as dirt and rock, not dark
+		# sky — deepening as you descend so the headlamp beam has something to
+		# bite into.
+		var ey0 := maxf(top, Atmos.GROUND_Y)
+		var deep_f := clampf((ey0 - Atmos.GROUND_Y) / 9000.0, 0.0, 1.0)
+		draw_rect(Rect2(left, ey0, width, bottom - ey0 + 40.0),
+			Color(0.11, 0.083, 0.055, 0.42 + 0.4 * deep_f))
 		var y0 := maxf(top, Atmos.GROUND_Y + 240.0)
 		var yn := minf(bottom, Atmos.WORLD_DEPTH)
 		var row := 340.0
