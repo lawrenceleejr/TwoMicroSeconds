@@ -34,6 +34,7 @@ const TOASTS := [
 
 func _ready() -> void:
 	add_to_group("hud")
+	add_to_group("menu_button")
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -43,6 +44,14 @@ func _ready() -> void:
 	_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_arrow.draw.connect(_draw_offscreen_arrow)
 	add_child(_arrow)
+
+	# Menu button (top-right): opens the pause menu. On a phone it's the only
+	# way in — there's no ESC key — so touch taps are routed here too.
+	_menu_btn = Control.new()
+	_menu_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu_btn.draw.connect(_draw_menu_btn)
+	_menu_btn.gui_input.connect(_on_menu_input)
+	add_child(_menu_btn)
 
 	# Big transient banner (meteor warning, fusion event).
 	_flash_label = Label.new()
@@ -162,6 +171,41 @@ var _flash_t := 0.0
 var _flash_dur := 0.0
 var _flash_col := Color.WHITE
 var _arrow: Control
+var _menu_btn: Control
+
+
+## Draw the menu button: a small hamburger glyph on an ink disc.
+func _draw_menu_btn() -> void:
+	var c: Vector2 = _menu_btn.size * 0.5
+	_menu_btn.draw_circle(c, 17.0, Color(Juice.INK, 0.5))
+	_menu_btn.draw_circle(c, 17.0, Color(Juice.CREAM, 0.35), false, 1.5)
+	for i in 3:
+		var yy := c.y - 6.0 + i * 6.0
+		_menu_btn.draw_line(Vector2(c.x - 8.0, yy), Vector2(c.x + 8.0, yy),
+			Color(Juice.CREAM, 0.9), 2.2)
+
+
+func _on_menu_input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		_menu_btn.accept_event()
+		_open_menu()
+
+
+## Touch router hook (touch_controls forwards a tap that lands on us here).
+func wants_touch(screen_pos: Vector2) -> bool:
+	var local: Vector2 = _menu_btn.get_global_transform_with_canvas().affine_inverse() * screen_pos
+	return Rect2(Vector2.ZERO, _menu_btn.size).grow(10.0).has_point(local)
+
+
+func press_menu() -> void:
+	_open_menu()
+
+
+func _open_menu() -> void:
+	var p := get_tree().get_first_node_in_group("pause")
+	if p != null:
+		p.open()
 
 
 ## An arrow at the screen edge when the muon has steered off to one side,
@@ -301,6 +345,11 @@ func _process(delta: float) -> void:
 
 	_arrow.queue_redraw()
 
+	# Menu button, top-right, clear of the checklist tab below it.
+	_menu_btn.size = Vector2(34.0, 34.0)
+	_menu_btn.position = Vector2(vp.x - 48.0, 12.0)
+	_menu_btn.queue_redraw()
+
 	# Big transient banner (meteor warning / fusion event): strobe + fade.
 	if _flash_t > 0.0:
 		_flash_t -= delta
@@ -332,7 +381,7 @@ func _process(delta: float) -> void:
 		_depth.set("muon", muon)
 	var d_top := 148.0
 	_depth.position = Vector2(14.0, d_top)
-	_depth.size = Vector2(52.0, vp.y - _plot.size.y - 40.0 - d_top)
+	_depth.size = Vector2(74.0, vp.y - _plot.size.y - 40.0 - d_top)
 
 	_hint_t += delta
 	_hint_chip.position = Vector2(vp.x * 0.5 - _hint_chip.size.x * 0.5, vp.y - 52.0)

@@ -25,10 +25,14 @@ const REAL_SECONDS_PER_US := 12.0    # game seconds per proper µs
 const CONTRACT := 0.5
 const ZAP_RADIUS := 175.0
 const ZAP_COOLDOWN := 0.35
-# The camera aims this far BELOW the muon so it rides the top third of
-# the frame (not jammed against the very top) and you can see what's
-# coming up from below. (Combined with the 3D stage's upward pitch.)
+# The muon is pinned to this fraction of the screen height (top third), so
+# you always see what's rushing up from below. It's enforced by a feedback
+# controller (see _process) reading the muon's real post-projection screen
+# position, so fov breathing, the stage dolly, speed and orientation can't
+# drift it off the line. FRAME_AIM_DOWN is just the starting guess.
+const FRAME_FRACTION := 1.0 / 3.0
 const FRAME_AIM_DOWN := 220.0
+var _aim_y := FRAME_AIM_DOWN
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the
@@ -264,14 +268,18 @@ func _process(delta: float) -> void:
 	else:
 		_depth_f = 0.0
 
-	# Camera framing: aim BELOW the muon (top-third framing so you see
-	# what's rushing up) plus horizontal lead when steering. One authority
-	# for _camera.position — smoothed here, not fought over elsewhere.
-	# A gentle downward lead only — too much and a fast dive pins the muon to
-	# the very top edge. Capped so terminal-velocity plunges stay ~1/3 down.
-	var frame_target := Vector2(velocity.x * 0.12,
-		FRAME_AIM_DOWN + minf(velocity.y * 0.05, 90.0))
-	_camera.position = _camera.position.lerp(frame_target, 1.0 - exp(-3.5 * delta))
+	# Camera framing: ENFORCE the muon on the 1/3 line. A light proportional
+	# controller nudges the vertical aim until the muon's real screen
+	# position (published by the 3D stage, so it already includes fov, tilt
+	# and dolly) sits a third of the way down. This is the single authority
+	# for _camera.position — not fought over elsewhere.
+	var root_h: float = get_tree().root.get_visible_rect().size.y
+	if Game.muon_screen_pos.y > -1.0e5 and root_h > 1.0:
+		var err: float = Game.muon_screen_pos.y - root_h * FRAME_FRACTION
+		# +err means the muon sits too low → aim further down to lift it.
+		_aim_y = clampf(_aim_y + clampf(err * 0.20, -60.0, 60.0), -200.0, 1200.0)
+	var frame_target := Vector2(velocity.x * 0.12, _aim_y)
+	_camera.position = _camera.position.lerp(frame_target, 1.0 - exp(-6.0 * delta))
 
 	age_us += delta / REAL_SECONDS_PER_US
 	lab_us += gamma * delta / REAL_SECONDS_PER_US

@@ -30,6 +30,12 @@ func _steer_from(x: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.pressed:
+			# A tap on the menu button opens the pause menu (no ESC on touch).
+			var menu := get_tree().get_first_node_in_group("menu_button")
+			if menu != null and menu.wants_touch(event.position):
+				get_viewport().set_input_as_handled()
+				menu.press_menu()
+				return
 			# A tap on the to-do note (or its tucked grab-tab) toggles the
 			# list and must NOT also begin a steer — this is the only route
 			# to reopen it on touch, since there is no keyboard.
