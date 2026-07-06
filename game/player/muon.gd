@@ -28,7 +28,7 @@ const ZAP_COOLDOWN := 0.35
 # The camera aims this far BELOW the muon so it rides the top third of
 # the frame (not jammed against the very top) and you can see what's
 # coming up from below. (Combined with the 3D stage's upward pitch.)
-const FRAME_AIM_DOWN := 150.0
+const FRAME_AIM_DOWN := 220.0
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the

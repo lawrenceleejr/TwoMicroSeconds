@@ -145,10 +145,11 @@ func _process(delta: float) -> void:
 	_origin_chip.position = Vector2(16, 12)
 	_sparks_chip.position = Vector2(vp.x - _sparks_chip.size.x - 16.0, 12)
 	_hint_chip.position = Vector2(vp.x * 0.5 - _hint_chip.size.x * 0.5, vp.y - 46.0)
-	# Credits/version sit just above the hint bar, clamped to the screen width.
+	# Credits/version sit as a byline just under the subtitle — clear of the
+	# bottom-left histogram and hint bar, which collide with it on a phone.
 	var fw: float = minf(vp.x - 40.0, 620.0)
 	_footer.size.x = fw
-	_footer.position = Vector2((vp.x - fw) * 0.5, vp.y - 86.0 - _footer.size.y)
+	_footer.position = Vector2((vp.x - fw) * 0.5, vp.y * 0.16 + 116.0)
 	_histo.position = Vector2(16.0, vp.y - _histo.size.y - 64.0)
 	_histo.visible = Meta.lifetimes.size() > 0
 	_histo.queue_redraw()
