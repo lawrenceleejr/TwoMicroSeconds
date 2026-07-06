@@ -32,7 +32,9 @@ const ZAP_COOLDOWN := 0.35
 # drift it off the line. FRAME_AIM_DOWN is just the starting guess.
 const FRAME_FRACTION := 1.0 / 3.0
 const FRAME_AIM_DOWN := 220.0
-var _aim_y := FRAME_AIM_DOWN
+var _aim_correction := 0.0
+var _last_gy := 0.0
+var _frame_settle := 0.0
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the
@@ -268,19 +270,25 @@ func _process(delta: float) -> void:
 	else:
 		_depth_f = 0.0
 
-	# Camera framing: ENFORCE the muon on the 1/3 line. A light proportional
-	# controller nudges the vertical aim until the muon's real screen
-	# position (published by the 3D stage, so it already includes fov, tilt
-	# and dolly) sits a third of the way down. This is the single authority
-	# for _camera.position — not fought over elsewhere.
+	# Camera framing: ENFORCE the muon on the 1/3 line. A feed-forward aim
+	# (scaling gently with fall speed) does the coarse work; a small bounded
+	# correction — driven by the muon's real, post-projection screen position
+	# published by the 3D stage — pins it exactly on the third. The
+	# correction is frozen for a beat after any large positional jump so a
+	# teleport or big boost (which the camera smoothing lags on) can't wind
+	# it up. This is the single authority for _camera.position.
+	var gy: float = global_position.y
+	if absf(gy - _last_gy) > 2500.0:
+		_frame_settle = 0.6
+	_last_gy = gy
+	_frame_settle = maxf(_frame_settle - delta, 0.0)
+	var feed_forward: float = FRAME_AIM_DOWN + minf(velocity.y * 0.05, 90.0)
 	var root_h: float = get_tree().root.get_visible_rect().size.y
-	if Game.muon_screen_pos.y > -1.0e5 and root_h > 1.0:
+	if _frame_settle <= 0.0 and Game.muon_screen_pos.y > -1.0e5 and root_h > 1.0:
 		var err: float = Game.muon_screen_pos.y - root_h * FRAME_FRACTION
-		# +err means the muon sits too low → aim further down to lift it. The
-		# aim is clamped to the window that keeps it in the upper band, so a
-		# sudden jump (a big boost, a teleport) can never wind it to the edge.
-		_aim_y = clampf(_aim_y + clampf(err * 0.20, -60.0, 60.0), 150.0, 380.0)
-	var frame_target := Vector2(velocity.x * 0.12, _aim_y)
+		# +err = muon too low → aim further down (which lifts it toward 1/3).
+		_aim_correction = clampf(_aim_correction + clampf(err * 0.15, -25.0, 25.0), -80.0, 80.0)
+	var frame_target := Vector2(velocity.x * 0.12, feed_forward + _aim_correction)
 	_camera.position = _camera.position.lerp(frame_target, 1.0 - exp(-6.0 * delta))
 
 	age_us += delta / REAL_SECONDS_PER_US
