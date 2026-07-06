@@ -56,10 +56,14 @@ var heading := Vector2.DOWN
 var birth_speed := 0.0
 var alive := true
 var finished := false
-## Proper time lived so far (µs). Counts UP; there is no fixed budget —
-## decay is a memoryless roll against the dilated hazard rate, like the
-## real particle.
+## Proper time lived so far (µs). Counts UP toward this muon's own decay
+## time, drawn once at birth from an exponential with mean 2.2 µs (§ _ready).
 var age_us := 0.0
+## This muon's intrinsic proper lifetime (µs) — when age_us reaches it, it
+## decays. Drawn Exp(mean 2.2): statistically identical to a memoryless
+## roll, but a fixed value we can report even if a detector ends the run
+## first, so the recorded mean is the physical 2.2 µs.
+var life_us := 2.2
 ## Lab-frame time lived so far (µs): Earth's clocks run gamma times fast.
 var lab_us := 0.0
 ## Cumulative probability of having decayed by now: 1 - exp(-τ/2.2).
@@ -103,6 +107,8 @@ func _ready() -> void:
 	z_index = 5
 	birth_speed = BASE_BIRTH_SPEED + Meta.tier * TIER_SPEED
 	speed = birth_speed
+	# Draw this muon's proper lifetime: inverse-CDF of Exp with mean 2.2 µs.
+	life_us = clampf(-LIFETIME * log(1.0 - randf()), 0.02, 40.0)
 	_build_visuals()
 	_build_camera()
 
@@ -181,8 +187,12 @@ func _make_trail(width: float, tip_color: Color, mat: CanvasItemMaterial) -> Lin
 
 func _build_camera() -> void:
 	_camera = Camera2D.new()
-	_camera.position_smoothing_enabled = true
-	_camera.position_smoothing_speed = 6.0
+	# NO position smoothing. The camera is a child of the muon, so smoothing
+	# would let the camera lag the muon by velocity/speed — and at high γ the
+	# muon moves fast enough that that lag exceeds a screen height, dropping
+	# it off the bottom. Glued to the muon, it can never outrun the frame;
+	# the 1/3 controller trims the vertical offset each frame.
+	_camera.position_smoothing_enabled = false
 	_camera.limit_left = int(-Atmos.X_LIMIT - 250.0)
 	_camera.limit_right = int(Atmos.X_LIMIT + 250.0)
 	# Top reaches into space so the discovery finale can pan back up;
@@ -310,7 +320,7 @@ func _process(delta: float) -> void:
 	var mean_real_life := LIFETIME * REAL_SECONDS_PER_US
 	_hazard_integral += delta / mean_real_life
 	decay_p = 1.0 - exp(-_hazard_integral)
-	if not Game.shoot_mode and randf() < delta / mean_real_life:
+	if not Game.shoot_mode and age_us >= life_us:
 		_die()
 		return
 
@@ -532,6 +542,15 @@ func _heartbeat() -> void:
 		if bucket != _last_tick_bucket:
 			_last_tick_bucket = bucket
 			Sfx.play("tick", -6.0)
+
+
+## The muon's intrinsic proper lifetime and the lab-frame lifetime it implies
+## at the average dilation lived so far. Recorded at the end of every run —
+## decay or detection — so the histogram mean is the physical 2.2 µs, not the
+## truncated time a fast run happened to last.
+func lifetime_sample() -> Array:
+	var avg_gamma: float = lab_us / maxf(age_us, 0.001)
+	return [life_us, life_us * avg_gamma]
 
 
 func _die() -> void:

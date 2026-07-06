@@ -162,7 +162,8 @@ func _on_decayed() -> void:
 	if _ended:
 		return
 	_ended = true
-	Meta.record_lifetime(muon.age_us, muon.lab_us)
+	var s: Array = muon.lifetime_sample()
+	Meta.record_lifetime(s[0], s[1])
 	pause_overlay.can_pause = false
 	Sfx.play("decay", -2.0, 0.0)
 	# No dramatic pause: decay is instantaneous — one frame you exist,
@@ -190,7 +191,8 @@ func _discover() -> void:
 	_ended = true
 	pause_overlay.can_pause = false
 	muon.finished = true
-	Meta.record_lifetime(muon.age_us, muon.lab_us)
+	var s: Array = muon.lifetime_sample()
+	Meta.record_lifetime(s[0], s[1])
 	Meta.add_sparks(20)
 	Meta.mark_discovery()
 	var stage := get_tree().get_first_node_in_group("stage")
