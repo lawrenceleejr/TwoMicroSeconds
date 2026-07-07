@@ -206,3 +206,10 @@ func _discover() -> void:
 	# time over the wistful music.
 	muon.begin_epilogue_pan(15.0)
 	end_screen.begin_epilogue(muon.age_us, muon.lab_us)
+	# Clear the gameplay HUD away so the epilogue reads clean — the clock,
+	# gauges and to-do note all fade out as the camera rises.
+	var fade := create_tween().set_parallel(true)
+	fade.tween_property(_hud, "modulate:a", 0.0, 2.2)
+	var cl := get_tree().get_first_node_in_group("checklist")
+	if cl != null:
+		fade.tween_property(cl, "modulate:a", 0.0, 2.2)
