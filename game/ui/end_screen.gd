@@ -113,6 +113,58 @@ func show_discovery(age_us: float, lab_us: float) -> void:
 	_pop_in()
 
 
+## The finale as an epilogue: no boxed panel, the camera rises behind it, and
+## each line fades in on its own — one sentence at a time — over ~14 seconds,
+## paced to land as the view reaches space. Wistful music is already playing.
+func begin_epilogue(age_us: float, lab_us: float) -> void:
+	active = true
+	visible = true
+	_tap_guard = 2.0
+	for child in _vbox.get_children():
+		child.queue_free()
+	# No paper card — the words float over the rising sky.
+	_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	_dim.color = Color(Juice.INK, 0.0)
+	_vbox.add_theme_constant_override("separation", 14)
+	var soft := Color(Juice.CREAM, 0.92)
+	var lines := [
+		["I M P O S S I B L E .", 34, Color("ffce6a")],
+		["you reached LZ.", 20, soft],
+		["deeper than any cosmic ray has a right to go.", 17, soft],
+		["you were the Oh-My-God particle.", 20, Color(Juice.CREAM, 0.96)],
+		["Utah, 1991.  3×10²⁰ eV.", 17, soft],
+		["above the GZK limit — an energy that shouldn't survive the trip.", 16, soft],
+		["where it came from is still unknown.", 18, Color("9bb8ff")],
+		["a nearby source?  dark matter?", 16, soft],
+		["something we haven't named yet?", 16, soft],
+		["you lived %.2f µs of your own time.  %.1f µs of ours." % [age_us, lab_us], 15, Color(Juice.CREAM, 0.75)],
+		["the mystery is still open.", 17, Color("ff8f7a")],
+		["thank you for chasing it. <3", 16, Color("ff8f7a")],
+		[_restart_hint(), 16, Color("cbb8ff")],
+	]
+	var vw := get_viewport_rect().size.x
+	var wrap_w: float = minf(vw - 30.0, 540.0)
+	var tw := create_tween().set_ignore_time_scale(true)
+	for i in lines.size():
+		var l := _epilogue_line(str(lines[i][0]), int(lines[i][1]), lines[i][2], wrap_w)
+		tw.parallel().tween_property(l, "modulate:a", 1.0, 1.0).set_delay(1.0 + i * 1.15)
+
+
+func _epilogue_line(text: String, font_size: int, color: Color, wrap_w: float) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = wrap_w
+	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_outline_color", Juice.INK)
+	l.add_theme_constant_override("outline_size", 6)
+	l.modulate.a = 0.0
+	_vbox.add_child(l)
+	return l
+
+
 func _build_common() -> void:
 	active = true
 	visible = true

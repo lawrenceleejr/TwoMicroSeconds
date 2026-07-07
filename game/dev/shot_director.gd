@@ -185,7 +185,7 @@ func _run() -> void:
 	muon.set("global_position", Vector2(0, Atmos.LZ_Y - 320.0))
 	await _wait(1.4)
 	await _shot("22_lz")
-	await _wait(3.4)   # camera pans up to space; the reveal fades in
+	await _wait(6.0)   # camera rises to space; the epilogue reveals line by line
 	await _shot("23_discovery")
 	_finish()
 

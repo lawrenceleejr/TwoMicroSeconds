@@ -201,12 +201,8 @@ func _discover() -> void:
 	Sfx.play("detected", 0.0, 0.0)
 	Sfx.play_discovery_music()
 	Juice.shake(0.3)
-	# Pan up through every layer to space over the reveal.
-	var tw := create_tween()
-	tw.tween_property(muon, "position", Vector2(0.0, -5600.0), 13.0) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	var age: float = muon.age_us
-	var lab: float = muon.lab_us
-	get_tree().create_timer(4.0).timeout.connect(func() -> void:
-		end_screen.show_discovery(age, lab)
-	)
+	# The camera rises on its own, slowly, up to space — the muon stays put
+	# and drifts off below — while the epilogue reveals itself one line at a
+	# time over the wistful music.
+	muon.begin_epilogue_pan(15.0)
+	end_screen.begin_epilogue(muon.age_us, muon.lab_us)

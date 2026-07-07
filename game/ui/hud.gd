@@ -279,6 +279,11 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	var vp := get_viewport_rect().size
+	# A tall phone is narrow: the big centered clock spans the whole width and
+	# collides with the corner chips. On portrait we shrink the clock and move
+	# the status chips into the right column (free now the note is menu-only).
+	var portrait := vp.y > vp.x
+	_timer_label.add_theme_font_size_override("font_size", 32 if portrait else 46)
 	var age: float = muon.get("age_us")
 	var gamma: float = muon.get("gamma")
 
@@ -341,7 +346,10 @@ func _process(delta: float) -> void:
 		_alt_label.text = "%d m deep · %s" % [int(round(Atmos.depth_m_at(y_pos))), Atmos.strata_label_at(y_pos)]
 	else:
 		_alt_label.text = "%d km · %s" % [int(round(Atmos.altitude_at(y_pos))), Atmos.LAYER_NAMES[layer]]
-	_alt_chip.position = Vector2(16.0, 12.0) + jit * 0.7
+	if portrait:
+		_alt_chip.position = Vector2(vp.x - _alt_chip.size.x - 12.0, 128.0) + jit * 0.7
+	else:
+		_alt_chip.position = Vector2(16.0, 12.0) + jit * 0.7
 
 	_arrow.queue_redraw()
 
@@ -363,14 +371,18 @@ func _process(delta: float) -> void:
 		if _flash_t <= 0.0:
 			_flash_label.visible = false
 	_mischief_label.text = "mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()]
-	_mischief_chip.position = Vector2(16.0, 12.0 + 40.0) - jit * 0.5
 	_sparks_label.text = str(Meta.sparks)
-	_sparks_chip.position = Vector2(16.0, 12.0 + 80.0) + jit * 0.6
+	if portrait:
+		_mischief_chip.position = Vector2(vp.x - _mischief_chip.size.x - 12.0, 166.0) - jit * 0.5
+		_sparks_chip.position = Vector2(vp.x - _sparks_chip.size.x - 12.0, 204.0) + jit * 0.6
+	else:
+		_mischief_chip.position = Vector2(16.0, 12.0 + 40.0) - jit * 0.5
+		_sparks_chip.position = Vector2(16.0, 12.0 + 80.0) + jit * 0.6
 
 	if layer != _last_layer:
 		_last_layer = layer
 		_show_toast(_toasts[layer])
-	_toast_chip.position = Vector2(vp.x * 0.5 - _toast_chip.size.x * 0.5, 138.0)
+	_toast_chip.position = Vector2(vp.x * 0.5 - _toast_chip.size.x * 0.5, 250.0 if portrait else 138.0)
 
 	if _plot.get("muon") == null:
 		_plot.set("muon", muon)

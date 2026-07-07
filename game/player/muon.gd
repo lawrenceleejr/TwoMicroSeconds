@@ -491,6 +491,14 @@ func _update_speed_fx(delta: float) -> void:
 	_wind.direction = -heading
 	_sparkles.modulate.a = clampf(0.35 + speed / SPEED_CAP, 0.0, 1.0)
 	var zoom := lerpf(1.0, 0.84, _speed_fx)
+	# A tall phone crops the 16:9 world hard on the sides, so it reads as very
+	# zoomed in. Pull the gameplay camera back on portrait to show a much
+	# wider swath — closer to the field of view you get in landscape.
+	var root := get_tree().root
+	if root != null:
+		var sz: Vector2 = root.get_visible_rect().size
+		if sz.y > sz.x:
+			zoom *= 0.6
 	_camera.zoom = _camera.zoom.lerp(Vector2.ONE * zoom, 1.0 - exp(-4.0 * delta))
 	Juice.set_relativity(heading, clampf((speed - 330.0) / 750.0, 0.0, 1.0),
 		clampf((gamma - 1.0) / 14.0, 0.0, 1.0))
@@ -551,6 +559,23 @@ func _heartbeat() -> void:
 func lifetime_sample() -> Array:
 	var avg_gamma: float = lab_us / maxf(age_us, 0.001)
 	return [life_us, life_us * avg_gamma]
+
+
+## The finale: freeze the muon where it is and let the CAMERA rise on its
+## own, slowly, up through the earth and into space. (While `finished`, the
+## framing controller in _process is skipped, so this tween owns the camera.)
+func begin_epilogue_pan(duration: float) -> void:
+	finished = true
+	velocity = Vector2.ZERO
+	speed = 0.0
+	_wind.emitting = false
+	_speed_lines.intensity = 0.0
+	var target_y := -(global_position.y + 6500.0)   # camera global ≈ deep space
+	var tw := create_tween().set_ignore_time_scale(true).set_parallel(true)
+	tw.tween_property(_camera, "position:y", target_y, duration) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(_camera, "position:x", 0.0, 3.0) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
 func _die() -> void:
