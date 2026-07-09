@@ -12,6 +12,18 @@ const PEEK_T := 2.8
 
 const TaskPop := preload("res://game/fx/task_pop.gd")
 
+const LIST_TOP := 48.0
+const ROW_STEP := 24.0
+const SECTION_STEP := 22.0
+## Task → prop sprite, so the list doubles as a preview of what you'll meet.
+const ICONS := {
+	"tickle_aurora": "sparkle", "bonk_satellite": "satellite",
+	"overclock": "streak", "photobomb_star": "glint",
+	"zap_noctilucent": "noctilucent", "startle_balloon": "balloon",
+	"thread_airplane": "airplane", "make_rain": "cloud",
+	"get_detected": "cms",
+}
+
 var open := true
 
 var _slide := 0.0
@@ -20,12 +32,39 @@ var _t := 0.0
 var _stamp_scale := 0.0
 var _peek_left := 0.0
 var _user_touched := false
+var _task_y := {}       # id → y, so rows and confetti agree
+var _sections := []     # [{name, y}] atmospheric-band headers
+var _icon_cache := {}
+
+
+## Group the tasks by atmospheric band: the list becomes a map of the descent.
+func _build_layout() -> void:
+	var y := LIST_TOP
+	var cur := -1
+	for d in Tasks.DEFS:
+		var lyr := int(d["layer"])
+		if lyr != cur:
+			cur = lyr
+			y += 6.0
+			_sections.append({"name": str(Atmos.LAYER_NAMES[lyr]), "y": y})
+			y += SECTION_STEP
+		_task_y[d["id"]] = y
+		y += ROW_STEP
+	size = Vector2(W, y + 30.0)
+
+
+func _icon(id: String) -> Texture2D:
+	if not ICONS.has(id):
+		return null
+	if not _icon_cache.has(id):
+		_icon_cache[id] = load("res://assets/sprites/%s.svg" % ICONS[id])
+	return _icon_cache[id]
 
 
 func _ready() -> void:
 	add_to_group("checklist")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	size = Vector2(W, Tasks.DEFS.size() * 26.0 + 78.0)
+	_build_layout()
 	pivot_offset = Vector2(W * 0.5, 0.0)
 	rotation = -0.012  # pinned up slightly crooked, like a real note
 	Tasks.task_completed.connect(_on_task_completed)
@@ -131,12 +170,7 @@ func _on_task_completed(task: Dictionary) -> void:
 		_strikes[id] = v
 	, 0.0, 1.0, 0.4).set_delay(0.15)
 	# Confetti at the item's spot on the list.
-	var idx := 0
-	for i in Tasks.DEFS.size():
-		if Tasks.DEFS[i]["id"] == id:
-			idx = i
-			break
-	TaskPop.confetti(self, Vector2(30.0, 56.0 + idx * 26.0), 14)
+	TaskPop.confetti(self, Vector2(30.0, float(_task_y.get(id, 56.0))), 14)
 
 
 func _draw() -> void:
@@ -168,27 +202,40 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	var font: Font = Juice.hand_font
-	draw_string(font, Vector2(16, 28), "to-do", HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Juice.INK)
-	draw_string(font, Vector2(76, 28), "(mischief optional)", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(Juice.INK, 0.55))
+	draw_string(font, Vector2(16, 28), "mischief", HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Juice.INK)
+	# Perfect-sheet bonus, surfaced so the reward isn't hidden.
+	var bonus := "clear all · +5 ◆"
+	var bw: float = Juice.ui_font.get_string_size(bonus, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+	var bonus_col := Color("2e8b57") if Tasks.all_optional_done() else Color(Juice.SUN, 0.9)
+	draw_string(Juice.ui_font, Vector2(W - 14 - bw, 26), bonus, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, bonus_col)
 	draw_line(Vector2(14, 36), Vector2(W - 14, 36), Color(Juice.INK, 0.25), 1.5)
 
-	for i in Tasks.DEFS.size():
-		var d: Dictionary = Tasks.DEFS[i]
+	# Atmospheric-band section labels (the descent, top to bottom).
+	for s in _sections:
+		draw_string(Juice.ui_font, Vector2(16, float(s["y"]) + 10.0),
+			str(s["name"]).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color("a99dff"))
+
+	for d: Dictionary in Tasks.DEFS:
 		var id: String = d["id"]
-		var y := 56.0 + i * 26.0
+		var y: float = _task_y[id]
 		var jitter := float(absi(hash(id)) % 100 - 50) * 0.0005
 		var is_done: bool = Tasks.is_done(id)
 		draw_set_transform(Vector2(16, y), jitter, Vector2.ONE)
 		# Checkbox.
-		var box := Rect2(0, -11, 15, 15)
-		draw_rect(box, Color(Juice.INK, 0.6), false, 1.8)
+		draw_rect(Rect2(0, -11, 15, 15), Color(Juice.INK, 0.6), false, 1.8)
 		if is_done:
 			draw_rect(Rect2(1.5, -9.5, 12, 12), Color(Juice.MINT, 0.9))
 			draw_line(Vector2(3, -4), Vector2(6.5, 0.5), Juice.INK, 2.2)
 			draw_line(Vector2(6.5, 0.5), Vector2(13, -9), Juice.INK, 2.2)
-		# Text.
+		# Prop sprite (where one exists), then the task text.
+		var text_x := 24.0
+		var icon := _icon(id)
+		if icon != null:
+			draw_texture_rect(icon, Rect2(22, -12, 17, 17), false,
+				Color(1, 1, 1, 0.55 if is_done else 1.0))
+			text_x = 44.0
 		var text_col := Color(Juice.INK, 0.45) if is_done else Juice.INK
-		draw_string(font, Vector2(24, 3), d["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, text_col)
+		draw_string(font, Vector2(text_x, 3), d["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, text_col)
 		# Wobbly strikethrough.
 		var progress: float = _strikes.get(id, 1.0 if is_done else 0.0)
 		if progress > 0.0:
@@ -197,7 +244,7 @@ func _draw() -> void:
 			var pts := PackedVector2Array()
 			var x := 0.0
 			while x <= strike_w:
-				pts.append(Vector2(22.0 + x, -3.0 + sin(x * 0.25 + float(absi(hash(id)) % 10)) * 1.6))
+				pts.append(Vector2(text_x - 2.0 + x, -3.0 + sin(x * 0.25 + float(absi(hash(id)) % 10)) * 1.6))
 				x += 6.0
 			if pts.size() >= 2:
 				draw_polyline(pts, Color(Juice.INK, 0.75), 2.0, true)

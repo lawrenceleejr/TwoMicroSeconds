@@ -320,7 +320,8 @@ func _process(delta: float) -> void:
 	# collides with the corner chips. On portrait we shrink the clock and move
 	# the status chips into the right column (free now the note is menu-only).
 	var portrait := vp.y > vp.x
-	_timer_label.add_theme_font_size_override("font_size", 32 if portrait else 46)
+	# On a phone the clock is the single hero readout — scale it up.
+	_timer_label.add_theme_font_size_override("font_size", 40 if portrait else 46)
 	var age: float = muon.get("age_us")
 	var gamma: float = muon.get("gamma")
 

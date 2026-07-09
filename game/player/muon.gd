@@ -36,6 +36,7 @@ var _aim_correction := 0.0
 var _last_gy := 0.0
 var _frame_settle := 0.0
 var _lamp: Node2D
+var _zapring: Node2D
 # No coasting drag: a minimum-ionizing particle barely notices the air,
 # and a drifting muon keeps its momentum. The early game stays unwinnable
 # anyway — a fresh solar-flare muon's clock runs out long before the
@@ -73,6 +74,8 @@ var lab_us := 0.0
 ## Cumulative probability of having decayed by now: 1 - exp(-τ/2.2).
 var decay_p := 0.0
 var gamma := 1.0
+## Highest γ reached this run — for the end-of-run receipt.
+var peak_gamma := 1.0
 ## Scripted birth sequence owns the muon while true.
 var intro_mode := false
 
@@ -156,6 +159,14 @@ func _build_visuals() -> void:
 	_lamp.material = add_mat
 	_lamp.draw.connect(_draw_lamp)
 	add_child(_lamp)
+
+	# Zap-ready pulse ring: on touch, signals the honk is armed on something
+	# nearby (which auto-zaps, or you can tap to fire it yourself).
+	_zapring = Node2D.new()
+	_zapring.z_index = 6
+	_zapring.material = add_mat
+	_zapring.draw.connect(_draw_zapring)
+	add_child(_zapring)
 
 	_body = preload("res://game/player/muon_body.gd").new()
 	add_child(_body)
@@ -285,6 +296,7 @@ func _process(delta: float) -> void:
 	# The multiplier is soft-capped so the top origins stay readable —
 	# the Oh-My-God run should feel inevitable, not frantic.
 	gamma = 1.0 + GAMMA_K * speed_frac * speed_frac + Meta.gamma_bonus()
+	peak_gamma = maxf(peak_gamma, gamma)
 	velocity = heading * speed * minf(gamma * CONTRACT, 7.0)
 	position += velocity * delta
 	_apply_bounds()
@@ -343,7 +355,21 @@ func _process(delta: float) -> void:
 	_update_speed_fx(delta)
 	_update_tail_intensity(delta)
 	_lamp.queue_redraw()
+	if _touch:
+		_zapring.queue_redraw()
 	_heartbeat()
+
+
+## Zap-ready pulse ring (touch only): an expanding teal ring when the honk is
+## armed and something zappable is in range.
+func _draw_zapring() -> void:
+	if not _touch or not alive or finished or _zap_cd > 0.0:
+		return
+	if not _zappable_near():
+		return
+	var pulse := fmod(_clock * 1.6, 1.0)
+	_zapring.draw_arc(Vector2.ZERO, 24.0 + pulse * 28.0, 0.0, TAU, 32,
+		Color(Juice.MINT, (1.0 - pulse) * 0.5), 2.5, true)
 
 
 ## The muon's headlamp: a forward cone of warm light, lit only underground

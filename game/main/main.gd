@@ -30,6 +30,7 @@ var _hud
 ## Detector stack progress.
 var _passed := {}
 var _deepest := ""          # sub-label of the deepest detector reached
+var _perfect_awarded := false
 
 
 func _ready() -> void:
@@ -151,6 +152,13 @@ func _on_task_completed(task: Dictionary) -> void:
 	Juice.shake(0.12)
 	TaskPop.confetti(self, muon.global_position, 26)
 	FloatText.spawn(self, muon.global_position + Vector2(0, -34), "mischief!", Juice.MINT)
+	# Perfect sheet: clearing every bit of mischief pays a one-time bonus.
+	if not _perfect_awarded and Tasks.all_optional_done():
+		_perfect_awarded = true
+		Meta.add_sparks(5)
+		Sfx.play("buy", -3.0)
+		FloatText.spawn(self, muon.global_position + Vector2(0, -70),
+			"perfect sheet · +5 ◆", Juice.SUN)
 
 
 func _on_circle_drawn() -> void:
@@ -179,8 +187,9 @@ func _on_decayed() -> void:
 	var age: float = muon.age_us
 	var lab: float = muon.lab_us
 	var deepest := _deepest
+	var peak: float = muon.peak_gamma
 	get_tree().create_timer(1.6).timeout.connect(func() -> void:
-		end_screen.show_lose(alt, depth, deepest, run_sparks, age, lab)
+		end_screen.show_lose(alt, depth, deepest, run_sparks, age, lab, peak)
 	)
 
 

@@ -6,6 +6,9 @@ var active := false
 var _dim: ColorRect
 var _panel: PanelContainer
 var _vbox: VBoxContainer
+var _deco: Control          # receipt perforation + stamp overlay on the panel
+var _deco_mode := ""        # "" or "receipt"
+var _perfect := false
 # Small grace period so the tap that ended the run can't instantly restart.
 var _tap_guard := 0.0
 
@@ -35,6 +38,13 @@ func _ready() -> void:
 	_vbox.add_theme_constant_override("separation", 8)
 	_panel.add_child(_vbox)
 
+	# Perforation + inked stamp, drawn over the paper for the receipt look.
+	_deco = Control.new()
+	_deco.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_deco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_deco.draw.connect(_draw_deco)
+	_panel.add_child(_deco)
+
 
 func show_win(run_sparks: int, omg: bool, age_us: float, lab_us: float) -> void:
 	_build_common()
@@ -63,32 +73,41 @@ func show_win(run_sparks: int, omg: bool, age_us: float, lab_us: float) -> void:
 
 
 func show_lose(altitude_km: float, depth_m: float, deepest: String,
-		run_sparks: int, age_us: float, lab_us: float) -> void:
+		run_sparks: int, age_us: float, lab_us: float, peak_g: float) -> void:
 	_build_common()
-	_line("poof.", 44, Juice.INK)
-	_line("an electron, a neutrino, and an antineutrino carry on.", 20, Color(Juice.INK, 0.8))
-	_line("", 8, Juice.INK)
+	_perfect = Tasks.all_optional_done()
+	_line("poof.", 40, Juice.INK)
+	_line("an electron, a neutrino, and an antineutrino carry on.", 15, Color(Juice.INK, 0.7))
+	_gap(12)
+	# The run, itemized like a printed receipt.
+	_line("C O S M I C - R A Y   M U O N   ·   R E C E I P T", 10, Color(Juice.INK, 0.6))
+	_dashed_rule()
+	_ledger("proper lifetime", "%.2f µs" % age_us, Juice.INK)
+	_ledger("lab-frame lifetime", "%.1f µs" % lab_us, Color(Juice.INK, 0.75))
+	_ledger("peak γ", "%d×" % int(round(peak_g)), Juice.INK)
 	if depth_m > 0.0:
-		_line("lived %.2f µs proper · %.1f µs lab frame · got %d m down" % [
-			age_us, lab_us, int(round(depth_m))], 16, Juice.INK)
+		_ledger("depth reached", "%d m" % int(round(depth_m)), Juice.INK)
 	else:
-		_line("lived %.2f µs proper · %.1f µs lab frame · made it to %d km" % [
-			age_us, lab_us, int(round(altitude_km))], 16, Juice.INK)
+		_ledger("altitude reached", "%d km" % int(round(altitude_km)), Juice.INK)
 	if deepest != "":
-		_line("deepest detector reached: %s" % deepest, 16, Color("2e8b57"))
-	_line("mischief %d/%d" % [Tasks.optional_done_count(), Tasks.optional_total()], 16, Juice.INK)
-	if run_sparks > 0:
-		_line("sparks +%d  ·  wallet %d" % [run_sparks, Meta.sparks], 16, Juice.PERIWINKLE)
-	_line("", 4, Juice.INK)
+		_ledger("deepest detector", deepest.split(" · ")[0], Color("2e8b57"))
+	_ledger("mischief", "%d / %d" % [Tasks.optional_done_count(), Tasks.optional_total()], Juice.INK)
+	_dashed_rule()
+	_ledger("sparks earned", "+%d ◆" % run_sparks, Color("ff5c4d"))
+	if _perfect:
+		_gap(4)
+		var stamp := _line("★  A++ MUON  ★", 20, Color("ff5c4d"))
+		stamp.add_theme_font_override("font", Juice.hand_font)
+	_gap(8)
+	_line("your death was logged →", 13, Juice.MINT)
 	var histo := preload("res://game/ui/lifetime_histogram.gd").new()
 	_vbox.add_child(histo)
-	_line("", 4, Juice.INK)
-	_line("go deeper. come back heavier.", 14, Color(Juice.INK, 0.65))
-	_line("", 8, Juice.INK)
+	_gap(6)
 	var hint := _restart_hint()
 	if not Game.is_touch():
-		hint += "  (U — shop)"
-	_line(hint, 16, Color(Juice.PERIWINKLE, 1.0))
+		hint += "        U — shop"
+	_line(hint, 15, Color(Juice.PERIWINKLE, 1.0))
+	_deco_mode = "receipt"
 	_pop_in()
 
 
@@ -169,6 +188,8 @@ func _build_common() -> void:
 	active = true
 	visible = true
 	_tap_guard = 0.7
+	_deco_mode = ""
+	_perfect = false
 	for child in _vbox.get_children():
 		child.queue_free()
 
@@ -179,13 +200,47 @@ func _restart_hint() -> String:
 	return "R — again        ESC — title"
 
 
-func _line(text: String, font_size: int, color: Color) -> void:
+func _line(text: String, font_size: int, color: Color) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", color)
 	_vbox.add_child(l)
+	return l
+
+
+func _gap(px: int) -> void:
+	var s := Control.new()
+	s.custom_minimum_size.y = px
+	_vbox.add_child(s)
+
+
+## A receipt ledger row: label left, value right (bold mono), fixed width.
+func _ledger(label_text: String, value_text: String, vcol: Color) -> void:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size.x = 380.0
+	var l := Label.new()
+	l.text = label_text
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.add_theme_font_override("font", Juice.ui_font)
+	l.add_theme_font_size_override("font_size", 15)
+	l.add_theme_color_override("font_color", Color(Juice.INK, 0.7))
+	var v := Label.new()
+	v.text = value_text
+	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	v.add_theme_font_override("font", Juice.ui_font_bold)
+	v.add_theme_font_size_override("font_size", 15)
+	v.add_theme_color_override("font_color", vcol)
+	row.add_child(l)
+	row.add_child(v)
+	_vbox.add_child(row)
+
+
+func _dashed_rule() -> void:
+	var l := _line("– – – – – – – – – – – – – – – – – – – –", 12, Color(Juice.INK, 0.35))
+	l.clip_text = true
+	l.custom_minimum_size.x = 380.0
 
 
 func _pop_in() -> void:
@@ -205,10 +260,22 @@ func _center_panel() -> void:
 	_panel.pivot_offset = _panel.size * 0.5
 
 
+func _draw_deco() -> void:
+	if _deco_mode != "receipt":
+		return
+	# Perforated top edge: notches biting into the paper.
+	var w := _deco.size.x
+	var nx := 8.0
+	while nx < w - 4.0:
+		_deco.draw_circle(Vector2(nx, 0.0), 4.0, Color(Juice.INK, 0.55))
+		nx += 13.0
+
+
 func _process(delta: float) -> void:
 	if active:
 		_tap_guard = maxf(_tap_guard - delta, 0.0)
 		_center_panel()
+		_deco.queue_redraw()
 
 
 func _unhandled_input(event: InputEvent) -> void:

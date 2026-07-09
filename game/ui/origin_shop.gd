@@ -4,7 +4,19 @@ extends Control
 
 const W := 600.0
 const ROW_H := 44.0
+const ROW_TOP := 104.0   # first row's y — leaves room for the energy track
+const GOLD := Color("ffe08a")
 const TaskPop := preload("res://game/fx/task_pop.gd")
+
+
+## The origin ladder's colour spine: energy (and γ) climbing coral → gold.
+func _grad(f: float) -> Color:
+	var stops := [Color("ff5c4d"), Color("ffb03a"), Color("3ecfb2"), Color("6a5cff"), GOLD]
+	var x := clampf(f, 0.0, 1.0) * float(stops.size() - 1)
+	var i := int(floor(x))
+	if i >= stops.size() - 1:
+		return stops[stops.size() - 1]
+	return (stops[i] as Color).lerp(stops[i + 1], x - float(i))
 
 var active := false
 
@@ -15,7 +27,7 @@ var _reset_armed := 0.0
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	size = Vector2(W, Meta.TIERS.size() * ROW_H + 150.0)
+	size = Vector2(W, ROW_TOP + Meta.TIERS.size() * ROW_H + 90.0)
 
 
 func _process(delta: float) -> void:
@@ -45,7 +57,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if not Rect2(Vector2.ZERO, size).has_point(local):
 			toggle()
 			return
-		var row := int(floor((local.y - 56.0) / ROW_H))
+		var row := int(floor((local.y - (ROW_TOP - 6.0)) / ROW_H))
 		if row >= 0 and row < Meta.TIERS.size() and row <= Meta.owned_tier + 1:
 			_cursor = row
 			_activate_cursor()
@@ -115,11 +127,35 @@ func _draw() -> void:
 	var sparks_text := "sparks: %d" % Meta.sparks
 	var stw := font.get_string_size(sparks_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 	draw_string(font, Vector2(W - 24 - stw, 34), sparks_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Juice.PERIWINKLE)
-	draw_line(Vector2(20, 46), Vector2(W - 20, 46), Color(Juice.INK, 0.2), 1.5)
+
+	# The energy ladder's spine: a gradient track from a modest solar flare to
+	# the impossible OMG particle — each origin is a rung further up it.
+	var last := Meta.TIERS.size() - 1
+	draw_string(font, Vector2(24, 62), "MORE ENERGY AT BIRTH →", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Juice.INK, 0.5))
+	var hg := "HIGHER γ →"
+	var hgw := font.get_string_size(hg, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+	draw_string(font, Vector2(W - 24 - hgw, 62), hg, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Juice.PERIWINKLE, 0.7))
+	var tx0 := 24.0
+	var tw := W - 48.0
+	var ty := 70.0
+	var step := 4.0
+	var sx := tx0
+	while sx < tx0 + tw:
+		draw_rect(Rect2(sx, ty, step + 1.0, 9.0), _grad((sx - tx0) / tw))
+		sx += step
+	draw_rect(Rect2(tx0, ty, tw, 9.0), Color(Juice.INK, 0.4), false, 1.0)
+	# Marker at the equipped tier's rung.
+	var mx := tx0 + (float(Meta.tier) / float(maxi(last, 1))) * tw
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(mx, ty - 2.0), Vector2(mx - 5.0, ty - 10.0), Vector2(mx + 5.0, ty - 10.0),
+	]), Juice.CREAM)
+	draw_line(Vector2(20, ROW_TOP - 14.0), Vector2(W - 20, ROW_TOP - 14.0), Color(Juice.INK, 0.2), 1.5)
 
 	for i in Meta.TIERS.size():
 		var t: Dictionary = Meta.tier_display(i)
-		var y := 62.0 + i * ROW_H
+		var y := ROW_TOP + i * ROW_H
+		var rung := _grad(float(i) / float(maxi(last, 1)))
+		var is_omg := i == last
 		var equipped := i == Meta.tier
 		var owned := i <= Meta.owned_tier
 		var next_up := i == Meta.owned_tier + 1
@@ -140,9 +176,19 @@ func _draw() -> void:
 			draw_colored_polygon(PackedVector2Array([
 				Vector2(6, y + 6), Vector2(12, y + 11), Vector2(6, y + 16)
 			]), Juice.INK)
+		# The finale glows even while it's still a mystery.
+		if is_omg:
+			draw_rect(Rect2(14, y - 6, W - 28, ROW_H - 4), Color(GOLD, 0.13))
+		# Rung dot: this origin's place on the energy ladder.
+		draw_circle(Vector2(24, y + 10), 4.0, Color(rung, 1.0 if (owned or next_up) else 0.35))
 		var name_col := Juice.INK if (owned or next_up) else Color(Juice.INK, 0.4)
-		draw_string(font, Vector2(28, y + 12), str(t["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, name_col)
-		draw_string(font, Vector2(28, y + 29), str(t["flavor"]), HORIZONTAL_ALIGNMENT_LEFT, 300, 11, Color(Juice.INK, 0.5))
+		if is_omg and (owned or next_up):
+			name_col = Color("b8860b")
+		var nm := str(t["name"])
+		if is_omg and not Meta.is_mystery(i):
+			nm += " ★"
+		draw_string(font, Vector2(38, y + 12), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, name_col)
+		draw_string(font, Vector2(38, y + 29), str(t["flavor"]), HORIZONTAL_ALIGNMENT_LEFT, 288, 11, Color(Juice.INK, 0.5))
 		# Middle column: energy + gamma. Right column: status, right-aligned.
 		draw_string(font, Vector2(W - 254, y + 12), "E ≈ %s" % t["energy"], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.INK, 0.7))
 		draw_string(font, Vector2(W - 254, y + 28), "γ +%.1f" % float(t["gamma"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Juice.PERIWINKLE, 0.9))
