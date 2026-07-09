@@ -49,6 +49,10 @@ const BremBurst := preload("res://game/fx/brem_burst.gd")
 ## Above this gamma, radiative losses kick in: forward bremsstrahlung
 ## sparks and continuous mini-showers ahead of you.
 const BREM_GAMMA := 9.0
+## Hard cap on live brem bursts. Deep + high-γ fires several spawners at once;
+## uncapped, the node/overdraw churn crashed low-memory phone browsers.
+var _max_brem := 10
+var _touch := false
 
 var velocity := Vector2.ZERO
 var speed := 0.0
@@ -109,6 +113,9 @@ func _ready() -> void:
 	speed = birth_speed
 	# Draw this muon's proper lifetime: inverse-CDF of Exp with mean 2.2 µs.
 	life_us = clampf(-LIFETIME * log(1.0 - randf()), 0.02, 40.0)
+	# Phones are memory- and fill-rate-bound: keep the deep-shower fleet small.
+	_touch = Game.is_touch()
+	_max_brem = 4 if _touch else 10
 	_build_visuals()
 	_build_camera()
 
@@ -122,7 +129,7 @@ func _build_visuals() -> void:
 
 	_sparkles = CPUParticles2D.new()
 	_sparkles.texture = load("res://assets/sprites/sparkle.svg")
-	_sparkles.amount = 30
+	_sparkles.amount = 16 if Game.is_touch() else 30
 	_sparkles.lifetime = 0.85
 	_sparkles.local_coords = false
 	_sparkles.spread = 180.0
@@ -210,7 +217,7 @@ func _build_camera() -> void:
 	add_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_wind = CPUParticles2D.new()
 	_wind.texture = load("res://assets/sprites/streak.svg")
-	_wind.amount = 26
+	_wind.amount = 14 if Game.is_touch() else 26
 	_wind.lifetime = 0.5
 	_wind.emitting = false
 	_wind.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
@@ -511,19 +518,19 @@ func _update_speed_fx(delta: float) -> void:
 		_brem_timer -= delta
 		if _brem_timer <= 0.0:
 			_brem_timer = randf_range(0.4, 0.75)
-			var burst: Node2D = BremBurst.new()
-			burst.position = global_position + heading * randf_range(120.0, 260.0)
-			burst.dir = heading
-			get_parent().add_child(burst)
-			Sfx.play("tick", -14.0, 0.25)
+			if _spawn_brem(120.0, 260.0):
+				Sfx.play("tick", -14.0, 0.25)
 
 
 ## The tail escalates with depth: wider, hotter, and increasingly a
 ## continuous forward shower as the muon rams through ever-denser earth.
 func _update_tail_intensity(delta: float) -> void:
 	var d := _depth_f
-	_trail.width = 15.0 * (1.0 + d * 1.9)
-	_trail_halo.width = 30.0 * (1.0 + d * 1.7)
+	# The deep trail is fat and additive — a big fill-rate cost on phones, so
+	# trim its width there (the crazy shower still reads through colour/rate).
+	var wmul := 0.65 if _touch else 1.0
+	_trail.width = 15.0 * (1.0 + d * 1.9) * wmul
+	_trail_halo.width = 30.0 * (1.0 + d * 1.7) * wmul
 	var hot := Color(1.0, 1.0, 0.97).lerp(Color(1.0, 0.46, 0.30), d)
 	_trail.gradient.set_color(1, Color(hot, 0.6 + 0.3 * d))
 	_trail_halo.gradient.set_color(1, Color(hot, 0.16 + 0.22 * d))
@@ -534,13 +541,22 @@ func _update_tail_intensity(delta: float) -> void:
 	if d > 0.04:
 		_shower_timer -= delta
 		if _shower_timer <= 0.0:
-			_shower_timer = lerpf(0.5, 0.07, d)
-			var burst: Node2D = BremBurst.new()
-			burst.position = global_position + heading * randf_range(70.0, 220.0)
-			burst.dir = heading
-			get_parent().add_child(burst)
-			if d > 0.5 and randf() < 0.3:
+			_shower_timer = lerpf(0.5, 0.14, d)
+			if _spawn_brem(70.0, 220.0) and d > 0.5 and randf() < 0.3:
 				Sfx.play("tick", -16.0, 0.3)
+
+
+## Spawn a forward brem burst, unless the live-burst cap is already reached
+## (keeps the deep shower from flooding low-memory browsers). Returns whether
+## one was spawned.
+func _spawn_brem(off_min: float, off_max: float) -> bool:
+	if get_tree().get_nodes_in_group("brem").size() >= _max_brem:
+		return false
+	var burst: Node2D = BremBurst.new()
+	burst.position = global_position + heading * randf_range(off_min, off_max)
+	burst.dir = heading
+	get_parent().add_child(burst)
+	return true
 
 
 func _heartbeat() -> void:

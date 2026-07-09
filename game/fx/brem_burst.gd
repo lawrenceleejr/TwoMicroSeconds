@@ -4,6 +4,10 @@ extends Node2D
 
 const DUR := 0.5
 
+## One shared additive material for every burst. A fresh CanvasItemMaterial
+## per burst churned the web heap hard once the deep showers ramped up.
+static var _add_mat: CanvasItemMaterial
+
 var dir := Vector2.DOWN
 
 var _t := 0.0
@@ -12,9 +16,11 @@ var _rays := []
 
 func _ready() -> void:
 	z_index = 6
-	var mat := CanvasItemMaterial.new()
-	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	material = mat
+	add_to_group("brem")
+	if _add_mat == null:
+		_add_mat = CanvasItemMaterial.new()
+		_add_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	material = _add_mat
 	for i in 5:
 		var ang := dir.angle() + randf_range(-0.55, 0.55)
 		_rays.append({

@@ -32,6 +32,11 @@ func _process(delta: float) -> void:
 		if _sample_accum >= 0.2:
 			_sample_accum = 0.0
 			_hist.append(Vector2(lab, p))
+			# Bound the history: a long deep run would grow it (and the
+			# per-frame polyline rebuilt from it) without limit. Old samples
+			# compress against the left edge anyway.
+			if _hist.size() > 240:
+				_hist = _hist.slice(_hist.size() - 220)
 		var gamma: float = muon.get("gamma")
 		var mean_life: float = gamma * 2.2  # lab-frame mean life, µs
 		# Window covers the past plus ~2 mean lives of future; boosting
