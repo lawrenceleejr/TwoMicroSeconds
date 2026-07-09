@@ -119,6 +119,8 @@ func _ready() -> void:
 	_gamma_bar.draw.connect(_draw_gamma_bar)
 	add_child(_gamma_bar)
 
+	_build_ribbon()
+
 	# Left column chips.
 	var alt_pair := _mk_chip(14, "")
 	_alt_label = alt_pair[1]
@@ -172,6 +174,41 @@ var _flash_dur := 0.0
 var _flash_col := Color.WHITE
 var _arrow: Control
 var _menu_btn: Control
+# Causal-chain ribbon: names the physics as a chain, not four loose numbers.
+var _ribbon_panel: PanelContainer
+var _rib_v: Label
+var _rib_a1: Label
+var _rib_g: Label
+var _rib_sky: Label
+var _rib_a3: Label
+var _rib_time: Label
+
+
+func _build_ribbon() -> void:
+	_ribbon_panel = PanelContainer.new()
+	_ribbon_panel.add_theme_stylebox_override("panel", Juice.ui_chip(Juice.INK, 0.6))
+	_ribbon_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 7)
+	_ribbon_panel.add_child(row)
+	_rib_v = _rib_seg(row, "v —", Juice.CREAM)
+	_rib_a1 = _rib_seg(row, "→", Color(Juice.CREAM, 0.4))
+	_rib_g = _rib_seg(row, "γ —", Juice.SUN)
+	_rib_seg(row, "→", Color(Juice.CREAM, 0.4))
+	_rib_sky = _rib_seg(row, "sky —", Color("a99dff"))
+	_rib_a3 = _rib_seg(row, "→", Color(Juice.CREAM, 0.4))
+	_rib_time = _rib_seg(row, "time borrowed", Juice.MINT)
+	add_child(_ribbon_panel)
+
+
+func _rib_seg(row: HBoxContainer, text: String, col: Color) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_override("font", Juice.ui_font)
+	l.add_theme_font_size_override("font_size", 11)
+	l.add_theme_color_override("font_color", col)
+	row.add_child(l)
+	return l
 
 
 ## Draw the menu button: a small hamburger glyph on an ink disc.
@@ -304,7 +341,12 @@ func _process(delta: float) -> void:
 		_timer_label.add_theme_color_override("font_color", Juice.CREAM)
 
 	var lab: float = muon.get("lab_us")
-	_lab_label.text = "proper · lab frame %.1f µs" % lab
+	# The clock is a budget, not a stat: name the ~2.2 µs mean it's spending
+	# toward (decay is random — the plot shows the odds). Lab frame trails it.
+	if portrait:
+		_lab_label.text = "of ~2.2 µs mean · lab %.1f µs" % lab
+	else:
+		_lab_label.text = "proper time · of ~2.2 µs mean · lab frame %.1f µs" % lab
 	_lab_label.position = Vector2(vp.x * 0.5 - _lab_label.size.x * 0.5, 60.0)
 
 	# Red alert: the dice are loaded now. The whole UI comes apart a little —
@@ -339,6 +381,20 @@ func _process(delta: float) -> void:
 	_gamma_bar.position = Vector2(vp.x * 0.5 - 60.0, 116.0)
 	_gamma_bar.size = Vector2(120.0, 8.0)
 	_gamma_bar.queue_redraw()
+
+	# Causal-chain ribbon: v → γ → sky ÷γ → time borrowed, live. On a narrow
+	# phone it compresses to just γ → sky (drop the ends).
+	_rib_v.text = "v %.3fc" % beta
+	_rib_g.text = "γ %.0f×" % gamma
+	_rib_sky.text = "sky ÷%d" % maxi(1, int(round(gamma)))
+	var full_chain := not portrait
+	_rib_v.visible = full_chain
+	_rib_a1.visible = full_chain
+	_rib_time.visible = full_chain
+	_rib_a3.visible = full_chain
+	_ribbon_panel.reset_size()
+	_ribbon_panel.position = Vector2(vp.x * 0.5 - _ribbon_panel.size.x * 0.5,
+		150.0 if portrait else 132.0)
 
 	var y_pos: float = muon.global_position.y
 	var layer := Atmos.layer_index_at(y_pos)
@@ -382,7 +438,7 @@ func _process(delta: float) -> void:
 	if layer != _last_layer:
 		_last_layer = layer
 		_show_toast(_toasts[layer])
-	_toast_chip.position = Vector2(vp.x * 0.5 - _toast_chip.size.x * 0.5, 250.0 if portrait else 138.0)
+	_toast_chip.position = Vector2(vp.x * 0.5 - _toast_chip.size.x * 0.5, 250.0 if portrait else 176.0)
 
 	if _plot.get("muon") == null:
 		_plot.set("muon", muon)
@@ -404,7 +460,7 @@ func _process(delta: float) -> void:
 	# way down until it has passed. (Toast/hint own their alpha via
 	# tweens; the danger banner stays — it's an alarm.)
 	for el: Control in [_timer_label, _lab_label, _gamma_chip, _gamma_bar,
-			_alt_chip, _mischief_chip, _sparks_chip, _plot, _depth]:
+			_ribbon_panel, _alt_chip, _mischief_chip, _sparks_chip, _plot, _depth]:
 		Juice.duck_behind_muon(el, delta)
 
 

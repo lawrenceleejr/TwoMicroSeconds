@@ -9,6 +9,7 @@ var _muon_tex: Texture2D
 var _title_label: Label
 var _title_shadow: Label
 var _sub_label: Label
+var _teaser_label: Label
 var _cta_chip: PanelContainer
 var _origin_chip: PanelContainer
 var _origin_label: Label
@@ -40,11 +41,20 @@ func _ready() -> void:
 	_title_label.add_theme_font_override("font", Juice.hand_font)
 	_sub_label = _mk_label("the (brief) life of a muon", 18, Color(Juice.CREAM, 0.8))
 
-	_cta_chip = _mk_chip(Juice.MINT, 0.92)
-	var cta_text := "press any key — be born"
+	# The hook, up front: sell the counter-intuitive mechanic before the CTA.
+	_teaser_label = _mk_label(
+		"you can't slow a muon down — only the sky can speed you up.",
+		15, Color(Juice.CREAM, 0.85))
+	_teaser_label.add_theme_font_override("font", Juice.hand_font)
+	_teaser_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	# Primary CTA reads as an action — amber, the muon's own energy colour.
+	_cta_chip = _mk_chip(Juice.SUN, 0.95)
+	var cta_text := "▸ fall — space"
 	if Game.is_touch():
-		cta_text = "tap anywhere — be born"
+		cta_text = "▸ fall — tap"
 	var cta := _chip_label(_cta_chip, cta_text, 18)
+	cta.add_theme_font_override("font", Juice.ui_font_bold)
 	cta.add_theme_color_override("font_color", Juice.INK)
 
 	_origin_chip = _mk_chip(Juice.PAPER, 0.88)
@@ -131,7 +141,7 @@ func _process(delta: float) -> void:
 	var vp := _root.get_viewport_rect().size
 	# Modal focus: while the shop is open, the competing chrome steps out.
 	var modal: bool = _shop != null and _shop.active
-	for c: Control in [_cta_chip, _hint_chip, _histo, _footer]:
+	for c: Control in [_cta_chip, _hint_chip, _histo, _footer, _teaser_label]:
 		c.modulate.a = lerpf(c.modulate.a, 0.0 if modal else 1.0, 1.0 - exp(-12.0 * delta))
 	_title_label.position = Vector2(vp.x * 0.5 - _title_label.size.x * 0.5, vp.y * 0.16)
 	_title_label.rotation = -0.015
@@ -139,6 +149,12 @@ func _process(delta: float) -> void:
 	_title_shadow.position = _title_label.position + Vector2(-3.5, 3.0)
 	_title_shadow.rotation = -0.015
 	_sub_label.position = Vector2(vp.x * 0.5 - _sub_label.size.x * 0.5, vp.y * 0.16 + 84.0)
+	# Teaser sits just above the CTA — the hook lands before the button.
+	var tw2: float = minf(vp.x * 0.72, 560.0)
+	_teaser_label.custom_minimum_size.x = tw2
+	_teaser_label.size.x = tw2
+	_teaser_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_teaser_label.position = Vector2((vp.x - tw2) * 0.5, vp.y * 0.72 - 56.0)
 	_cta_chip.position = Vector2(vp.x * 0.5 - _cta_chip.size.x * 0.5, vp.y * 0.72)
 	_cta_chip.pivot_offset = _cta_chip.size * 0.5
 	_cta_chip.scale = Vector2.ONE * (1.0 + 0.03 * sin(_t * 2.6))
