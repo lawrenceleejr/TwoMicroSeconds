@@ -532,13 +532,20 @@ func _make_music() -> AudioStreamWAV:
 	return _pack(b, MUSIC_RATE, true)
 
 
-## Swap the soundtrack to the wistful discovery theme (the finale).
+## Fade the main loop out, then bring the wistful discovery theme in — a
+## real musical transition, not a hard cut, for the finale.
 func play_discovery_music() -> void:
 	if _music_player == null:
 		return
-	_music_player.stream = _make_discovery_music()
-	_music_player.volume_db = MUSIC_DB - 1.0
-	_music_player.play()
+	# A lingering bullet-time duck would fight the crossfade — end it.
+	if _bt_music_tween != null and _bt_music_tween.is_valid():
+		_bt_music_tween.kill()
+	var tw := create_tween().set_ignore_time_scale(true)
+	tw.tween_property(_music_player, "volume_db", -50.0, 1.1)
+	tw.tween_callback(func() -> void:
+		_music_player.stream = _make_discovery_music()
+		_music_player.play())
+	tw.tween_property(_music_player, "volume_db", MUSIC_DB - 1.0, 2.4)
 
 
 ## Slow, dreamy, hopeful: a maj7 pad drift (C - Em - Am - F) with a sparse

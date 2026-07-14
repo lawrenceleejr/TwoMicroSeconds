@@ -13,9 +13,14 @@ game plays out in **your own rest frame**: energy can never stretch your
 clock — what it does is **length-contract the atmosphere**, so a hotter birth
 makes the ground arrive sooner while Earth's lab clock races ahead of yours.
 You can't throttle — you coast, and only the sky's own machinery (auroras,
-lightning, satellites) can speed you up. And the meadow was never the finish
-line: muons punch straight through it. The run ends 100 m down, through the
-bedrock, in the cavern at LHC Point 5 — counted by **CMS**. Every death is
+lightning, satellites, stray radio waves) can speed you up. And the meadow
+was never the finish line: muons punch straight through it, headlamp on,
+grinding through dirt and rock past a whole **stack of real detectors** —
+HAWC on the surface, IceCube in the glacial ice, CMS 100 m down at LHC
+Point 5, and, for a top-tier muon flown well, the LZ dark-matter experiment
+deep in the cavern below — each fly-through in Matrix bullet time. Reach LZ
+and the run ends in a discovery: an energy above the GZK limit, a camera
+that rises alone to space, and a mystery that stays open. Every death is
 logged: a persistent histogram of proper lifetimes converges on 2.2 µs as
 you play, with the γ-stretched lab-frame distribution underneath.
 
@@ -25,10 +30,10 @@ you play, with the γ-stretched lab-frame distribution underneath.
 |---|---|
 | A / D · arrows · left stick | **steer left / right** — you always fall; you only angle it |
 | SPACE / Z / X (gamepad A/X) | **zap** — your honk; everything reacts |
-| touch: hold & slide left / right | **steer** (zaps fire on their own) |
+| touch: hold & slide left / right | **steer** (auto-zaps · tap = manual zap) |
 | TAB | to-do list |
 | U | origin shop (title screen) |
-| ESC | pause |
+| ESC · ☰ button (touch) | pause / menu |
 | R | restart (on the end screen) |
 | F / M | fullscreen / mute |
 
@@ -42,9 +47,13 @@ blur creeps in as γ climbs.
 
 The to-do list is optional, goose-style: tickle an aurora, high-five a
 satellite, photobomb a shooting star, startle a weather balloon, zip through
-an airplane, make a cloud rain… Finish all ten before being detected and
-CMS stamps your receipt **A++ MUON**. Fresh solar-flare muons cannot even
-reach the ground — early runs are for sparks; come back heavier.
+an airplane, make a cloud rain — and underground, disturb an ancient tomb,
+strike oil, find a secret tunnel (rarely, brushing one triggers a
+**muon-catalyzed fusion event**, a real thing). A perfect sheet pays +5
+sparks and stamps your receipt **A++ MUON**. Dodge the meteor showers and
+drifting space junk — they bleed your speed, though a clean graze pays a
+spark. Fresh solar-flare muons cannot even reach the ground — early runs
+are for sparks; come back heavier.
 
 ## sparks & the origin shop
 
@@ -60,8 +69,9 @@ more energy at birth, i.e. a permanently higher Lorentz factor:
 
 solar flare → red dwarf superflare → supernova shock front (Fermi
 acceleration) → pulsar wind nebula → magnetar flare → active galactic
-nucleus → **the Oh-My-God particle** (Utah, 1991, 3×10²⁰ eV) — a golden
-muon whose detection earns the game's final ending.
+nucleus → and a final tier the shop only shows as **? ? ?** — carry it all
+the way down to LZ and the epilogue tells you what you were (Utah, 1991,
+3×10²⁰ eV) and why that should have been impossible.
 
 ## play in the browser
 
@@ -117,8 +127,13 @@ start at 100 km because the aurora was too pretty to skip).
 
 ## the soundtrack (and how to replace it)
 
-The game generates a cute 8-bar loop at startup (C–Am–F–G, plucks + pad +
-bass, 104 BPM). To swap in your own music, drop `track.ogg` into `music/`
+The game synthesizes its soundtrack at startup: a slow, wide 8-bar piece
+in D minor (66 BPM) — a breathing pad, a heartbeat on every bar line, sub
+bass, a plucked arpeggio, a lead that only enters for the second half, and
+sparse star bells shared with the wistful discovery theme that takes over
+for the finale. Underground, the rock audibly muffles the music (a lowpass
+closes with depth); detector fly-throughs drop the world — and the song —
+into bullet time. To swap in your own music, drop `track.ogg` into `music/`
 (ships with the build) or `music.ogg` into the game's user-data folder
 (works on the shipped app, no rebuild). Details in
 [`music/README.md`](music/README.md).
@@ -160,8 +175,13 @@ game/
               tasks.gd (the to-do list) · game.gd (flow + input map)
   player/     muon.gd + body/face (movement, dash, zap, squash & stretch)
   world/      atmos.gd (constants) · atmosphere.gd (sky) · layer_director.gd
-              props/ (auroras, balloons, clouds, birds, airplane, detector…)
+              props/ (auroras, balloons, clouds, birds, meteors, discoveries…)
   ui/         hud.gd · checklist.gd · end_screen.gd · pause_overlay.gd
-  fx/         zap_ring · ghost · decay_burst · task_pop · float_text · intro
+  fx/         zap_ring · ghost · decay_burst · brem_burst · intro_beats …
 dist/         RUN_ME_FIRST.txt (ships inside the DMG)
 ```
+
+## credits
+
+Made with [Claude Code](https://claude.com/claude-code) by **Lawrence Lee**,
+with support from **Tova Holmes** — University of Tennessee, Knoxville.
