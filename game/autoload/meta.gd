@@ -69,6 +69,8 @@ var total_sparks_earned := 0
 ## The final origin (the Oh-My-God particle) is a mystery — shown as "???"
 ## until you carry it all the way down to LZ and unlock its true identity.
 var discovered := false
+## First-run onboarding beats: shown once, then never again.
+var seen_intro := false
 ## Proper lifetime (µs) of every decayed muon, ever. Exponentially
 ## distributed by construction; the mean converges on 2.2 as you play.
 var lifetimes: Array = []
@@ -103,6 +105,13 @@ func mark_discovery() -> void:
 	if discovered:
 		return
 	discovered = true
+	_save()
+
+
+func mark_intro_seen() -> void:
+	if seen_intro:
+		return
+	seen_intro = true
 	_save()
 
 
@@ -182,6 +191,7 @@ func reset_save() -> void:
 	owned_tier = 0
 	total_sparks_earned = 0
 	discovered = false
+	seen_intro = false
 	lifetimes = []
 	lifetimes_lab = []
 	_save()
@@ -198,6 +208,7 @@ func _save() -> void:
 		"owned": owned_tier,
 		"earned": total_sparks_earned,
 		"discovered": discovered,
+		"seen_intro": seen_intro,
 		"lifetimes": lifetimes,
 		"lifetimes_lab": lifetimes_lab,
 	}))
@@ -216,6 +227,7 @@ func _load() -> void:
 		owned_tier = clampi(int(data.get("owned", tier)), tier, TIERS.size() - 1)
 		total_sparks_earned = maxi(int(data.get("earned", 0)), 0)
 		discovered = bool(data.get("discovered", false))
+		seen_intro = bool(data.get("seen_intro", false))
 		var lts = data.get("lifetimes", [])
 		if lts is Array:
 			lifetimes = lts

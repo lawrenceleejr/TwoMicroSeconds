@@ -3,11 +3,18 @@ extends "res://game/world/props/prop_base.gd"
 ## and it rips a chunk of your speed away — dodge them.
 
 const SLOW := 150.0
+## Grazing past inside this radius (without touching) pays a spark — the
+## dodge should feel like a move, not just an absence of damage.
+const NEAR_MISS := 130.0
+
+const FloatText := preload("res://game/fx/float_text.gd")
 
 var vel := Vector2(400.0, 900.0)
 var _t := 0.0
 var _trail := []
 var _hit := false
+var _min_d := 1.0e9
+var _scored := false
 
 
 func _setup() -> void:
@@ -25,9 +32,19 @@ func _process(delta: float) -> void:
 	if _trail.size() > 10:
 		_trail.pop_back()
 	var m := muon()
-	if m != null and not _hit and m.get("alive") and muon_dist() < 44.0:
+	var d := muon_dist()
+	_min_d = minf(_min_d, d)
+	if m != null and not _hit and m.get("alive") and d < 44.0:
 		_hit = true
 		m.slow(SLOW, "meteor")
+	# A clean graze: it came close, never touched, and is now pulling away.
+	if m != null and not _hit and not _scored and m.get("alive") \
+			and _min_d < NEAR_MISS and _min_d >= 44.0 and d > _min_d + 70.0:
+		_scored = true
+		Meta.add_sparks(1)
+		Sfx.play("chirp", -8.0, 0.2)
+		FloatText.spawn(get_parent(), (m as Node2D).global_position + Vector2(0, -44),
+			"close! +1 ◆", Juice.SUN)
 	# Cull once well past the muon (below, or far off to the side).
 	if m != null:
 		var off: Vector2 = global_position - (m as Node2D).global_position

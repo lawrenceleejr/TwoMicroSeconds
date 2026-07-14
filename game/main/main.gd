@@ -76,6 +76,9 @@ func _ready() -> void:
 	_hud = HudScript.new()
 	_hud.muon = muon
 	_ui_layer.add_child(_hud)
+	# First fall only: three diegetic beats teach the mechanic in-world.
+	if not Game.shoot_mode and not Meta.seen_intro:
+		_ui_layer.add_child(preload("res://game/fx/intro_beats.gd").new())
 	_ui_layer.add_child(ChecklistScript.new())
 	end_screen = EndScreenScript.new()
 	_ui_layer.add_child(end_screen)
@@ -105,6 +108,7 @@ func _process(_delta: float) -> void:
 		add_child(burst)
 		Sfx.play("zap", -1.0, 0.0)
 		Sfx.play("decay", -6.0, 0.35)
+		Sfx.play("boom", -5.0, 0.1)
 		Juice.shake(0.7)
 		Juice.hitstop(0.06, 0.12)
 		Juice.glitch(0.22, 0.4)

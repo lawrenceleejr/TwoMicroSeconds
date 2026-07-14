@@ -20,6 +20,8 @@ var _music_player: AudioStreamPlayer
 var _whoosh_player: AudioStreamPlayer
 var _bt_music_tween: Tween
 var _bt_whoosh_tween: Tween
+var _lowpass: AudioEffectLowPassFilter
+var _muffle := 0.0
 
 
 func _ready() -> void:
@@ -33,6 +35,17 @@ func _ready() -> void:
 	_music_player.stream = _music_stream()
 	_music_player.volume_db = MUSIC_DB
 	add_child(_music_player)
+	# Music rides its own bus so the earth can muffle it: a lowpass whose
+	# cutoff closes with depth (driven each frame from _process). SFX stay
+	# crisp on Master — only the song is behind a kilometer of rock.
+	var bus_i := AudioServer.bus_count
+	AudioServer.add_bus(bus_i)
+	AudioServer.set_bus_name(bus_i, "Music")
+	AudioServer.set_bus_send(bus_i, "Master")
+	_lowpass = AudioEffectLowPassFilter.new()
+	_lowpass.cutoff_hz = 19500.0
+	AudioServer.add_bus_effect(bus_i, _lowpass)
+	_music_player.bus = "Music"
 	# Loop fallback for streams that don't loop natively.
 	_music_player.finished.connect(_music_player.play)
 	_music_player.play()
@@ -42,6 +55,21 @@ func _ready() -> void:
 	_whoosh_player.stream = _streams["whoosh"]
 	_whoosh_player.volume_db = -60.0
 	add_child(_whoosh_player)
+
+
+func _process(delta: float) -> void:
+	# Underground, the rock muffles the music: the lowpass closes with depth.
+	# Skipped once the run is `finished` — the discovery theme plays wide and
+	# clear while the camera rises, even though the muon stays deep.
+	if _lowpass == null:
+		return
+	var target := 0.0
+	var m := get_tree().get_first_node_in_group("muon")
+	if m != null and not bool(m.get("finished")) \
+			and (m as Node2D).global_position.y > Atmos.GROUND_Y:
+		target = clampf(Atmos.depth_m_at((m as Node2D).global_position.y) / 320.0, 0.0, 0.85)
+	_muffle = lerpf(_muffle, target, 1.0 - exp(-2.5 * delta))
+	_lowpass.cutoff_hz = lerpf(19500.0, 700.0, _muffle)
 
 
 func play(key: String, vol_db := 0.0, pitch_jitter := 0.05) -> void:
@@ -133,6 +161,7 @@ func _build() -> void:
 	_streams["deny"] = _make_deny()
 	_streams["wind"] = _make_wind()
 	_streams["whoosh"] = _make_whoosh()
+	_streams["boom"] = _make_boom()
 
 
 func _pack(samples: PackedFloat32Array, rate: int, loop: bool) -> AudioStreamWAV:
@@ -381,82 +410,123 @@ func _make_deny() -> AudioStreamWAV:
 	return _pack(b, SFX_RATE, false)
 
 
-## The built-in soundtrack: a hand-composed 8-bar loop at 104 BPM.
-## C - Am - F - G, twice: soft pad, round bass, plucky pentatonic-ish melody,
-## brushed offbeat ticks. Note tails wrap around the buffer so it loops clean.
+## The built-in soundtrack: slow, wide, and a little awestruck — a breathing
+## D-minor pad (root gently detuned for width), a heartbeat thump on each
+## bar, a sub bass swell, a plucked arpeggio that thinks in eighth notes, a
+## long-breathed lead that only enters for the second half, and sparse star
+## bells in the same language as the discovery theme, so the finale feels
+## like coming home. 66 BPM, 8 bars, tails wrap so it loops seamlessly.
 func _make_music() -> AudioStreamWAV:
-	var bpm := 104.0
-	var beat := 60.0 / bpm
-	var bar := beat * 4.0
+	var bar := 3.6                      # 66 bpm, 4 beats
+	var beat := bar / 4.0
 	var bars := 8
 	var dur := bar * bars
 	var n := int(dur * MUSIC_RATE)
 	var b := PackedFloat32Array()
 	b.resize(n)
 
-	# Pad: one triad per bar, enveloped inside the bar so changes don't click.
-	var pads := [
-		[261.63, 329.63, 392.0],   # C
-		[220.0, 261.63, 329.63],   # Am
-		[174.61, 220.0, 261.63],   # F
-		[196.0, 246.94, 293.66],   # G
+	# One voicing per bar:
+	# Dm(add9) · Bbmaj7 · Fmaj9 · Cadd9 / Dm(add9) · Bbmaj7 · Gm9 · A7sus4
+	var chords := [
+		[146.83, 174.61, 220.0, 329.63],
+		[116.54, 146.83, 174.61, 220.0],
+		[174.61, 220.0, 261.63, 392.0],
+		[130.81, 164.81, 196.0, 293.66],
+		[146.83, 174.61, 220.0, 329.63],
+		[116.54, 146.83, 174.61, 220.0],
+		[98.0, 233.08, 293.66, 440.0],
+		[110.0, 293.66, 329.63, 392.0],
 	]
+
+	# Pad: swells across each bar (zero at the bar lines, so no clicks); the
+	# root is doubled a few cents sharp — cheap chorus, real width.
 	for i in n:
 		var t := float(i) / MUSIC_RATE
-		var bar_i := int(t / bar) % 4
+		var bar_i := int(t / bar) % bars
 		var bar_pos := fmod(t, bar) / bar
-		var env := minf(minf(bar_pos / 0.05, (1.0 - bar_pos) / 0.10), 1.0)
-		var chord: Array = pads[bar_i]
-		var v := 0.0
-		for f in chord:
-			v += sin(TAU * float(f) * t)
-		b[i] = v * 0.030 * env
+		var env := minf(sin(bar_pos * PI) * 1.35, 1.0)
+		var chord: Array = chords[bar_i]
+		var root := float(chord[0])
+		var v := sin(TAU * root * t) + sin(TAU * root * 1.004 * t)
+		for k in range(1, chord.size()):
+			v += sin(TAU * float(chord[k]) * t)
+		b[i] = v * 0.026 * env
 
-	# Bass: root pulses on beats 1, 3, and the 4-and.
-	var roots := [65.41, 110.0, 87.31, 98.0]  # C2 A2 F2 G2
+	# Heartbeat: a soft kick-ish drop on every bar line — the muon's clock.
 	for bar_i in bars:
-		var root: float = roots[bar_i % 4]
-		for hit in [0.0, 2.0, 3.5]:
-			var onset := int((bar_i * 4.0 + float(hit)) * beat * MUSIC_RATE)
-			var length := int(0.30 * MUSIC_RATE)
-			var amp := 0.13 if float(hit) < 3.0 else 0.09
-			for j in length:
-				var t2 := float(j) / MUSIC_RATE
-				var v2 := (sin(TAU * root * t2) + 0.4 * sin(TAU * root * 2.0 * t2)) * exp(-t2 * 6.0) * amp
-				b[(onset + j) % n] += v2
+		var onset := int(float(bar_i) * bar * MUSIC_RATE)
+		var hlen := int(0.22 * MUSIC_RATE)
+		var phase := 0.0
+		for j in hlen:
+			var t2 := float(j) / MUSIC_RATE
+			phase += lerpf(88.0, 44.0, t2 / 0.22) / MUSIC_RATE
+			b[(onset + j) % n] += sin(TAU * phase) * exp(-t2 * 14.0) * 0.12
 
-	# Melody: 64 eighth-note slots, hand-written (0 = rest).
-	var melody := [
-		659.26, 0.0, 783.99, 0.0, 1046.5, 0.0, 987.77, 880.0,
-		880.0, 0.0, 659.26, 0.0, 523.25, 587.33, 659.26, 0.0,
-		698.46, 0.0, 880.0, 0.0, 1046.5, 0.0, 880.0, 783.99,
-		783.99, 0.0, 987.77, 0.0, 1174.66, 0.0, 987.77, 783.99,
-		659.26, 783.99, 0.0, 659.26, 523.25, 0.0, 587.33, 659.26,
-		440.0, 523.25, 659.26, 0.0, 880.0, 0.0, 783.99, 659.26,
-		698.46, 0.0, 523.25, 0.0, 440.0, 698.46, 783.99, 880.0,
-		783.99, 698.46, 587.33, 493.88, 392.0, 0.0, 587.33, 493.88,
-	]
+	# Sub bass: the root an octave down, one swell per bar + a mid-bar echo.
+	for bar_i in bars:
+		var root2 := float(chords[bar_i][0]) * 0.5
+		for hit: float in [0.0, 2.5]:
+			var onset := int((float(bar_i) * 4.0 + hit) * beat * MUSIC_RATE)
+			var blen := int(1.1 * MUSIC_RATE)
+			var amp := 0.15 if hit == 0.0 else 0.09
+			for j in blen:
+				var t3 := float(j) / MUSIC_RATE
+				b[(onset + j) % n] += sin(TAU * root2 * t3) * exp(-t3 * 2.2) * amp
+
+	# Arpeggio: plucked chord tones an octave up, eighth-note grid with
+	# rests (-1). Two alternating patterns keep it thinking, not ticking.
+	var pat_even := [0, -1, 1, -1, 2, -1, 3, 2]
+	var pat_odd := [-1, 0, -1, 2, 1, -1, 3, -1]
 	var eighth := beat * 0.5
-	for slot in melody.size():
-		var freq: float = melody[slot]
-		if freq <= 0.0:
-			continue
-		var onset := int(slot * eighth * MUSIC_RATE)
-		var length := int(0.42 * MUSIC_RATE)
-		for j in length:
-			var t3 := float(j) / MUSIC_RATE
-			var vib := t3 + 0.0022 * sin(TAU * 5.2 * t3)
-			var v3 := sin(TAU * freq * vib) + 0.35 * sin(TAU * freq * 2.0 * vib)
-			b[(onset + j) % n] += v3 * exp(-t3 * 6.5) * 0.155
+	for bar_i in bars:
+		var chord2: Array = chords[bar_i]
+		var pat: Array = pat_even if bar_i % 2 == 0 else pat_odd
+		for slot in 8:
+			var idx: int = pat[slot]
+			if idx < 0:
+				continue
+			var freq := float(chord2[idx]) * 2.0
+			var onset := int((float(bar_i) * 4.0 * beat + float(slot) * eighth) * MUSIC_RATE)
+			var plen := int(0.35 * MUSIC_RATE)
+			for j in plen:
+				var t4 := float(j) / MUSIC_RATE
+				var v4 := sin(TAU * freq * t4) + 0.4 * sin(TAU * freq * 2.0 * t4)
+				b[(onset + j) % n] += v4 * exp(-t4 * 7.0) * 0.075
 
-	# Brushed offbeat ticks.
+	# Lead: enters at the halfway point — long half-note breaths, slight
+	# vibrato, a quiet octave shimmer. The hopeful voice over the fall.
+	var lead := [
+		587.33, 0.0, 440.0, 523.25,     # bar 5
+		587.33, 698.46, 0.0, 587.33,    # bar 6
+		523.25, 0.0, 392.0, 440.0,      # bar 7
+		659.26, 587.33, 0.0, 0.0,       # bar 8 — breathe before the loop
+	]
+	var half := beat * 2.0
+	for slot in lead.size():
+		var freq2: float = lead[slot]
+		if freq2 <= 0.0:
+			continue
+		var onset := int((4.0 * bar + float(slot) * half) * MUSIC_RATE)
+		var llen := int(1.2 * MUSIC_RATE)
+		for j in llen:
+			var t5 := float(j) / MUSIC_RATE
+			var vib := t5 + 0.0028 * sin(TAU * 4.6 * t5) * minf(t5 * 2.0, 1.0)
+			var env5 := minf(t5 / 0.12, 1.0) * exp(-t5 * 1.9)
+			var v5 := sin(TAU * freq2 * vib) + 0.30 * sin(TAU * freq2 * 2.0 * vib)
+			b[(onset + j) % n] += v5 * env5 * 0.105
+
+	# Star bells: sparse high pings, seeded so the loop is identical every
+	# pass — the same bell language the discovery theme speaks.
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 3
-	for beat_i in bars * 4:
-		var onset := int((float(beat_i) + 0.5) * beat * MUSIC_RATE)
-		for j in int(0.02 * MUSIC_RATE):
-			var t4 := float(j) / MUSIC_RATE
-			b[(onset + j) % n] += (rng.randf() * 2.0 - 1.0) * exp(-t4 * 160.0) * 0.05
+	rng.seed = 29
+	var bells := [1174.66, 1318.5, 1760.0, 2349.3]
+	for k in 10:
+		var onset := int(rng.randf() * dur * MUSIC_RATE)
+		var freq3: float = bells[rng.randi() % bells.size()]
+		var klen := int(0.9 * MUSIC_RATE)
+		for j in klen:
+			var t6 := float(j) / MUSIC_RATE
+			b[(onset + j) % n] += sin(TAU * freq3 * t6) * exp(-t6 * 3.0) * 0.045
 
 	_normalize(b, 0.8)
 	return _pack(b, MUSIC_RATE, true)
@@ -535,6 +605,27 @@ func bullet_time_audio(total: float, ramp_in := 0.18, ramp_out := 0.55) -> void:
 	_bt_whoosh_tween.tween_interval(sustain * 0.35)
 	_bt_whoosh_tween.tween_property(_whoosh_player, "volume_db", -60.0, ramp_out + sustain * 0.4)
 	_bt_whoosh_tween.tween_callback(_whoosh_player.stop)
+
+
+## A deep boom: pitch-dropping sine body + a noise slap — fusion events,
+## punching through the surface of the Earth. Weight, not brightness.
+func _make_boom() -> AudioStreamWAV:
+	var dur := 0.9
+	var n := int(dur * SFX_RATE)
+	var b := PackedFloat32Array()
+	b.resize(n)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 47
+	var phase := 0.0
+	for i in n:
+		var t := float(i) / SFX_RATE
+		var k := t / dur
+		phase += lerpf(160.0, 34.0, pow(k, 0.4)) / SFX_RATE
+		var v := sin(TAU * phase) * exp(-t * 4.0)
+		v += (rng.randf() * 2.0 - 1.0) * exp(-t * 9.0) * 0.5
+		b[i] = v
+	_normalize(b, 0.9)
+	return _pack(b, SFX_RATE, false)
 
 
 ## An airy, loopable whoosh: low-passed noise with a slow swell — the sound

@@ -384,10 +384,13 @@ func _process(delta: float) -> void:
 	_gamma_bar.queue_redraw()
 
 	# Causal-chain ribbon: v → γ → sky ÷γ → time borrowed, live. On a narrow
-	# phone it compresses to just γ → sky (drop the ends).
+	# phone it compresses to just γ → sky (drop the ends). The chain shows
+	# the EFFECTIVE γ — the world's contraction is soft-capped at 14× for
+	# readability, and the HUD must claim only what the sky actually does.
+	var eff_g := mini(int(round(gamma)), 14)
 	_rib_v.text = "v %.3fc" % beta
-	_rib_g.text = "γ %.0f×" % gamma
-	_rib_sky.text = "sky ÷%d" % maxi(1, int(round(gamma)))
+	_rib_g.text = "γ %d×" % eff_g
+	_rib_sky.text = "sky ÷%d" % maxi(1, eff_g)
 	var full_chain := not portrait
 	_rib_v.visible = full_chain
 	_rib_a1.visible = full_chain

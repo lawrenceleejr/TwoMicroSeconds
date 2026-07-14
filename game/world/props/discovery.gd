@@ -57,6 +57,7 @@ func _discover() -> void:
 	FloatText.spawn(get_parent(), global_position + Vector2(0, -48), label, Juice.SUN)
 	# Rarely, the muon catalyses fusion in the dense matter it pierces.
 	if randf() < FUSION_CHANCE:
+		Sfx.play("boom", -1.0, 0.05)
 		var hud := get_tree().get_first_node_in_group("hud")
 		if hud != null:
 			hud.fusion_event()
